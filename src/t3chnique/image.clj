@@ -1,52 +1,53 @@
 (ns t3chnique.image
+  (:require [t3chnique.ber :as ber])
   (:require [nio.core :as nio]
             [clojure.java.io :as io])
   (:import [java.nio.charset Charset]
-           [java.nio ByteOrder]))
+           [java.nio ByteOrder MappedByteBuffer]))
+
+(defn read-sig [b]
+  (let [sig (ber/read-utf8 b 11)
+        ver (ber/read-uint2 b)
+        _ (.position b 45)
+        timestamp (ber/read-utf8 b 24)]
+    [ver timestamp]))
+
+(defn read-block-header [b]
+  (let [m (ber/parse [[:utf8 4] :id :uint4 :size :uint2 :flags] b)]
+    (assoc m :mandatory (= (bit-and 1 (:flags m)) 1))))
+
+(defn parse-image [b]
+  (let [_ (read-sig b)]
+    (loop [buf b blocks []]
+      (let [header (read-block-header b)
+            data (read-block header b)]
+        (recur buf (conj blocks (merge header data)))))))
 
 (defn load-image-file [f]
   (let [buf (nio/mmap f)
         _ (.order buf ByteOrder/LITTLE_ENDIAN)
-        version (read-sig)]
+        version (read-sig buf)]
     buf))
 
-(defn read-sig [b]
-  (let [_ (.limit buf 11)
-        sig (read-utf8 buf)
-        _ (.limit buf 13)
-        ver (read-uint2 buf)
-        _ (.limit buf 69)
-        _ (.position buf 45)
-        timestamp (read-utf8 buf)]
-    [ver timestamp]))
+(defmulti read-block (fn [block buf] (:id block)))
 
-(defn slice [b count]
-  "Slice a new buffer off the base of count bytes"
-  (let [_ (.limit b (+ count (.position b)))
-        slice (.slice b)
-        _ (.position b (.limit b))]
-    slice))
+(defmethod read-block "ENTP" [{size :size} buf]
+  (let [slice (slice buf size)
+        _ (println slice)
+        spec (conj [:uint4 :entry-point-offset
+                    :uint2 :method-header-size
+                    :uint2 :exception-table-entry-size
+                    :uint2 :debugger-line-table-entry-size
+                    :uint2 :debug-table-header-size
+                    :uint2 :debug-table-local-symbol-record-header-size
+                    :uint2 :debug-records-version-number]
+                   (when (> size 16) [:uint2 :debug-table-frame-header-size]))]
+    (ber/parse spec slice)))
 
-(defn read-block-header [b]
-  (let [b (slice b 10)
-        id (read-uint4 b)
-        size (read-uint4 b)
-        flags (read-uint2 b)
-        mandatory (= (bit-and 1 flags) 1)]
-    {:id id :size size :mandatory mandatory}))
+(defmethod read-block "SYMD" [{size :size} buf]
+  (let [slice (slice buf size)
+        entries (ber/read-uint2 buf)]
+    ))
 
-(defn read-utf8 [b]
-  "Read to limit at utf-8"
-  (let [utf8 (Charset/forName "utf-8")
-        decoder (.newDecoder utf8)]
-    (String. (.array (.decode decoder b)))))
-
-(defn read-uint2 
-  "Read a single uint2 from the buffer (advancing position 2)"
-  [b]
-  (bit-and (.getShort b) 0xffff))
-
-(defn read-uint4 
-  "Read a single uint4 from the buffer (advancing position 4)"
-  [b]
-  (bit-and (long (.getInt b)) 0xffffffff))
+(defmethod read-block :default [block buf]
+  )
