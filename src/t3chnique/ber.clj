@@ -61,6 +61,11 @@
         _ (.position b (+ pos 5))]
     (prim/typed-value typeid value)))
 
+(defn read-byte-array [b count]
+  (let [dest (byte-array count)
+        _ (.get b dest 0 count)]
+    dest))
+
 (defn read-item [type-sym buf]
   (condp = type-sym
     :uint2 (read-uint2 buf)

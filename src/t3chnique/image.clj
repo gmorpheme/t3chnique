@@ -19,13 +19,14 @@
 (defmulti read-block (fn [block buf] (:id block)))
 
 (defn parse-image [b]
-  (let [[version timestamp] (read-sig b)]
+  (let [_ (.position b 0)
+        [version timestamp] (read-sig b)]
     (loop [buf b blocks []]
       (let [header (read-block-header b)
             data (read-block header b)
             block (merge header data)]
-        (if (nil? data)
-          [blocks header]
+        (if (= "EOF " (:id block))
+          (conj blocks block)
           (recur buf (conj blocks block)))))))
 
 (defn load-image-file [f]
@@ -35,7 +36,6 @@
 
 (defmethod read-block "ENTP" [{size :size} buf]
   (let [slice (ber/slice buf size)
-        
         spec (conj [:uint4 :entry-point-offset
                     :uint2 :method-header-size
                     :uint2 :exception-table-entry-size
@@ -91,5 +91,42 @@
                      (recur (dec remaining) (conj entries {:name name :pids pids}))
                      entries)))}))
 
-(defmethod read-block :default [block buf]
-  )
+(defmethod read-block "OBJS" [{size :size} buf]
+  (let [slice (ber/slice buf size)
+        object-count (ber/read-uint2 slice)
+        mcld-index (ber/read-uint2 slice)
+        flags (ber/read-uint2 slice)
+        large (= (bit-and flags 1) 1)
+        transient (= (bit-and flags 2) 1)]
+    {:objects (loop [remaining (dec object-count) objects []]
+                (let [oid (ber/read-uint4 slice)
+                      count ((if large ber/read-uint4 ber/read-uint2) slice)
+                      bytes (ber/slice slice count)]
+                  (if (pos? remaining)
+                    (recur (dec remaining) (conj objects {:oid oid :bytes bytes}))
+                    objects)))}))
+
+(defmethod read-block "MRES" [{size :size} buf]
+  (let [slice (ber/slice buf size)
+        entry-count (ber/read-uint2 slice)
+        toc (loop [remaining (dec entry-count) entries []]
+              (let [offset (ber/read-uint4 slice)
+                    size (ber/read-uint4 slice)
+                    chars (ber/read-ubyte slice)
+                    barr (ber/read-byte-array slice chars)
+                    xbytes (amap ^bytes barr i _ (byte (bit-xor (aget ^bytes barr i) (byte -1))))
+                    name (String. xbytes "ascii")]
+                (if (pos? remaining)
+                  (recur (dec remaining) (conj entries {:size size :offset offset :name name}))
+                  entries)))
+        entries (reduce
+                 (fn [l m]
+                   (conj l
+                         (assoc m :bytes (do (.position slice (:offset m)) (ber/slice slice (:size m))))))
+                 []
+                 toc)]
+    {:entries entries}))
+
+(defmethod read-block "EOF " [{size :size} buf] {})
+
+(defmethod read-block :default [block buf] {:unknown (:id block)} )
