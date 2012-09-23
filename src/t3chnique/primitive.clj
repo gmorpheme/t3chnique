@@ -33,3 +33,8 @@
 (defprimitive vm-enum 15 "enumerated constant; 32-bit integer" :uint4)
 (defprimitive vm-bifptr 16 "built-in function pointer; 32-bit integer, encoding the function set dependency table index in the high-order 16 bits, and the function's index within its set in the low-order 16 bits." :uint4)
 (defprimitive vm-objx 17 "Reserved for implementation use for an executable object, as a 32-bit object ID number (see note below)" :uint4)
+
+(defn vm-string? [x] (some [vm-sstring? vm-dstring?] x))
+(defn vm-bool [v] (if v (vm-true true) (vm-nil nil)))
+(defn typeid [entry] (:type entry))
+(defn value [entry] (:value entry))

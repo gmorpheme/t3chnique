@@ -49,23 +49,25 @@
 (defmethod read-block "SYMD" [{size :size} buf]
   (let [slice (ber/slice buf size)
         entry-count (ber/read-uint2 slice)]
-    {:entries (loop [remaining (dec entry-count) entries {}]
-                (let [value (ber/read-data-holder slice)
-                      chars (ber/read-ubyte slice)
-                      name (ber/read-utf8 slice chars)]
-                  (if (pos? remaining)
-                    (recur (dec remaining) (assoc entries name value))
-                    entries)))}))
+    {:entry-count entry-count
+     :entries (loop [n 0 entries []]
+                (if (< n entry-count)
+                  (let [value (ber/read-data-holder slice)
+                        chars (ber/read-ubyte slice)
+                        name (ber/read-utf8 slice chars)]
+                    (recur (inc n) (conj entries {:name name :value value})))
+                  entries))}))
 
 (defmethod read-block "FNSD" [{size :size} buf]
   (let [slice (ber/slice buf size)
         entry-count (ber/read-uint2 slice)]
-    {:entries (loop [remaining (dec entry-count) entries []]
-                (let [chars (ber/read-ubyte slice)
-                      name (ber/read-utf8 slice chars)]
-                  (if (pos? remaining)
-                    (recur (dec remaining) (conj entries name))
-                    entries)))}))
+    {:entry-count entry-count
+     :entries (loop [n 0 entries []]
+                (if (< n entry-count)
+                  (let [chars (ber/read-ubyte slice)
+                        name (ber/read-utf8 slice chars)]
+                    (recur (inc n) (conj entries name)))
+                  entries))}))
 
 (defmethod read-block "CPDF" [{size :size} buf]
   (let [slice (ber/slice buf size)]
@@ -80,16 +82,17 @@
 (defmethod read-block "MCLD" [{size :size} buf]
   (let [slice (ber/slice buf size)
         entry-count (ber/read-uint2 slice)]
-    {:entries  (loop [remaining (dec entry-count) entries []]
-                 (let [offset (ber/read-uint2 slice)
-                       chars (ber/read-ubyte slice)
-                       name (ber/read-utf8 slice chars)
-                       pid-count (ber/read-uint2 slice)
-                       pid-size (ber/read-uint2 slice)
-                       pids (reduce (fn [x y] (conj x (ber/read-uint2 slice))) [] (range pid-count))]
-                   (if (pos? remaining)
-                     (recur (dec remaining) (conj entries {:name name :pids pids}))
-                     entries)))}))
+    {:entry-count entry-count
+     :entries  (loop [n 0 entries []]
+                 (if (< n entry-count)
+                   (let [offset (ber/read-uint2 slice)
+                         chars (ber/read-ubyte slice)
+                         name (ber/read-utf8 slice chars)
+                         pid-count (ber/read-uint2 slice)
+                         pid-size (ber/read-uint2 slice)
+                         pids (reduce (fn [x y] (conj x (ber/read-uint2 slice))) [] (range pid-count))]
+                     (recur (inc n) (conj entries {:name name :pids pids})))
+                   entries))}))
 
 (defmethod read-block "OBJS" [{size :size} buf]
   (let [slice (ber/slice buf size)
@@ -98,34 +101,40 @@
         flags (ber/read-uint2 slice)
         large (= (bit-and flags 1) 1)
         transient (= (bit-and flags 2) 1)]
-    {:objects (loop [remaining (dec object-count) objects []]
-                (let [oid (ber/read-uint4 slice)
-                      count ((if large ber/read-uint4 ber/read-uint2) slice)
-                      bytes (ber/slice slice count)]
-                  (if (pos? remaining)
-                    (recur (dec remaining) (conj objects {:oid oid :bytes bytes}))
-                    objects)))}))
+    {:object-count object-count
+     :mcld-index mcld-index
+     :flags flags
+     :large large
+     :transient transient
+     :objects (loop [n 0 objects []]
+                (if (< n object-count)
+                  (let [oid (ber/read-uint4 slice)
+                        count ((if large ber/read-uint4 ber/read-uint2) slice)
+                        bytes (ber/slice slice count)]
+                    (recur (inc n) (conj objects {:oid oid :bytes bytes})))
+                  objects))}))
 
 (defmethod read-block "MRES" [{size :size} buf]
   (let [slice (ber/slice buf size)
         entry-count (ber/read-uint2 slice)
-        toc (loop [remaining (dec entry-count) entries []]
-              (let [offset (ber/read-uint4 slice)
-                    size (ber/read-uint4 slice)
-                    chars (ber/read-ubyte slice)
-                    barr (ber/read-byte-array slice chars)
-                    xbytes (amap ^bytes barr i _ (byte (bit-xor (aget ^bytes barr i) (byte -1))))
-                    name (String. xbytes "ascii")]
-                (if (pos? remaining)
-                  (recur (dec remaining) (conj entries {:size size :offset offset :name name}))
-                  entries)))
+        toc (loop [n 0 entries []]
+              (if (< n entry-count)
+                (let [offset (ber/read-uint4 slice)
+                      size (ber/read-uint4 slice)
+                      chars (ber/read-ubyte slice)
+                      barr (ber/read-byte-array slice chars)
+                      xbytes (amap ^bytes barr i _ (byte (bit-xor (aget ^bytes barr i) (byte -1))))
+                      name (String. xbytes "ascii")]
+                  (recur (inc n) (conj entries {:size size :offset offset :name name})))
+                entries))
         entries (reduce
                  (fn [l m]
                    (conj l
                          (assoc m :bytes (do (.position slice (:offset m)) (ber/slice slice (:size m))))))
                  []
                  toc)]
-    {:entries entries}))
+    {:entry-count entry-count
+     :entries entries}))
 
 (defmethod read-block "EOF " [{size :size} buf] {})
 
