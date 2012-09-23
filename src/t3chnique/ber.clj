@@ -1,6 +1,7 @@
 (ns t3chnique.ber
   (:require [nio.core :as nio]
-             [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [t3chnique.primitive :as prim])
   (:import [java.nio.charset Charset]
            [java.nio ByteOrder MappedByteBuffer]))
 
@@ -23,23 +24,51 @@
         slice (slice b count)]
     (String. (.array (.decode decoder slice)))))
 
+(defn read-ubyte
+  "Read a singly ubyte from the buffer (advancing position 1)"
+  [b]
+  (bit-and (.get b) 0xff))
+
 (defn read-uint2 
   "Read a single uint2 from the buffer (advancing position 2)"
   [b]
   (bit-and (.getShort b) 0xffff))
+
+(defn read-int2
+  "Read a single int2 from the buffer (advancing position 2)"
+  [b]
+  (.getShort b))
 
 (defn read-uint4 
   "Read a single uint4 from the buffer (advancing position 4)"
   [b]
   (bit-and (.getInt b) 0xffffffff))
 
+(defn read-int4
+  "Read a single int4 from the buffer (advancing position 4)"
+  [b]
+  (.getInt b))
+
+(declare read-item)
+
 (defn read-data-holder
-  "Read a data holder from the buffer (advancing position 5")
+  "Read a data holder from the buffer (advancing position 5"
+  [b]
+  (let [pos (.position b)
+        typeid (.get b)
+        encoding (:encoding (prim/primitive typeid))
+        value (read-item encoding b)
+        _ (.position b (+ pos 5))]
+    (prim/typed-value typeid value)))
 
 (defn read-item [type-sym buf]
   (condp = type-sym
     :uint2 (read-uint2 buf)
+    :int2 (read-int2 buf)
     :uint4 (read-uint4 buf)
+    :int4 (read-int4 buf)
+    :ubyte (read-ubyte buf)
+    :data-holder (read-data-holder buf)
     (read-utf8 buf (second type-sym))))
 
 (defn parse
