@@ -1,7 +1,7 @@
 (ns t3chnique.intrinsics
   (:refer-clojure :exclude [concat abs max min]))
 
-(defprotocol t3vm
+(defprotocol ^{:id "t3vm/010006"} t3vm
   "Internal VM operations"
   (t3AllocProp [_])
   (t3DebugTrace [_ mode & args])
@@ -16,7 +16,7 @@
   (t3RunGC [_])
   (t3SetSay [_ val]))
 
-(defprotocol tads-gen
+(defprotocol ^{:id "tads-gen/030008"} tads-gen
   "General utility and data manipulation functions"
   (abs [_ val])
   (concat [_ & args])
@@ -48,7 +48,7 @@
   (toString [_ val radix? isSigned?])
   (undo [_]))
 
-(defprotocol tads-io
+(defprotocol ^{:id "tads-io/030007"} tads-io
   "Interactive / Real Time IO"
   (bannerClear [_ handle])
   (bannerCreate [_ parent where other windowType align size sizeUnits style])
@@ -84,7 +84,7 @@
   (tadsSay [_ val & args])
   (timeDelay [_ delay]))
 
-(defprotocol tads-net
+(defprotocol ^{:id "tads-net/030001"} tads-net
   "Access to network features."
   (connectWebUI [_ server path])
   (getHostName [_])

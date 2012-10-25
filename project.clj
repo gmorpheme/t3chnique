@@ -4,4 +4,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [nio "0.0.3"]])
+                 [monads "1.0.0"]
+                 [nio "0.0.3"]
+                 [compojure "1.1.3"]
+                 [ring/ring-jetty-adapter "1.1.0"]
+                 [ring-edn "0.1.0"]
+                 [hiccup "1.0.1"]])
