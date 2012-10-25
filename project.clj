@@ -8,5 +8,5 @@
                  [nio "0.0.3"]
                  [compojure "1.1.3"]
                  [ring/ring-jetty-adapter "1.1.0"]
-                 [ring-edn "0.1.0"]
+                 [ring-middleware-format "0.2.2"]
                  [hiccup "1.0.1"]])

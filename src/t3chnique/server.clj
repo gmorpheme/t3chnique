@@ -1,10 +1,12 @@
 (ns t3chnique.server
   (:use compojure.core
         ring.adapter.jetty
-        ring.middleware.edn
         [compojure.handler :as handler]
-        clojure.java.io
         [t3chnique.image :only [parse-image load-image-file]]
+        [ring.middleware.format-params :only [wrap-restful-params]]
+        [ring.middleware.format-response :only [wrap-restful-response]]
+        [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
+        clojure.java.io
         hiccup.core)
   (:require [compojure.route :as route]))
 
@@ -25,11 +27,13 @@
    :headers {"Content-Type" "text/html"}
    :body (render-html data)})
 
+;; state and operations
+
 (def game-catalogue [{:id 1 :name "Elysium.t3"}
                      {:id 2 :name "ditch.t3"}])
 
 (defn game-list [] game-catalogue)
-(defn game-get [id] (first (filter #(= (:id %) (int id)) game-catalogue)))
+(defn game-get [id] (first (filter #(= (:id %) id) game-catalogue)))
 
 (def vms (atom {}))
 
@@ -44,25 +48,26 @@
     (swap! vms conj vm)
     (vm-get id)))
 
+(defn respond [data]
+  {:body data})
+
 (defroutes vm-routes
-
   (GET "/games" []
-       (edn-response (game-list)))
+       (respond (game-list)))
   (GET "/games/:id" [id]
-       (edn-response (game-get id)))
-
+       (respond (game-get (Integer/parseInt id))))
   (GET "/vms" []
-       (edn-response (vm-list)))
+       (respond (vm-list)))
   (GET "/vms/:id" [id]
-       (edn-response (vm-get id)))
+       (respond (vm-get id)))
   (POST "/vms" [game]
-        (println "new vm " game)
-        (edn-response (vm-new game))))
-
+        (respond (vm-new game))))
 
 (def app
   (-> (handler/api vm-routes)
-      wrap-edn-params))
+      (wrap-restful-params)
+      (wrap-restful-response)
+      (wrap-stacktrace-web)))
 
-(defn main []
+(defn start []
   (run-jetty #'app {:port 8080 :join? false}))
