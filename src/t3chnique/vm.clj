@@ -56,64 +56,78 @@
   (let [{:keys [page-count page-size]} (first (filter #(and (= (:id %) "CPDF") (= (:pool-id %) 1)) im))
         cppgs (filter #(and (= (:id %) "CPPG") (= (:pool-id %) 1)) im)
         pages (reduce #(assoc %1 (:pool-index %2) %2) (vec (repeat page-count 0)) cppgs)]
-    (assoc (vm-state) :code pages :code-page-size page-size)))
+    (assoc (vm-state)
+      :code pages :code-page-size page-size)))
 
-(defn to-ubyte [b] (bit-and b 0xff))
-(defn to-int2 [b1 b2] (short (bit-or (bit-shift-left b2 8) b1)))
-(defn to-uint2 [b1 b2] (bit-and (to-int2 b1 b2) 0xffff))
-(defn to-int4 [b1 b2 b3 b4] (int (bit-or (bit-shift-left b4 24)
-                                         (bit-shift-left b3 16)
-                                         (bit-shift-left b2 8)
-                                         b1)))
-(defn to-uint4 [b1 b2 b3 b4] (bit-and (to-int4 b1 b2 b3 b4) 0xffffffff))
+(defn ip-position [{:keys [code-page-size code ip]}]
+  [(:bytes (nth (/ ip code-page-size) code)) (mod ip code-page-size)])
 
-(defn code-at-ip []
-  (fn [{:keys [ip code-page-size] :as s}]
-    (let [o  (mod ip code-page-size)
-          bf (:bytes (nth (:code s) (/ ip code-page-size)))]
-      [[bf o] s])))
+(defmacro with-buffer [bsym s & exprs]
+  `(let [[b# o#] (ip-position ~s)
+         ~bsym (.slice b#)
+         _# (.position ~bsym o#)]
+     ~@exprs))
+
+(defn bump-ip [s count]
+  (update-in s :ip (partial + count)))
 
 (defn code-read-ubyte []
-  (domonad state-m
-           [[bf o] (code-at-ip)
-            _ (update-val :ip inc)]
-           (to-ubyte (.get bf o))))
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-ubyte buf) (bump-ip s 1)])))
 
 (defn code-read-sbyte []
-  (domonad state-m
-           [[bf o] (code-at-ip)
-            _ (update-val :ip inc)]
-           (.get bf o)))
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-sbyte buf) (bump-ip s 1)])))
 
 (defn code-read-uint2 []
-  (domonad state-m
-           [[bf o] (code-at-ip)
-            _ (update-val :ip (partial + 2))]
-           (to-uint2 (.get bf o) (.get bf (inc o)))))
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-uint2 buf) (bump-ip s 2)])))
 
 (defn code-read-int2 []
-  (domonad state-m
-           [[bf o] (code-at-ip)
-            _ (update-val :ip (partial + 2))]
-           (to-int2 (.get bf o) (.get bf (inc o)))))
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-int2 buf) (bump-ip s 2)])))
 
 (defn code-read-uint4 []
-  (domonad state-m
-           [[bf o] (code-at-ip)
-            _ (update-val :ip (partial + 4))]
-           (to-uint4 (.get bf o)
-                     (.get bf (inc o))
-                     (.get bf (+ 2 o))
-                     (.get bf (+ 3 o)))))
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-uint4 buf) (bump-ip s 4)])))
 
 (defn code-read-int4 []
-  (domonad state-m
-           [[bf o] (code-at-ip)
-            _ (update-val :ip (partial + 4))]
-           (to-int4 (.get bf o)
-                    (.get bf (inc o))
-                    (.get bf (+ 2 o))
-                    (.get bf (+ 3 o)))))
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-int4 buf) (bump-ip s 4)])))
+
+(defn code-read-utf8 [count]
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-utf8 count) (bump-ip s count)])))
+
+(defn code-read-pref-utf8 []
+  (fn [s]
+    (with-buffer buf s
+      (let [count (ber/read-uint2 buf)]
+        [(ber/read-utf8 count) (bump-ip s count)]))))
+
+(defn code-read-data-holder []
+  (fn [s]
+    (with-buffer buf s
+      [(ber/read-data-holder buf) (bump-ip s 5)])))
+
+(defn code-read-item [type-sym]
+  (condp = type-sym
+    :uint2 (code-read-uint2)
+    :int2 (code-read-int2)
+    :uint4 (code-read-uint4)
+    :int4 (code-read-int4)
+    :ubyte (code-read-ubyte)
+    :sbyte (code-read-sbyte)
+    :data-holder (code-read-data-holder)
+    :pref-utf8 (code-read-pref-utf8)
+    (code-read-utf8 (second type-sym))))
 
 (defn stack-push [val]
   (fn [s] [nil (-> s
@@ -129,11 +143,6 @@
 (defn reg-get [k]
   (fn [s] [(k s) s]))
 
-#_(def vm-run1 []
-  (domonad state-m
-           [ip (reg-get :ip)]))
-
-
 (defop push_0 0x01 []
   (stack-push (vm-int 0)))
 
@@ -146,14 +155,15 @@
 (defop pushint 0x04 [:int4 val]
   (stack-push (vm-int val)))
 
-(defop pushstr 0x05 [:uint4 offset])
+(defop pushstr 0x05 [:uint4 offset]
+  )
 (defop pushlst 0x06 [:uint4 offset])
 (defop pushobj 0x07 [:uint4 objid])
 (defop pushnil 0x08 [])
 (defop pushtrue 0x09 [])
 (defop pushpropid 0x0A [:uint2 propid])
 (defop pushfnptr 0x0B [:uint4 code_offset])
-(defop pushstri 0x0C [:uint2 string_length :putf8 string_bytes])
+(defop pushstri 0x0C [:pref-utf8 string_bytes])
 (defop pushparlst 0x0D [:ubyte fixed_arg_count])
 (defop makelstpar 0x0E [])
 (defop pushenum 0x0F [:int4 val])
@@ -244,7 +254,7 @@
 (defop rettrue 0x52 [])
 (defop ret 0x54 [])
 (defop namedargptr 0x56 [:ubyte named_arg_count :uint2 table_offset])
-(defop namedargtab 0x57 [:SPECIAL args])
+(defop namedargtab 0x57 [:named-arg-args args])
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
 
