@@ -61,7 +61,11 @@
   (GET "/vms/:id" [id]
        (respond (vm-get id)))
   (POST "/vms" [game]
-        (respond (vm-new game))))
+        (respond (vm-new game)))
+  (GET "/vms/:id/code/:block"
+       )
+  
+  )
 
 (def app
   (-> (handler/api vm-routes)
