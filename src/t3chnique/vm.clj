@@ -2,7 +2,10 @@
   (:use [t3chnique.primitive])
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val update-val]])
   (:require [t3chnique.ber :as ber]
-            [t3chnique.image :as im]))
+            [t3chnique.image :as im]
+            [t3chnique.intrinsics :as bif]
+            [t3chnique.metaclass :as mc])
+  (:import [t3chnique.metaclass TadsObject]))
 
 (defprotocol ByteCode
   (mnemonic [self])
@@ -50,14 +53,27 @@
    :savepoint 0
    :savepoint-count 0
    :code []
-   :objs []})
+   :code-page-size 0
+   :const []
+   :const-page-size 0
+   :objs []
+   :mcld []
+   :fnsd []})
 
 (defn vm-from-image [im]
-  (let [{:keys [page-count page-size]} (first (filter #(and (= (:id %) "CPDF") (= (:pool-id %) 1)) im))
-        cppgs (filter #(and (= (:id %) "CPPG") (= (:pool-id %) 1)) im)
-        pages (reduce #(assoc %1 (:pool-index %2) %2) (vec (repeat page-count 0)) cppgs)]
+  (let [load-pages (fn [type]
+                     (let [{:keys [page-count page-size]} (first (filter #(and (= (:id %) "CPDF") (= (:pool-id %) type)) im))
+                           pages (filter #(and (= (:id %) "CPPG") (= (:pool-id %) type)) im)]
+                       [page-size (reduce #(assoc %1 (:pool-index %2) %2) (vec (repeat page-count 0)) pages)]))
+        [code-page-size code-pages] (load-pages 1)
+        [const-page-size const-pages] (load-pages 2)
+        mcld (:entries (first (filter #(= (:id %) "MCLD") im)))
+        fnsd (:entries (first (filter #(= (:id %) "FNSD") im)))]
     (assoc (vm-state)
-      :code pages :code-page-size page-size)))
+      :code code-pages :code-page-size code-page-size
+      :const const-pages :const-page-size const-page-size
+      :mcld mcld
+      :fnsd fnsd)))
 
 (defn ip-position [{:keys [code-page-size code ip]}]
   [(:bytes (nth (/ ip code-page-size) code)) (mod ip code-page-size)])
@@ -156,14 +172,30 @@
   (stack-push (vm-int val)))
 
 (defop pushstr 0x05 [:uint4 offset]
+  (stack-push (vm-sstring offset)))
+
+(defop pushlst 0x06 [:uint4 offset]
+  (stack-push (vm-list offset)))
+
+(defop pushobj 0x07 [:uint4 objid]
+  (stack-push (vm-obj objid)))
+
+(defop pushnil 0x08 []
+  (stack-push (vm-nil)))
+
+(defop pushtrue 0x09 []
+  (stack-push (vm-true)))
+
+(defop pushpropid 0x0A [:uint2 propid]
+  (stack-push (vm-prop propid)))
+
+(defop pushfnptr 0x0B [:uint4 code_offset]
+  (stack-push (vm-funcptr-id code_offset)))
+
+(defop pushstri 0x0C [:pref-utf8 string_bytes]
+  ; todo new string
   )
-(defop pushlst 0x06 [:uint4 offset])
-(defop pushobj 0x07 [:uint4 objid])
-(defop pushnil 0x08 [])
-(defop pushtrue 0x09 [])
-(defop pushpropid 0x0A [:uint2 propid])
-(defop pushfnptr 0x0B [:uint4 code_offset])
-(defop pushstri 0x0C [:pref-utf8 string_bytes])
+
 (defop pushparlst 0x0D [:ubyte fixed_arg_count])
 (defop makelstpar 0x0E [])
 (defop pushenum 0x0F [:int4 val])

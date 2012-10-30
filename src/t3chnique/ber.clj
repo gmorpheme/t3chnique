@@ -7,14 +7,18 @@
 
 (defn slice 
   "Slice a new buffer off the base of count bytes"
-  [b count]
-  (let [save (.limit b)
-        _ (.limit b (+ count (.position b)))
-        slice (.slice b)
-        _ (.order slice ByteOrder/LITTLE_ENDIAN)
-        _ (.position b (.limit b))
-        _ (.limit b save)]
-    slice))
+  ([b]
+     (let [slice (.slice b)
+           _ (.order slice ByteOrder/LITTLE_ENDIAN)]
+       slice))
+  ([b count]
+     (let [save (.limit b)
+           _ (.limit b (+ count (.position b)))
+           slice (.slice b)
+           _ (.order slice ByteOrder/LITTLE_ENDIAN)
+           _ (.position b (.limit b))
+           _ (.limit b save)]
+       slice)))
 
 (defn read-sbyte
   "Read a singly ubyte from the buffer (advancing position 1)"
@@ -54,7 +58,7 @@
         slice (slice b count)]
     (String. (.array (.decode decoder slice)))))
 
-(defn read-putf8
+(defn read-pref-utf8
   "Read utf-8 prefixed with length as ubyte"
   [b]
   (let [count (read-ubyte b)]
@@ -68,7 +72,7 @@
   (let [pos (.position b)
         typeid (.get b)
         encoding (:encoding (prim/primitive typeid))
-        value (read-item encoding b)
+        value (if (nil? encoding) nil (read-item encoding b))
         _ (.position b (+ pos 5))]
     (prim/typed-value typeid value)))
 
@@ -96,7 +100,7 @@
     :ubyte (read-ubyte buf)
     :sbyte (read-sbyte buf)
     :data-holder (read-data-holder buf)
-    :putf8 (read-putf8 buf)
+    :pref-utf8 (read-pref-utf8 buf)
     (read-utf8 buf (second type-sym))))
 
 (defn parse

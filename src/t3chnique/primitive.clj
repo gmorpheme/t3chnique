@@ -9,7 +9,9 @@
 (defmacro defprimitive [name typeid doc encoding]
   `(let [p# (Primitive. (keyword '~name) ~typeid ~doc ~encoding)]
      (swap! primitives assoc ~typeid p#)
-     (defn ~name [val#] (TypedValue. ~typeid val#))
+     (defn ~name
+       ([val#] (TypedValue. ~typeid val#))
+       ([] (TypedValue. ~typeid nil)))
      (defn ~(symbol (str name "?")) [entry#] (= (:type entry#) ~typeid))
      (def ~(symbol (str name "-id")) ~typeid)))
 
