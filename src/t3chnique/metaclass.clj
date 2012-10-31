@@ -26,6 +26,8 @@
                          entries))]
       (TadsObject. class bases properties))))
 
+(defn tads-object [] (TadsObject. nil nil nil))
+
 (defrecord TadsString [text]
   MetaClass
   (load-from-image [self buf o]
@@ -34,30 +36,32 @@
           text (ber/read-pref-utf8 b)]
       (TadsString. text))))
 
-(defrecord DummyMetaclass [])
+(defn tads-string [] (TadsString. nil))
 
-(def metaclasses {:tads-object TadsObject
-                  :list DummyMetaclass
-                  :dictionary2 DummyMetaclass
-                  :grammar-production DummyMetaclass
-                  :vector DummyMetaclass
-                  :anon-func-ptr DummyMetaclass
-                  :int-class-mod DummyMetaclass
-                  :root-object DummyMetaclass
-                  :intrinsic-class DummyMetaclass
-                  :collection DummyMetaclass
-                  :iterator DummyMetaclass
-                  :indexed-iterator DummyMetaclass
-                  :character-set DummyMetaclass
-                  :bytearray DummyMetaclass
-                  :string TadsString
-                  :regex-pattern DummyMetaclass
-                  :lookuptable DummyMetaclass
-                  :weakreflookuptable DummyMetaclass
-                  :lookuptable-iterator DummyMetaclass
-                  :file DummyMetaclass
-                  :string-comparator DummyMetaclass
-                  :bignumber DummyMetaclass})
+(defn unknown-metaclass [] nil)
+
+(def metaclasses {:tads-object tads-object
+                  :list unknown-metaclass
+                  :dictionary2 unknown-metaclass
+                  :grammar-production unknown-metaclass
+                  :vector unknown-metaclass
+                  :anon-func-ptr unknown-metaclass
+                  :int-class-mod unknown-metaclass
+                  :root-object unknown-metaclass
+                  :intrinsic-class unknown-metaclass
+                  :collection unknown-metaclass
+                  :iterator unknown-metaclass
+                  :indexed-iterator unknown-metaclass
+                  :character-set unknown-metaclass
+                  :bytearray unknown-metaclass
+                  :string tads-string
+                  :regex-pattern unknown-metaclass
+                  :lookuptable unknown-metaclass
+                  :weakreflookuptable unknown-metaclass
+                  :lookuptable-iterator unknown-metaclass
+                  :file unknown-metaclass
+                  :string-comparator unknown-metaclass
+                  :bignumber unknown-metaclass})
 
 (defn wire-up-metaclasses
   "Takes MCLD block from image and wires in metaclass implementations"
@@ -68,3 +72,8 @@
           metaclass (k metaclasses)]
       (when (nil? metaclass) (throw (RuntimeException. (str "Metaclass " k " not available"))))
       {:metaclass-id k :pids pids :metaclass metaclass})))
+
+(defn read-object-block [mcld oblock]
+  (let [mclass-ctor (:metaclass (nth mcld (:mcld-index oblock)))
+        prototype (mclass-ctor)]
+    (map #(load-from-image prototype (:bytes %) 0) (:objects oblock))))

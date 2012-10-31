@@ -72,7 +72,7 @@
     (assoc (vm-state)
       :code code-pages :code-page-size code-page-size
       :const const-pages :const-page-size const-page-size
-      :mcld mcld
+      :mcld (mc/wire-up-metaclasses mcld)
       :fnsd fnsd)))
 
 (defn ip-position [{:keys [code-page-size code ip]}]
