@@ -7,6 +7,7 @@
             [t3chnique.metaclass :as mc])
   (:import [t3chnique.metaclass TadsObject]))
 
+
 (defprotocol ByteCode
   (mnemonic [self])
   (parse-spec [self]))
@@ -67,13 +68,14 @@
                        [page-size (reduce #(assoc %1 (:pool-index %2) %2) (vec (repeat page-count 0)) pages)]))
         [code-page-size code-pages] (load-pages 1)
         [const-page-size const-pages] (load-pages 2)
-        mcld (:entries (first (filter #(= (:id %) "MCLD") im)))
+        mcld (mc/wire-up-metaclasses (:entries (first (filter #(= (:id %) "MCLD") im))))
         fnsd (:entries (first (filter #(= (:id %) "FNSD") im)))]
     (assoc (vm-state)
       :code code-pages :code-page-size code-page-size
       :const const-pages :const-page-size const-page-size
-      :mcld (mc/wire-up-metaclasses mcld)
-      :fnsd fnsd)))
+      :mcld mcld
+      :fnsd fnsd
+      :objs (apply merge (map #(mc/read-object-block mcld %) (filter #(= (:id %) "OBJS") im))))))
 
 (defn ip-position [{:keys [code-page-size code ip]}]
   [(:bytes (nth (/ ip code-page-size) code)) (mod ip code-page-size)])
@@ -434,24 +436,3 @@
 (defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val])
 (defop bp 0xF1 [])
 (defop nop 0xF2 [])
-
-
-#_(def vm (let [registers (ref {:r0 0 :ip 0 :ep 0 :sp -1 :fp 0 :savepoint 0 :savepoint-count 0})
-              stack (ref [])]
-          (reify
-            RegisterAccess
-            (register-get [self name] (get @registers name))
-            (register-set [self name value] (alter registers assoc name value))
-            (register-update [self name f] (alter registers update-in [name] f))
-            StackAccess
-            (stack-push [self val] (do (register-update self :sp inc) (alter stack conj val)))
-            (stack-peek [self] (last @stack))
-            (stack-pop [self] (do (register-update self :sp dec) (let [top (stack-peek self)] (alter stack pop) top)))
-            (stack-clear [self] (register-set self :sp 0))
-            (stack-get [self i] (@stack i))
-            (stack-swap [self i j] (alter stack assoc i (@stack j) j (@stack i)))
-            VirtualMachine
-            (vm-reset [self] (dosync (stack-clear self)))
-            (vm-raise [self sym] nil))))
-
-

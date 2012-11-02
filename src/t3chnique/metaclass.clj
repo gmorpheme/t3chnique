@@ -3,7 +3,8 @@
   (:require [clojure.string :as string]))
 
 (defprotocol MetaClass
-  (load-from-image [self buf o]))
+  "Operations available to the VM for each metaclass."
+  (load-from-image [self buf o] "Load object data from byte buffer; return new object."))
 
 (defrecord TadsObject [is-class bases properties]
   MetaClass
@@ -38,13 +39,28 @@
 
 (defn tads-string [] (TadsString. nil))
 
+(defrecord TadsList [val]
+  MetaClass
+  (load-from-image [self buf o]
+    (let [b (ber/slice buf)
+          _ (.position b 0)
+          count (ber/read-uint2 b)
+          values (loop [n 0 entries []]
+                   (if (< n count)
+                     (recur (inc n) (conj entries (ber/read-data-holder b)))
+                     entries))]
+      (TadsList. values))))
+
+(defn tads-list [] (TadsList. nil))
+
 (defn unknown-metaclass [] nil)
 
 (def metaclasses {:tads-object tads-object
-                  :list unknown-metaclass
+                  :string tads-string
+                  :list tads-list
+                  :vector #(throw (RuntimeException. "Vector in image file."))
                   :dictionary2 unknown-metaclass
                   :grammar-production unknown-metaclass
-                  :vector unknown-metaclass
                   :anon-func-ptr unknown-metaclass
                   :int-class-mod unknown-metaclass
                   :root-object unknown-metaclass
@@ -54,7 +70,6 @@
                   :indexed-iterator unknown-metaclass
                   :character-set unknown-metaclass
                   :bytearray unknown-metaclass
-                  :string tads-string
                   :regex-pattern unknown-metaclass
                   :lookuptable unknown-metaclass
                   :weakreflookuptable unknown-metaclass
@@ -69,11 +84,12 @@
   (for [{:keys [name pids]} mcld]
     (let [[n version-required] (string/split name #"/")
           k (keyword n)
-          metaclass (k metaclasses)]
+          metaclass (k metaclasses)
+          _ (println (str "Metaclass " k " in image file."))]
       (when (nil? metaclass) (throw (RuntimeException. (str "Metaclass " k " not available"))))
       {:metaclass-id k :pids pids :metaclass metaclass})))
 
 (defn read-object-block [mcld oblock]
   (let [mclass-ctor (:metaclass (nth mcld (:mcld-index oblock)))
         prototype (mclass-ctor)]
-    (map #(load-from-image prototype (:bytes %) 0) (:objects oblock))))
+    (into {} (map (fn [obj] [(:oid obj) (load-from-image prototype (:bytes obj) 0)]) (:objects oblock)))))
