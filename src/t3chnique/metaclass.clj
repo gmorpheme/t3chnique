@@ -4,7 +4,9 @@
 
 (defprotocol MetaClass
   "Operations available to the VM for each metaclass."
-  (load-from-image [self buf o] "Load object data from byte buffer; return new object."))
+  (load-from-image [self buf o] "Load object data from byte buffer; return new object.")
+  (get-property [self propid] "Return state function."))
+
 
 (defrecord TadsObject [is-class bases properties]
   MetaClass
@@ -19,13 +21,21 @@
                   (if (< n base-count)
                     (recur (inc n) (conj entries (ber/read-uint4 b)))
                     entries))
-          properties (loop [n 0 entries []]
+          properties (loop [n 0 entries {}]
                        (if (< n prop-count)
                          (let [pid (ber/read-uint2 b)
                                val (ber/read-data-holder b)]
-                           (recur (inc n) (conj entries {:pid pid :value val})))
+                           (recur (inc n) (assoc entries pid val)))
                          entries))]
-      (TadsObject. class bases properties))))
+      (TadsObject. class bases properties)))
+  (get-property [self pid]
+    (if-let [prop (get (properties self) pid)]
+      (fn [s] [prop s])
+      #_(domonad state-m
+               [scs (m-seq (map #(obj-retrieve %) bases))]
+               (if-let [prop (some #(get (properties %) pid) scs)]
+                 prop
+                 (map (fn [sc] ((get-property sc pid))) scs))))))
 
 (defn tads-object [] (TadsObject. nil nil nil))
 
@@ -53,7 +63,19 @@
 
 (defn tads-list [] (TadsList. nil))
 
-(defn unknown-metaclass [] nil)
+(defrecord AnonFn []
+  MetaClass
+  (load-from-image [self buf o]
+    (AnonFn.)))
+
+(defn anon-fn [] (AnonFn.))
+
+(defrecord Unimplemented []
+  MetaClass
+  (load-from-image [self buf o]
+    (Unimplemented.)))
+
+(defn unknown-metaclass [] (Unimplemented.))
 
 (def metaclasses {:tads-object tads-object
                   :string tads-string
@@ -61,7 +83,7 @@
                   :vector #(throw (RuntimeException. "Vector in image file."))
                   :dictionary2 unknown-metaclass
                   :grammar-production unknown-metaclass
-                  :anon-func-ptr unknown-metaclass
+                  :anon-func-ptr anon-fn
                   :int-class-mod unknown-metaclass
                   :root-object unknown-metaclass
                   :intrinsic-class unknown-metaclass

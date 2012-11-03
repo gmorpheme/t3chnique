@@ -31,7 +31,7 @@
         param-syms (vec (map second param-defs))
         spec (vec (apply concat (for [[t s] param-defs] [t (keyword s)])))]
     `(do
-       (defn ^{:opcode ~cd} ~(symbol (str "op-" op)) ~param-syms (dosync ~@exprs))
+       (defn ^{:opcode ~cd} ~(symbol (str "op-" op)) ~param-syms ~@exprs)
        (swap! table assoc ~cd (OpCode. ~cd '~op ~spec ~(symbol (str "op-" op)))))))
 
 #_(defmacro with-stack 
@@ -58,6 +58,7 @@
    :const []
    :const-page-size 0
    :objs []
+   :next-oid 0
    :mcld []
    :fnsd []})
 
@@ -69,13 +70,15 @@
         [code-page-size code-pages] (load-pages 1)
         [const-page-size const-pages] (load-pages 2)
         mcld (mc/wire-up-metaclasses (:entries (first (filter #(= (:id %) "MCLD") im))))
-        fnsd (:entries (first (filter #(= (:id %) "FNSD") im)))]
+        fnsd (:entries (first (filter #(= (:id %) "FNSD") im)))
+        objs (apply merge (map #(mc/read-object-block mcld %) (filter #(= (:id %) "OBJS") im)))]
     (assoc (vm-state)
       :code code-pages :code-page-size code-page-size
       :const const-pages :const-page-size const-page-size
       :mcld mcld
       :fnsd fnsd
-      :objs (apply merge (map #(mc/read-object-block mcld %) (filter #(= (:id %) "OBJS") im))))))
+      :objs objs
+      :next-oid (inc (apply max (keys objs))))))
 
 (defn ip-position [{:keys [code-page-size code ip]}]
   [(:bytes (nth (/ ip code-page-size) code)) (mod ip code-page-size)])
@@ -161,6 +164,16 @@
 (defn reg-get [k]
   (fn [s] [(k s) s]))
 
+(defn obj-store [o]
+  (fn [s]
+    (let [oid (:next-oid s)]
+      [(vm-obj oid) (-> s
+                        (update-in [:next-oid] inc)
+                        (assoc-in [:objs oid] o))])))
+
+(defn obj-retrieve [oid]
+  (fn [s] [(get-in s [:objs oid]) s]))
+
 (defop push_0 0x01 []
   (stack-push (vm-int 0)))
 
@@ -195,31 +208,50 @@
   (stack-push (vm-funcptr-id code_offset)))
 
 (defop pushstri 0x0C [:pref-utf8 string_bytes]
-  ; todo new string
   )
 
 (defop pushparlst 0x0D [:ubyte fixed_arg_count])
 (defop makelstpar 0x0E [])
-(defop pushenum 0x0F [:int4 val])
+
+(defop pushenum 0x0F [:int4 val]
+  (stack-push (vm-enum-id val)))
+
 (defop pushbifptr 0x10 [:uint2 function_index :uint2 set_index])
 (defop neg 0x20 [])
 (defop bnot 0x21 [])
 
-(comment (defn- add-entries [a b]
-           (condp = (typeid a)
-             vm-int-id (if (vm-int? b)
-                         (vm-int (+ (value a) (value b)))
-                         (raise NUM_VAL_REQD))
-                                        ; TODO other types
-             :else (raise BAD_TYPE_ADD))))
+(defn- convert-to-string [x]
+  (condp = (typeid x)
+    vm-nil-id "nil"
+    vm-true-id "true"
+    vm-int-id (str (value x))
+    vm-sstring-id (value x)
+    ))
+
+(defn- add-entries [a b]
+  (condp = (typeid a)
+    vm-int-id (if (vm-int? b)
+                (vm-int (+ (value a) (value b)))
+                #_(raise NUM_VAL_REQD))
+    vm-sstring-id (str (value a) (convert-to-string b))
+    ;:else (raise BAD_TYPE_ADD)
+    ))
+
+(defn- sub-entries [a b]
+  (condp = (typeid a)
+    vm-int-id (if (vm-int? b)
+                (vm-int (- (value a) (value b)))
+                #_ (raise NUM_VAL_REQD))))
 
 (defop add 0x22 []
-  #_(with-stack [val1 val2]
-    [(add-entries val1 val2)]))
+  (domonad state-m
+           [[val1 val2] (m-seq [(stack-pop) (stack-pop)])
+            _ (stack-push (add-entries val1 val2))] nil))
 
 (defop sub 0x23 []
-  #_(with-stack [val1 val2]
-    [(add-entries val (- val2))]))
+  (domonad state-m
+           [[val1 val2] (m-seq (repeat 2 (stack-pop)))
+            _ (stack-push (sub-entries val1 val2))] nil))
 
 (defop mul 0x24 [])
 (defop shl 0x27 [])
@@ -295,7 +327,14 @@
   )
 
 (defop ptrcall 0x59 [:ubyte arg_count])
-(defop getprop 0x60 [:uint2 prop_id])
+
+(defop getprop 0x60 [:uint2 prop_id]
+  (domonad state-m
+           [target-val (stack-pop)
+            obj (obj-retrieve target-val)]
+           (mc/get-property obj prop_id)))
+
+
 (defop callprop 0x61 [:ubyte arg_count :uint2 prop_id])
 (defop ptrcallprop 0x62 [:ubyte arg_count])
 (defop getpropself 0x63 [:uint2 prop_id])
