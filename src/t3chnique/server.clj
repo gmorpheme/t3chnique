@@ -1,31 +1,36 @@
 (ns t3chnique.server
-  (:use compojure.core
-        ring.adapter.jetty
-        [compojure.handler :as handler]
-        [t3chnique.image :only [parse-image load-image-file]]
+  (:use [t3chnique.image :only [parse-image load-image-file parse-resource]]
         [ring.middleware.format-params :only [wrap-restful-params]]
-        [ring.middleware.format-response :only [wrap-restful-response]]
+        [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
-        clojure.java.io
-        hiccup.core)
-  (:require [compojure.route :as route]))
-
-(defn edn-response
-  "Render data as edn"
-  [data & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" "text/edn"}
-   :body (pr-str data)})
+        clojure.java.io)
+  (:require [compojure.core :as c]
+            [ring.adapter.jetty :as j]
+            [compojure.handler :as handler]
+            [cheshire.custom :as json]
+            [clj-yaml.core :as yaml]        
+            [hiccup.core :as h])
+  (:require [compojure.route :as route]
+            [t3chnique.vm :as t3vm]))
 
 (defn render-html [data]
-  (html [:body (pr-str data)]))
+  (if-let [page (:page (meta data))]
+    (h/html [:html [:body  (str (resolve *ns* page))]])
+    (h/html [:html [:body (pr-str data)]])))
 
-(defn html-response
-  "Render as html report"
-  [data & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" "text/html"}
-   :body (render-html data)})
+(defn render-edn [data]
+  (binding [*print-dup* true]
+    (pr-str data)))
+
+;; middleware for returning json, edn or html based on accept header
+(defn wrap-response [handler]
+  (wrap-format-response handler
+                        :predicate serializable?
+                        :encoders [(make-encoder json/generate-string "application/json")
+                                   (make-encoder render-edn "application/edn")
+                                   (make-encoder yaml/generate-string "application/x-yaml")
+                                   (make-encoder render-html "text/html")]
+                        :charset "utf-8"))
 
 ;; state and operations
 
@@ -40,20 +45,22 @@
 (defn vm-list [] @vms)
 (defn vm-get [id] (first (filter #(= (:id %) (int id)) @vms)))
 (defn vm-new [game]
-  (let [f (file (resource (:name (game-get game))))
-        buf (load-image-file f)
-        blocks (parse-image buf)
+  (let [name  (:name (game-get game))
+        vm (t3vm/vm-from-image (parse-resource name))
         id (inc (count @vms)) ;; concurrency
-        vm {:id id :blocks blocks}]
+        vm (assoc vm :id id)]
     (swap! vms conj vm)
     (vm-get id)))
 
-(defn respond [data]
-  {:body data})
+(defn respond
+  ([data]
+     {:body data})
+  ([page data]
+     {:body (with-meta data {:page page})}))
 
-(defroutes vm-routes
+(c/defroutes vm-routes
   (GET "/games" []
-       (respond (game-list)))
+       (respond 'games-page (game-list)))
   (GET "/games/:id" [id]
        (respond (game-get (Integer/parseInt id))))
   (GET "/vms" []
@@ -61,17 +68,16 @@
   (GET "/vms/:id" [id]
        (respond (vm-get id)))
   (POST "/vms" [game]
-        (respond (vm-new game)))
-  (GET "/vms/:id/code/:block"
-       )
-  
-  )
+        (respond (vm-new game))))
 
 (def app
   (-> (handler/api vm-routes)
       (wrap-restful-params)
-      (wrap-restful-response)
+      (wrap-response)
       (wrap-stacktrace-web)))
 
 (defn start []
-  (run-jetty #'app {:port 8080 :join? false}))
+  (j/run-jetty #'app {:port 8080 :join? false}))
+
+(defn game-page [games]
+  (h/html [:html [:body (for [game games] [:em (:name game)])]]))
