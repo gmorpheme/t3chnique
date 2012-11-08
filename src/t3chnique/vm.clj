@@ -1,6 +1,6 @@
 (ns t3chnique.vm
   (:use [t3chnique.primitive])
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val update-val]])
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val update-val m-seq]])
   (:require [t3chnique.ber :as ber]
             [t3chnique.image :as im]
             [t3chnique.intrinsics :as bif]

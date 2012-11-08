@@ -3,20 +3,22 @@
         [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
+        [compojure.core :only [defroutes GET POST]]
         clojure.java.io)
-  (:require [compojure.core :as c]
-            [ring.adapter.jetty :as j]
+  (:require [ring.adapter.jetty :as j]
+            [ring.util.response :as response]
             [compojure.handler :as handler]
             [cheshire.custom :as json]
             [clj-yaml.core :as yaml]        
-            [hiccup.core :as h])
+            [hiccup.core :as h]
+            [hiccup.page :as hp])
   (:require [compojure.route :as route]
             [t3chnique.vm :as t3vm]))
 
 (defn render-html [data]
   (if-let [page (:page (meta data))]
-    (h/html [:html [:body  (str (resolve *ns* page))]])
-    (h/html [:html [:body (pr-str data)]])))
+    ((resolve (symbol page)) data)
+    (hp/html5 (pr-str data))))
 
 (defn render-edn [data]
   (binding [*print-dup* true]
@@ -58,17 +60,18 @@
   ([page data]
      {:body (with-meta data {:page page})}))
 
-(c/defroutes vm-routes
+(defroutes vm-routes
   (GET "/games" []
-       (respond 'games-page (game-list)))
+       (respond "t3chnique.server/games-page" (game-list)))
   (GET "/games/:id" [id]
-       (respond (game-get (Integer/parseInt id))))
+       (respond "t3chnique.server/game-page" (game-get (Integer/parseInt id))))
   (GET "/vms" []
-       (respond (vm-list)))
+       (respond "t3chnique.server/vms-page" (vm-list)))
   (GET "/vms/:id" [id]
        (respond (vm-get id)))
   (POST "/vms" [game]
-        (respond (vm-new game))))
+        (respond (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
+  (route/resources "/"))
 
 (def app
   (-> (handler/api vm-routes)
@@ -79,5 +82,40 @@
 (defn start []
   (j/run-jetty #'app {:port 8080 :join? false}))
 
-(defn game-page [games]
-  (h/html [:html [:body (for [game games] [:em (:name game)])]]))
+;; tooling site - static html access to the restful data
+
+(defn tooling-chrome [body]
+  (hp/html5
+   [:html
+    [:head
+     [:link {:href "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" :rel "stylesheet"}]
+     [:link {:href "/css/tools.css" :rel "stylesheet"}]]
+    [:body
+     [:ul.nav.nav-tabs
+      [:li.active [:a {:href "/games"} "Games"]]
+      [:li [:a {:href "/vms"} "VMs"]]]
+     [:div.tab-content
+      body]
+     [:script {:src "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"}]]]))
+
+(defn games-page [games]
+  (tooling-chrome [:div#games.row
+                   [:div.span4
+                    [:ul.nav.nav-list
+                     (for [game games]
+                       [:li [:a {:href (str "/games/" (:id game)) } (:name game)]])]]]))
+
+(defn game-page [game]
+  (tooling-chrome [:div#game
+                   [:div.span4
+                    [:h2 (:name game)]
+                    [:form {:method "post" :action "/vms"}
+                     [:input {:type "hidden" :name "game" :value (:id game)}]
+                     [:button.btn {:type "submit"} "Launch"]]]] ))
+
+(defn vms-page [vms]
+  (tooling-chrome [:div#vms.row
+                   [:dev.span4
+                    [:ul.nav.nav-list
+                     (for [vm vms]
+                       (:li [:a {:href (str "/vms" (:id vm))} (:id vm)]))]]]))
