@@ -7,6 +7,10 @@
             [t3chnique.metaclass :as mc])
   (:import [t3chnique.metaclass TadsObject]))
 
+(defn abort 
+  "Abort if we hit something we haven't implemented yet."
+  [msg]
+  (throw (RuntimeException. msg)))
 
 (defprotocol ByteCode
   (mnemonic [self])
@@ -34,12 +38,13 @@
        (defn ^{:opcode ~cd} ~(symbol (str "op-" op)) ~param-syms ~@exprs)
        (swap! table assoc ~cd (OpCode. ~cd '~op ~spec ~(symbol (str "op-" op)))))))
 
-#_(defmacro with-stack 
-    "Bind symbols to values popped of top of stack and push result of exprs back on"
-    [syms & exprs]
-  (let [binding-vector (vec (interleave (reverse syms) (repeat '(stack-pop))))]
-    `(let ~binding-vector
-       (doseq [v# (do ~@exprs)] (stack-push v#)))))
+(defmacro with-stack 
+  "Bind symbols to values popped of top of stack and push result of exprs back on"
+  [syms exprs]
+  `(domonad state-m
+            [~(vec (reverse syms)) (m-seq ~(vec (repeat (count syms) '(stack-pop))))
+             _# (m-seq (map stack-push ~exprs))]
+            nil))
 
 ;; state-m implementation
 ;;
@@ -174,6 +179,88 @@
 (defn obj-retrieve [oid]
   (fn [s] [(get-in s [:objs oid]) s]))
 
+;; Operations on primitives / op overloads
+
+; TODO other types
+(defn- convert-to-string [x]
+  (cond
+    vm-nil? "nil"
+    vm-true? "true"
+    vm-int? (str (value x))
+    vm-sstring? (value x)
+    :else (abort "other types")))
+
+; TODO non numeric
+(defn vm-< [a b]
+  (cond
+   (vm-int? a) (if (vm-int? b)
+                 (< a b)
+                 (abort "invalid comparison"))
+   :else (abort "non-numeric")))
+
+; TODO non numeric
+(defn vm-> [a b]
+  (cond
+   (vm-int? a) (if (vm-int? b)
+                 (> a b)
+                 (abort "invalid comparison"))))
+
+
+; TODO non numerics
+(defn- vm-+ [a b]
+  (cond
+   (vm-int? a) (if (vm-int? b)
+                (vm-int (+ (value a) (value b)))
+                (abort "NUM_VAL_REQD"))
+   (vm-sstring? a) (str (value a) (convert-to-string b))
+   :else (abort "BAD_TYPE_ADD")))
+
+; TODO non numerics
+(defn- vm-- [a b]
+  (cond
+   (vm-int? a) (if (vm-int? b)
+                 (vm-int (- (value a) (value b)))
+                 (abort "NUM_VAL_REQD"))))
+
+; TODO non numerics
+(defn- vm-* [a b]
+  (cond
+   (vm-int? a) (if (vm-int? b)
+                 (vm-int (* (value a) (value b)))
+                 (abort "NUM_VAL_REQD"))
+   :else (abort "NUM_VAL_REQD")))
+
+(defn- vm-div [a b]
+  (cond
+   (vm-int? a) (if (= (value b) 0)
+                 (abort "DIVIDE_BY_ZERO")
+                 (if (vm-int? b)
+                   (vm-int (/ (value a) (value b)))
+                   (abort "NUM_VAL_REQD")))
+   :else (abort "num vals")))
+
+(defn- vm-mod [a b]
+  (cond
+   (vm-int? a) (if (= (value b) 0)
+                 (abort "DIVIDE_BY_ZERO")
+                 (if (vm-int? b)
+                   (vm-int (mod (value a) (value b)))
+                   (abort "NUM_VAL_REQD")))))
+
+(defn- vm-falsey? [val]
+  (or (vm-nil? val) (and (vm-int? val) (vm-zero? val))))
+
+; TODO non numeric
+(defn vm-eq [a b]
+  (cond
+   (vm-nil? a) (vm-nil? b)
+   (vm-true? a) (vm-true? b)
+   (vm-int? a) (and (vm-int? b) (= (value a) (value b)))
+   (vm-enum? a) (and (vm-enum? b (= (value a) (value b))))
+   :else (abort "eq not implemented for type")))
+
+;;; Op codes
+
 (defop push_0 0x01 []
   (stack-push (vm-int 0)))
 
@@ -207,125 +294,94 @@
 (defop pushfnptr 0x0B [:uint4 code_offset]
   (stack-push (vm-funcptr-id code_offset)))
 
-(defop pushstri 0x0C [:pref-utf8 string_bytes]
-  )
+; TODO
+(defop pushstri 0x0C [:pref-utf8 string_bytes])
 
+; TODO
 (defop pushparlst 0x0D [:ubyte fixed_arg_count])
+
+; TODO
 (defop makelstpar 0x0E [])
 
 (defop pushenum 0x0F [:int4 val]
-  (stack-push (vm-enum-id val)))
+  (stack-push (vm-enum val)))
 
+; TODO
 (defop pushbifptr 0x10 [:uint2 function_index :uint2 set_index])
-(defop neg 0x20 [])
-(defop bnot 0x21 [])
 
-(defn- convert-to-string [x]
-  (condp = (typeid x)
-    vm-nil-id "nil"
-    vm-true-id "true"
-    vm-int-id (str (value x))
-    vm-sstring-id (value x)
-    ))
+; TODO non-numerics
+(defop neg 0x20 []
+  (with-stack [val]
+    [(if (vm-int? val) (vm-int (- (value val))) (abort "non-numerics"))]))
 
-(defn- add-entries [a b]
-  (condp = (typeid a)
-    vm-int-id (if (vm-int? b)
-                (vm-int (+ (value a) (value b)))
-                #_(raise NUM_VAL_REQD))
-    vm-sstring-id (str (value a) (convert-to-string b))
-    ;:else (raise BAD_TYPE_ADD)
-    ))
-
-(defn- sub-entries [a b]
-  (condp = (typeid a)
-    vm-int-id (if (vm-int? b)
-                (vm-int (- (value a) (value b)))
-                #_ (raise NUM_VAL_REQD))))
+; TODO make this work properly
+(defop bnot 0x21 []
+  (with-stack [val]
+    [(if (vm-int? val) (vm-int (bit-not (value val))) (abort "non-numerics"))]))
 
 (defop add 0x22 []
-  (domonad state-m
-           [[val1 val2] (m-seq [(stack-pop) (stack-pop)])
-            _ (stack-push (add-entries val1 val2))] nil))
+  (with-stack [a b] [(vm-+ a b)]))
 
 (defop sub 0x23 []
-  (domonad state-m
-           [[val1 val2] (m-seq (repeat 2 (stack-pop)))
-            _ (stack-push (sub-entries val1 val2))] nil))
+  (with-stack [a b] [(vm-- a b)]))
 
-(defop mul 0x24 [])
+(defop mul 0x24 []
+  (with-stack [a b] [(vm-* a b)]))
+
 (defop shl 0x27 [])
 (defop ashr 0x28 [])
 (defop xor 0x29 [])
 (defop lshr 0x30 [])
-(defop div 0x2A [])
-(defop mod 0x2B [])
 
-(comment (defn not-conv [val]
-           (condp = (typeid val)
-             vm-nil-id true
-             vm-true-id false
-             vm-int-id (zero? val)
-             vm-prop-id false
-             vm-obj-id false
-             vm-funcptr-id false
-             vm-sstring-id false
-             vm-list-id false
-             vm-enum-id false
-             :else (raise NO_LOG_CONV))))
+(defop div 0x2A []
+  (with-stack [a b] [(vm-div a b)]))
+
+(defop mod 0x2B []
+  (with-stack [a b] [(vm-mod a b)]))
 
 (defop not 0x2c []
-  #_(with-stack [val]
-    [(vm-bool (not-conv val))]))
+  (with-stack [val]
+    [(vm-bool (vm-falsey? val))]))
 
 (defop boolize 0x2d []
-  #_(with-stack [val]
-    [(vm-bool (not (not-conv val)))]))
+  (with-stack [val]
+    [(vm-bool (not (vm-falsey? val)))]))
 
+; TODO check type
 (defop inc 0x2e []
-  #_(with-stack [val]
-    [(add-entries [val 1])]))
+  (with-stack [val]
+    [(vm-int (inc (value val)))]))
 
+; TODO check type
 (defop dec 0x2f []
-  #_(with-stack [val]
-    [(add-entries [val (- 1)])]))
-
-(comment (defn- valeq [val1 val2]
-           (condp = (typeid val1)
-             vm-nil-id  (vm-nil? val2)
-             vm-true-id (vm-true? val2)
-             vm-int-id  (and (vm-int? val2) (= (value val1) (value val2)))
-             vm-prop-id (raise TODO)
-             vm-enum-id (and (vm-enum? val2) (= (value val1) (value val2)))
-             vm-sstring-id (raise TODO)
-             vm-list-id (raise TODO)
-             vm-codeofs-id (raise TODO)
-             vm-obj-id (raise TODO)
-             :else false)))
+  (with-stack [val]
+    [(vm-int (dec (value val)))]))
 
 (defop eq 0x40 []
-  #_(with-stack [val1 val2]
-    [(vm-bool (valeq val1 val2))]))
+  (with-stack [a b] [(vm-bool (vm-eq a b))]))
 
 (defop ne 0x41 []
-  #_(with-stack [val1 val2]
-    [(vm-bool (not (valeq val1 val2)))]))
+  (with-stack [a b] [(vm-bool (not (vm-eq a b)))]))
 
-(defop lt 0x42 [])
-(defop le 0x43 [])
-(defop gt 0x44 [])
-(defop ge 0x45 [])
+(defop lt 0x42 []
+  (with-stack [a b] [(vm-bool (vm-< a b))]))
+
+(defop le 0x43 []
+  (with-stack [a b] [(vm-bool (not (vm-> a b)))]))
+
+(defop gt 0x44 []
+  (with-stack [a b] [(vm-bool (vm-> a b))]))
+
+(defop ge 0x45 []
+  (with-stack [a b] [(vm-bool (not (vm-< a b)))]))
+
 (defop retval 0x50 [])
 (defop retnil 0x51 [])
 (defop rettrue 0x52 [])
 (defop ret 0x54 [])
 (defop namedargptr 0x56 [:ubyte named_arg_count :uint2 table_offset])
 (defop namedargtab 0x57 [:named-arg-args args])
-
-(defop call 0x58 [:ubyte arg_count :uint4 func_offset]
-
-  )
-
+(defop call 0x58 [:ubyte arg_count :uint4 func_offset] )
 (defop ptrcall 0x59 [:ubyte arg_count])
 
 (defop getprop 0x60 [:uint2 prop_id]
@@ -357,8 +413,7 @@
 (defop ptrdelegate 0x78 [:ubyte arg_count])
 
 (defop swap2 0x7a []
-  #_(with-stack [val4 val3 val2 val1]
-    [val2 val1 val4 val3]))
+  (with-stack [d c b a] [a b c d]))
 
 (defop swapn 0x7b [:ubyte idx1 :ubyte idx2]
   #_(stack-swap (- sp idx1) (- sp idx2)))
@@ -386,13 +441,10 @@
 (defop getargc 0x87 [])
 
 (defop dup 0x88 []
-  #_(with-stack [val]
-    [val val]))
+  (with-stack [x] [x x]))
 
 (defop disc 0x89 []
-  #_(with-stack [val]
-    []))
-
+  (with-stack [x] []))
 
 (defop disc1 0x89 [:ubyte count]
   #_(repeatedly count stack-pop))
@@ -403,7 +455,9 @@
 (defop pushctxele 0x8E [:ubyte element])
 (defop dup2 0x8F [])
 (defop switch 0x90 [:SPECIAL])
+
 (defop jmp 0x91 [:int2 branch_offset])
+
 (defop jt 0x92 [:int2 branch_offset])
 (defop jf 0x93 [:int2 branch_offset])
 (defop je 0x94 [:int2 branch_offset])
@@ -435,7 +489,9 @@
 (defop builtin1 0xB5 [:ubyte argc :ubyte func_index :ubyte set_index])
 (defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index])
 (defop callext 0xB7 [])
+
 (defop throw 0xB8 [])
+
 (defop sayval 0xB9 [])
 (defop index 0xBA [])
 (defop idxlcl1int8 0xBB [:ubyte local_number :ubyte index_val])

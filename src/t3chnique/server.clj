@@ -11,7 +11,8 @@
             [cheshire.custom :as json]
             [clj-yaml.core :as yaml]        
             [hiccup.core :as h]
-            [hiccup.page :as hp])
+            [hiccup.page :as hp]
+            [clojure.tools.trace :as t])
   (:require [compojure.route :as route]
             [t3chnique.vm :as t3vm]))
 
