@@ -85,11 +85,12 @@
       :objs objs
       :next-oid (inc (apply max (keys objs))))))
 
-(defn ip-position [{:keys [code-page-size code ip]}]
-  [(:bytes (nth (/ ip code-page-size) code)) (mod ip code-page-size)])
-
-(defmacro with-buffer [bsym s & exprs]
-  `(let [[b# o#] (ip-position ~s)
+(defn offset [{:keys [code-page-size code ip]} & ptr]
+  (let [p (or ptr ip)]
+    [(:bytes (nth (/ p code-page-size) code)) (mod p code-page-size)]))
+  
+(defmacro with-buffer [[bsym s p] & exprs]
+  `(let [[b# o#] (offset ~s ~p)
          ~bsym (.slice b#)
          _# (.position ~bsym o#)]
      ~@exprs))
@@ -99,48 +100,48 @@
 
 (defn code-read-ubyte []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-ubyte buf) (bump-ip s 1)])))
 
 (defn code-read-sbyte []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-sbyte buf) (bump-ip s 1)])))
 
 (defn code-read-uint2 []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-uint2 buf) (bump-ip s 2)])))
 
 (defn code-read-int2 []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-int2 buf) (bump-ip s 2)])))
 
 (defn code-read-uint4 []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-uint4 buf) (bump-ip s 4)])))
 
 (defn code-read-int4 []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-int4 buf) (bump-ip s 4)])))
 
 (defn code-read-utf8 [count]
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-utf8 count) (bump-ip s count)])))
 
 (defn code-read-pref-utf8 []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       (let [count (ber/read-uint2 buf)]
         [(ber/read-utf8 count) (bump-ip s count)]))))
 
 (defn code-read-data-holder []
   (fn [s]
-    (with-buffer buf s
+    (with-buffer [buf s]
       [(ber/read-data-holder buf) (bump-ip s 5)])))
 
 (defn code-read-item [type-sym]
@@ -155,6 +156,13 @@
     :pref-utf8 (code-read-pref-utf8)
     (code-read-utf8 (second type-sym))))
 
+(defn get-method-header
+  "Read method header at specified offset."
+  [ptr]
+  (fn [s]
+    (with-buffer [buf s ptr]
+      [(im/read-method-header buf) s])))
+
 (defn stack-push [val]
   (fn [s] [nil (-> s
                   (update-in [:stack] conj val)
@@ -166,8 +174,15 @@
               (update-in [:stack] pop)
               (update-in [:sp] dec))]))
 
+(defn stack-set [idx val]
+  (fn [s]
+    [nil (assoc-in s [:stack idx] val)]))
+
 (defn reg-get [k]
   (fn [s] [(k s) s]))
+
+(defn reg-set [k v]
+  (fn [s] [nil (assoc s k v)]))
 
 (defn obj-store [o]
   (fn [s]
@@ -178,6 +193,13 @@
 
 (defn obj-retrieve [oid]
   (fn [s] [(get-in s [:objs oid]) s]))
+
+(defn jump [offset]
+  (domonad state-m
+           [ip (reg-get :ip)
+            _ (reg-set :ip (- ip 2) offset)]
+           nil))
+
 
 ;; Operations on primitives / op overloads
 
@@ -251,7 +273,7 @@
   (or (vm-nil? val) (and (vm-int? val) (vm-zero? val))))
 
 ; TODO non numeric
-(defn vm-eq [a b]
+(defn vm-eq? [a b]
   (cond
    (vm-nil? a) (vm-nil? b)
    (vm-true? a) (vm-true? b)
@@ -358,10 +380,10 @@
     [(vm-int (dec (value val)))]))
 
 (defop eq 0x40 []
-  (with-stack [a b] [(vm-bool (vm-eq a b))]))
+  (with-stack [a b] [(vm-bool (vm-eq? a b))]))
 
 (defop ne 0x41 []
-  (with-stack [a b] [(vm-bool (not (vm-eq a b)))]))
+  (with-stack [a b] [(vm-bool (not (vm-eq? a b)))]))
 
 (defop lt 0x42 []
   (with-stack [a b] [(vm-bool (vm-< a b))]))
@@ -381,7 +403,33 @@
 (defop ret 0x54 [])
 (defop namedargptr 0x56 [:ubyte named_arg_count :uint2 table_offset])
 (defop namedargtab 0x57 [:named-arg-args args])
-(defop call 0x58 [:ubyte arg_count :uint4 func_offset] )
+
+(defn check-argc [{:keys [param-count opt-param-count]} ac]
+  (let [varags (not= (bit-and param-count 0x80) 0)
+        varmin (bit-and param-count 0x7f)]
+    (if varags
+      (>= ac varmin)
+      (= ac param-count))))
+
+(defop call 0x58 [:ubyte arg_count :uint4 func_offset]
+  (domonad state-m
+           [_ (m-seq (repeat 4 (stack-push (vm-nil))))
+            ep (reg-get :ep)
+            ip (reg-get :ip)
+            fp (reg-get :fp)
+            _ (stack-push (- ip ep))
+            _ (stack-push ep)
+            _ (stack-push (vm-int arg_count))
+            _ (stack-push fp)
+            sp (reg-get :sp)
+            _ (reg-set :fp sp)
+            _ (reg-set :ep func_offset)
+            mh (get-method-header func_offset)
+                                        ; :when (check-argc mh arg_count)
+            _ (m-seq (repeat (:max-slots mh) (stack-push (vm-nil))))
+            _ (reg-set :ip (+ func_offset (:code-offset mh)))]
+           nil))
+
 (defop ptrcall 0x59 [:ubyte arg_count])
 
 (defop getprop 0x60 [:uint2 prop_id]
@@ -447,20 +495,39 @@
   (with-stack [x] []))
 
 (defop disc1 0x89 [:ubyte count]
-  #_(repeatedly count stack-pop))
+  (with-monad state-m (m-seq (repeat count (stack-pop)))))
 
-(defop getr0 0x8B [])
+(defop getr0 0x8B []
+  (reg-get :r0))
+
 (defop getdbargc 0x8C [])
 (defop swap 0x8D [])
 (defop pushctxele 0x8E [:ubyte element])
 (defop dup2 0x8F [])
 (defop switch 0x90 [:SPECIAL])
 
-(defop jmp 0x91 [:int2 branch_offset])
+(defop jmp 0x91 [:int2 branch_offset]
+  (jump branch_offset))
 
-(defop jt 0x92 [:int2 branch_offset])
-(defop jf 0x93 [:int2 branch_offset])
-(defop je 0x94 [:int2 branch_offset])
+(defop jt 0x92 [:int2 branch_offset]
+  (domonad state-m
+           [v (stack-pop)
+            _ (if (not (vm-falsey?)) (jump branch_offset) (m-result nil))]
+           nil))
+
+(defop jf 0x93 [:int2 branch_offset]
+  (domonad state-m
+           [v (stack-pop)
+            _ (if (vm-falsey?) (jump branch_offset) (m-result nil))]
+           nil))
+
+(defop je 0x94 [:int2 branch_offset]
+  (domonad state-m
+           [v2 (stack-pop)
+            v1 (stack-pop)
+            _ (if (vm-eq? v1 v2) (jump branch_offset) (m-result nil))]
+           nil))
+
 (defop jne 0x95 [:int2 branch_offset])
 (defop jgt 0x96 [:int2 branch_offset])
 (defop jge 0x97 [:int2 branch_offset])
@@ -475,12 +542,14 @@
 (defop jr0t 0xA0 [:int2 branch_offset])
 (defop jr0f 0xA1 [:int2 branch_offset])
 (defop getspn 0xA6 [:ubyte index])
+
 (defop getlcln0 0x8AA [])
 (defop getlcln1 0x8AB [])
 (defop getlcln2 0x8AC [])
 (defop getlcln3 0x8AD [])
 (defop getlcln4 0x8AE [])
 (defop getlcln5 0x8AF [])
+
 (defop say 0xB0 [:uint4 offset])
 (defop builtin_a 0xB1 [:ubyte argc :ubyte func_index])
 (defop builtin_b 0xB2 [:ubyte argc :ubyte func_index])
@@ -509,7 +578,9 @@
 (defop subfromlcl 0xD5 [:uint2 local_number])
 (defop zerolcl1 0xD6 [:ubyte local_number])
 (defop zerolcl2 0xD7 [:uint2 local_number])
-(defop nillcl1 0xD8 [:ubyte local_number])
+
+(defop nillcl1 0xD8 [:ubyte local_number]
+  )
 (defop nillcl2 0xD9 [:uint2 local_number])
 (defop onelcl1 0xDA [:ubyte local_number])
 (defop onelcl2 0xDB [:uint2 local_number])

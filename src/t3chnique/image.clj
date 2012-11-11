@@ -174,12 +174,14 @@
 
 (defn read-method-header [buf size]
   (let [b (ber/slice buf size)]
-    (ber/parse [:ubyte :param-count
-                :ubyte :opt-param-count
-                :uint2 :local-variable-count
-                :uint2 :max-slots
-                :uint2 :etable-offset
-                :uint2 :dtable-offset] b)))
+    (assoc 
+        (ber/parse [:ubyte :param-count
+                    :ubyte :opt-param-count
+                    :uint2 :local-variable-count
+                    :uint2 :max-slots
+                    :uint2 :etable-offset
+                    :uint2 :dtable-offset] b)
+      :code-offset size)))
 
 (defn read-exception-handler [buf]
   (ber/parse [:uint2 :first-offset
