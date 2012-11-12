@@ -163,6 +163,13 @@
     (with-buffer [buf s ptr]
       [(im/read-method-header buf) s])))
 
+(defn get-exception-table
+  "Read exception table at specified offset."
+  [ptr]
+  (fn [s]
+    (with-buffer [buf s ptr]
+      (im/read-exception-table buf) s)))
+
 (defn stack-push [val]
   (fn [s] [nil (-> s
                   (update-in [:stack] conj val)
@@ -397,7 +404,23 @@
 (defop ge 0x45 []
   (with-stack [a b] [(vm-bool (not (vm-< a b)))]))
 
-(defop retval 0x50 [])
+(defop retval 0x50 []
+  (domonad state-m
+           [rv (stack-pop)
+            _ (reg-set :r0 rv)
+            sp (reg-get :sp)
+            fp (reg-get :fp)
+            _ (m-seq (repeat (- sp fp) (stack-pop)))
+            fp (stack-pop)
+            ac (stack-pop)
+            of (stack-pop)
+            ep (stack-pop)
+            _ (m-seq (repeat (+ 4 (value ac)) (stack-pop)))
+            _ (reg-set :fp (value fp))
+            _ (reg-set :ep (value ep))
+            _ (reg-set :ip (+ (value ep) (value of)))]
+           nil))
+
 (defop retnil 0x51 [])
 (defop rettrue 0x52 [])
 (defop ret 0x54 [])
@@ -559,8 +582,17 @@
 (defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index])
 (defop callext 0xB7 [])
 
+; TODO implement
 (defop throw 0xB8 []
-  )
+  (domonad state-m
+           [ep (reg-get :ep)
+            ip (reg-get :ip)
+            mh (get-method-header ep)
+            et (:etable-offset mh)
+            ex (get-exception-table et)
+;            _ (filter #(<= (:first-offset %) (dec ip) (:last-offset)) ex)
+            ]
+           nil))
 
 (defop sayval 0xB9 [])
 (defop index 0xBA [])

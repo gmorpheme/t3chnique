@@ -97,3 +97,27 @@
                                       (vm-int 2)
                                       (vm-int 0)
                                       (vm-nil) (vm-nil) (vm-nil) (vm-nil)]}))))))
+
+(deftest test-returns
+  (testing "Testing returns"
+    (is (=
+         (with-state
+           (merge (vm-state) {:ep 0x1234
+                              :ip 0x123e
+                              :fp 10
+                              :sp 15
+                              :stack [(vm-int 1) (vm-int 2)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                      (vm-codeofs 0x20)
+                                      (vm-codeofs 0x10)
+                                      (vm-int 2)
+                                      (vm-int 0)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                      (vm-int 99)]})
+           [(op-retval)])
+         (merge (vm-state) {:ep 0x20
+                            :ip 0x30
+                            :fp 0
+                            :sp 0
+                            :r0 (vm-int 99)
+                            :stack []})))))

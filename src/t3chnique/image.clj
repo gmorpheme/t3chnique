@@ -189,5 +189,13 @@
               :uint4 :oid
               :uint2 :handler-offset] buf))
 
+(defn read-exception-table [buf]
+  (let [count (ber/read-uint2 buf)
+        etable (loop [n 0 entries []]
+                 (if (< n count)
+                   (recur (inc n) (conj entries (read-exception-table buf)))
+                   entries))]
+    etable))
+
 ;;
 
