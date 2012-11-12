@@ -54,7 +54,7 @@
    :r0 0
    :ip 0
    :ep 0
-   :sp -1
+   :sp 0
    :fp 0
    :savepoint 0
    :savepoint-count 0
@@ -417,16 +417,16 @@
             ep (reg-get :ep)
             ip (reg-get :ip)
             fp (reg-get :fp)
-            _ (stack-push (- ip ep))
-            _ (stack-push ep)
+            _ (stack-push (vm-codeofs (- ip ep)))
+            _ (stack-push (vm-codeofs ep))
             _ (stack-push (vm-int arg_count))
-            _ (stack-push fp)
-            sp (reg-get :sp)
+            _ (stack-push (vm-int fp))
+             sp (reg-get :sp)
             _ (reg-set :fp sp)
             _ (reg-set :ep func_offset)
             mh (get-method-header func_offset)
-                                        ; :when (check-argc mh arg_count)
-            _ (m-seq (repeat (:max-slots mh) (stack-push (vm-nil))))
+            ;;                             ; :when (check-argc mh arg_count)
+            _ (m-seq (repeat (:local-variable-count mh) (stack-push (vm-nil))))
             _ (reg-set :ip (+ func_offset (:code-offset mh)))]
            nil))
 
@@ -559,7 +559,8 @@
 (defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index])
 (defop callext 0xB7 [])
 
-(defop throw 0xB8 [])
+(defop throw 0xB8 []
+  )
 
 (defop sayval 0xB9 [])
 (defop index 0xBA [])

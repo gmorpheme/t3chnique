@@ -8,6 +8,10 @@
   (with-monad state-m
     (:stack (second ((m-seq ops) (vm-state))))))
 
+(defn with-state [init ops]
+  (with-monad state-m
+    (second ((m-seq ops) init))))
+
 (deftest test-pushes
   (testing "Simple pushes"
     (are [ops stack] (= (apply stack-after ops) stack)
@@ -74,3 +78,22 @@
 (deftest test-bitwise
   (testing "bnot"
     #_(is (= (stack-after (op-pushint 0xffffffff) (op-bnot)) [(vm-int 0x00000000)]))))
+
+(deftest test-call-stack
+  (with-redefs [get-method-header (fn [ptr] (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))]
+    (testing "call stack"
+      (is (=
+           (with-state
+             (merge (vm-state) {:ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)]})
+             [(op-call 2 0x1234)])
+           (merge (vm-state) {:ep 0x1234
+                              :ip 0x123e
+                              :fp 10
+                              :sp 14
+                              :stack [(vm-int 1) (vm-int 2)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                      (vm-codeofs 0x20)
+                                      (vm-codeofs 0x10)
+                                      (vm-int 2)
+                                      (vm-int 0)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]}))))))
