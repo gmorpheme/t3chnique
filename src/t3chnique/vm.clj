@@ -208,9 +208,8 @@
 (defn jump [offset]
   (domonad state-m
            [ip (reg-get :ip)
-            _ (reg-set :ip (- ip 2) offset)]
+            _ (reg-set :ip (+ (- ip 2) offset))]
            nil))
-
 
 ;; Operations on primitives / op overloads
 
