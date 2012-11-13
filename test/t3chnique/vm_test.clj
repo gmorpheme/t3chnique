@@ -8,9 +8,12 @@
   (with-monad state-m
     (:stack (second ((m-seq ops) (vm-state))))))
 
-(defn with-state [init ops]
+(defn apply-to-state [init ops]
   (with-monad state-m
     (second ((m-seq ops) init))))
+
+(defn apply-with-stack [stack ops]
+  (:stack (apply-to-state (merge (vm-state) {:stack stack :sp (count stack)}) ops)))
 
 (deftest test-pushes
   (testing "Simple pushes"
@@ -83,7 +86,7 @@
   (with-redefs [get-method-header (fn [ptr] (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))]
     (testing "call stack"
       (is (=
-           (with-state
+           (apply-to-state
              (merge (vm-state) {:ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)]})
              [(op-call 2 0x1234)])
            (merge (vm-state) {:ep 0x1234
@@ -101,7 +104,7 @@
 (deftest test-returns
   (testing "Testing returns"
     (is (=
-         (with-state
+         (apply-to-state
            (merge (vm-state) {:ep 0x1234
                               :ip 0x123e
                               :fp 10
@@ -121,3 +124,10 @@
                             :sp 0
                             :r0 (vm-int 99)
                             :stack []})))))
+
+(deftest test-local-access
+  (testing "Test local access"
+    (let [stack (map vm-int (range 4))]
+      (doseq [i (range 4) f [op-getlcl1 op-getlcl2]]
+        (is (= (apply-with-stack stack [(f i)])
+               (conj stack (vm-int i))))))))

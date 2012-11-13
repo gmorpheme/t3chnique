@@ -185,6 +185,10 @@
   (fn [s]
     [nil (assoc-in s [:stack idx] val)]))
 
+(defn stack-get [idx]
+  (fn [s]
+    [(nth (:stack s) idx) s]))
+
 (defn reg-get [k]
   (fn [s] [(k s) s]))
 
@@ -495,10 +499,16 @@
 (defop getargn3 0x7F [])
 
 (defop getlcl1 0x80 [:ubyte local_number]
-  #_(stack-push (stack-get (+ fp local_number))))
+  (domonad state-m [fp (reg-get :fp)
+                    rv (stack-get (+ fp local_number))
+                    _ (stack-push rv)]
+           nil))
 
 (defop getlcl2 0x81 [:uint2 local_number]
-  #_(stack-push (stack-get (+ fp local_number))))
+  (domonad state-m [fp (reg-get :fp)
+                    rv (stack-get (+ fp local_number))
+                    _ (stack-push rv)]
+           nil))
 
 (defop getarg1 0x82 [:ubyte param_number]
   #_(stack-push (stack-get (- fp param_number))))
