@@ -135,4 +135,8 @@
 (deftest test-dump
   (testing "Jumps"
     (is (= (apply-to-state (merge (vm-state) {:ip 0x66}) [(op-jmp 0x11)])
+           (merge (vm-state) {:ip 0x75})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-je 0x11)])
            (merge (vm-state) {:ip 0x75})))))
