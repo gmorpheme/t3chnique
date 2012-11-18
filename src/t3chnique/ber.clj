@@ -109,12 +109,26 @@
   (reduce merge (for [[t n] (partition 2 spec)]
                   (sorted-map (keyword n) (read-item t buf)))))
 
-(defn read-method-header [buf size]
-  (let [b (slice buf size)]
-    (parse [:ubyte :param-count
-            :ubyte :opt-param-count
-            :uint2 :local-variable-count
-            :uint2 :max-slots
-            :uint2 :exception-table-offset
-            :uint2 :debugging-records-offset] b)))
-
+(comment
+  (defblock header [[:utf8 4] :id
+                    :uint4 :size
+                    :uint2 :flags])
+  (defblock fnsd [:uint2 :count
+                  (:* :count
+                      [:ubyte :bytes
+                       [:utf8 :ubyte] :name]) :entries])
+  (defblock cpdf [:uint2 :pool-id
+                  :uint4 :page-count
+                  :uint4 :page-size])
+  (defblock cppg [size] [:uint2 :pool-id
+                         :uint4 :pool-index
+                         :ubyte :xor-mask
+                         [:bytes :> size] :bytes])
+  (defblock mcld [:uint2 :count
+                  (* :count
+                     [:uint2 :offset
+                      :ubyte :chars
+                      [:utf8 :chars] :name
+                      :uint2 :pid-count
+                      :uint2 :pid-size
+                      (* :pid-count [:uint2 :pid]) :pids])] :entries))
