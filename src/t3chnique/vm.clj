@@ -7,6 +7,8 @@
             [t3chnique.metaclass :as mc])
   (:import [t3chnique.metaclass TadsObject]))
 
+(def vm-m state-m)
+
 (defn abort 
   "Abort if we hit something we haven't implemented yet."
   [msg]
@@ -41,12 +43,12 @@
 (defmacro with-stack 
   "Bind symbols to values popped of top of stack and push result of exprs back on"
   [syms exprs]
-  `(domonad state-m
+  `(domonad vm-m
             [~(vec (reverse syms)) (m-seq ~(vec (repeat (count syms) '(stack-pop))))
              _# (m-seq (map stack-push ~exprs))]
             nil))
 
-;; state-m implementation
+;; vm-m implementation
 ;;
 ;; vm state:
 (defn vm-state []
@@ -206,7 +208,7 @@
   (fn [s] [(get-in s [:objs oid]) s]))
 
 (defn jump [offset]
-  (domonad state-m
+  (domonad vm-m
            [ip (reg-get :ip)
             _ (reg-set :ip (+ (- ip 2) offset))]
            nil))
@@ -408,7 +410,7 @@
   (with-stack [a b] [(vm-bool (not (vm-< a b)))]))
 
 (defop retval 0x50 []
-  (domonad state-m
+  (domonad vm-m
            [rv (stack-pop)
             _ (reg-set :r0 rv)
             sp (reg-get :sp)
@@ -438,7 +440,7 @@
       (= ac param-count))))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
-  (domonad state-m
+  (domonad vm-m
            [_ (m-seq (repeat 4 (stack-push (vm-nil))))
             ep (reg-get :ep)
             ip (reg-get :ip)
@@ -459,7 +461,7 @@
 (defop ptrcall 0x59 [:ubyte arg_count])
 
 (defop getprop 0x60 [:uint2 prop_id]
-  (domonad state-m
+  (domonad vm-m
            [target-val (stack-pop)
             obj (obj-retrieve target-val)]
            (mc/get-property obj prop_id)))
@@ -498,13 +500,13 @@
 (defop getargn3 0x7F [])
 
 (defop getlcl1 0x80 [:ubyte local_number]
-  (domonad state-m [fp (reg-get :fp)
+  (domonad vm-m [fp (reg-get :fp)
                     rv (stack-get (+ fp local_number))
                     _ (stack-push rv)]
            nil))
 
 (defop getlcl2 0x81 [:uint2 local_number]
-  (domonad state-m [fp (reg-get :fp)
+  (domonad vm-m [fp (reg-get :fp)
                     rv (stack-get (+ fp local_number))
                     _ (stack-push rv)]
            nil))
@@ -527,7 +529,7 @@
   (with-stack [x] []))
 
 (defop disc1 0x89 [:ubyte count]
-  (with-monad state-m (m-seq (repeat count (stack-pop)))))
+  (with-monad vm-m (m-seq (repeat count (stack-pop)))))
 
 (defop getr0 0x8B []
   (reg-get :r0))
@@ -542,31 +544,37 @@
   (jump branch_offset))
 
 (defop jt 0x92 [:int2 branch_offset]
-  (domonad state-m
+  (domonad vm-m
            [v (stack-pop)
-            _ (if (not (vm-falsey?)) (jump branch_offset) (m-result nil))]
+            _ (m-when (not (vm-falsey? v)) (jump branch_offset))]
            nil))
 
 (defop jf 0x93 [:int2 branch_offset]
-  (domonad state-m
+  (domonad vm-m
            [v (stack-pop)
-            _ (if (vm-falsey?) (jump branch_offset) (m-result nil))]
+            _ (m-when (vm-falsey? v) (jump branch_offset))]
            nil))
 
 (defop je 0x94 [:int2 branch_offset]
-  (domonad state-m
+  (domonad vm-m
            [v2 (stack-pop)
             v1 (stack-pop)
-            _ (if (vm-eq? v1 v2) (jump branch_offset) (m-result nil))]
+            _ (m-when (vm-eq? v1 v2) (jump branch_offset))]
            nil))
 
-(defop jne 0x95 [:int2 branch_offset])
+(defop jne 0x95 [:int2 branch_offset]
+  (domonad vm-m
+           [v2 (stack-pop)
+            v1 (stack-pop)
+            _ (m-when (not (vm-eq? v1 v2)) (jump branch_offset))]))
+
 (defop jgt 0x96 [:int2 branch_offset])
 (defop jge 0x97 [:int2 branch_offset])
 (defop jlt 0x98 [:int2 branch_offset])
 (defop jle 0x99 [:int2 branch_offset])
 (defop jst 0x9A [:int2 branch_offset])
 (defop jsf 0x9B [:int2 branch_offset])
+
 (defop ljsr 0x9C [:int2 branch_offset])
 (defop lret 0x9D [:int2 local_variable_number])
 (defop jnil 0x9E [:int2 branch_offset])
@@ -593,7 +601,7 @@
 
 ; TODO implement
 (defop throw 0xB8 []
-  (domonad state-m
+  (domonad vm-m
            [ep (reg-get :ep)
             ip (reg-get :ip)
             mh (get-method-header ep)
