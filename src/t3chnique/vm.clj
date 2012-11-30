@@ -1,6 +1,6 @@
 (ns t3chnique.vm
   (:use [t3chnique.primitive])
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val update-val m-seq]])
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val update-val m-seq m-when]])
   (:require [t3chnique.ber :as ber]
             [t3chnique.image :as im]
             [t3chnique.intrinsics :as bif]
@@ -566,7 +566,8 @@
   (domonad vm-m
            [v2 (stack-pop)
             v1 (stack-pop)
-            _ (m-when (not (vm-eq? v1 v2)) (jump branch_offset))]))
+            _ (m-when (not (vm-eq? v1 v2)) (jump branch_offset))]
+           nil))
 
 (defop jgt 0x96 [:int2 branch_offset])
 (defop jge 0x97 [:int2 branch_offset])
