@@ -37,7 +37,9 @@
                  prop
                  (map (fn [sc] ((get-property sc pid))) scs))))))
 
-(defn tads-object [] (TadsObject. nil nil nil))
+(defn tads-object
+  ([] (TadsObject. nil nil nil))
+  ([is-class bases properties] (TadsObject. is-class bases properties)))
 
 (defrecord TadsString [text]
   MetaClass
