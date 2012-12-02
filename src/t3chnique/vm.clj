@@ -191,6 +191,22 @@
   (fn [s]
     [(nth (:stack s) idx) s]))
 
+(defn stack-update [idx f]
+  (fn [s]
+    (let [stack (:stack s)
+          [pre [x & post]] (split-at idx stack)
+          stack (concat pre (cons x post))]
+      [nil (assoc s :stack stack)])))
+
+(defn stack-swap [i j]
+  (fn [s]
+    (let [stack (:stack s)
+          [i j] (sort [i j])
+          [prei [iv & posti]] (split-at i stack)
+          [prej [jv & postj]] (split-at j posti)
+          stack (concat prei [jv] prej [iv] postj)]
+      [nil (assoc s :stack stack)])))
+
 (defn reg-get [k]
   (fn [s] [(k s) s]))
 
@@ -512,7 +528,10 @@
   (with-stack [d c b a] [a b c d]))
 
 (defop swapn 0x7b [:ubyte idx1 :ubyte idx2]
-  #_(stack-swap (- sp idx1) (- sp idx2)))
+  (domonad vm-m
+           [sp (reg-get :sp)
+            _ (stack-swap (- sp idx1) (- sp idx2))]
+           nil))
 
 (defop getargn0 0x7C [])
 (defop getargn1 0x7D [])
@@ -521,14 +540,14 @@
 
 (defop getlcl1 0x80 [:ubyte local_number]
   (domonad vm-m [fp (reg-get :fp)
-                    rv (stack-get (+ fp local_number))
-                    _ (stack-push rv)]
+                 rv (stack-get (+ fp local_number))
+                 _ (stack-push rv)]
            nil))
 
 (defop getlcl2 0x81 [:uint2 local_number]
   (domonad vm-m [fp (reg-get :fp)
-                    rv (stack-get (+ fp local_number))
-                    _ (stack-push rv)]
+                 rv (stack-get (+ fp local_number))
+                 _ (stack-push rv)]
            nil))
 
 (defop getarg1 0x82 [:ubyte param_number]
@@ -560,10 +579,19 @@
 (defop getr0 0x8B []
   (reg-get :r0))
 
+; TODO 
 (defop getdbargc 0x8C [])
-(defop swap 0x8D [])
+
+(defop swap 0x8D []
+  (with-stack [x y] [y x]))
+
+; TODO
 (defop pushctxele 0x8E [:ubyte element])
-(defop dup2 0x8F [])
+
+(defop dup2 0x8F []
+  (with-stack [a b] [a b a b]))
+
+; TODO
 (defop switch 0x90 [:SPECIAL])
 
 (defop jmp 0x91 [:int2 branch_offset]

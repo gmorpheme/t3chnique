@@ -26,6 +26,18 @@
          [(op-pushnil) (op-pushtrue)] [(vm-nil) (vm-true)]
          [(op-pushenum 9876)] [(vm-enum 9876)])))
 
+(deftest test-stack-ops
+  (testing "Simple stack ops"
+    (are [before ops after] (= (apply-with-stack before ops) after)
+         [(vm-int 10)] [(op-dup)] [(vm-int 10) (vm-int 10)]
+         [(vm-nil)] [(op-dup)] [(vm-nil) (vm-nil)]
+         [(vm-true)] [(op-disc)] []
+         [(vm-int 100) (vm-int 99) (vm-int 98)] [(op-disc)] [(vm-int 100) (vm-int 99)]
+         [(vm-nil) (vm-nil)] [(op-disc1 2)] []
+         [(vm-nil) (vm-nil)] [(op-disc1 1)] [(vm-nil)]
+         [(vm-int 1) (vm-int 2)] [(op-swap)] [(vm-int 2) (vm-int 1)]
+         [(vm-int 1) (vm-int 2)] [(op-dup2)] [(vm-int 1) (vm-int 2) (vm-int 1) (vm-int 2)])))
+
 (deftest test-arithmetic
   (testing "Testing inc"
     (doseq [i (range 100)]
