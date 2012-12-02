@@ -132,7 +132,7 @@
         (is (= (apply-with-stack stack [(f i)])
                (conj stack (vm-int i))))))))
 
-(deftest test-dump
+(deftest test-jump
   (testing "Jumps"
     (is (= (apply-to-state (merge (vm-state) {:ip 0x66}) [(op-jmp 0x11)])
            (merge (vm-state) {:ip 0x75})))

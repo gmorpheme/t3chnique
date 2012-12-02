@@ -409,11 +409,9 @@
 (defop ge 0x45 []
   (with-stack [a b] [(vm-bool (not (vm-< a b)))]))
 
-(defop retval 0x50 []
+(defn unwind []
   (domonad vm-m
-           [rv (stack-pop)
-            _ (reg-set :r0 rv)
-            sp (reg-get :sp)
+           [sp (reg-get :sp)
             fp (reg-get :fp)
             _ (m-seq (repeat (- sp fp) (stack-pop)))
             fp (stack-pop)
@@ -426,10 +424,32 @@
             _ (reg-set :ip (+ (value ep) (value of)))]
            nil))
 
-(defop retnil 0x51 [])
-(defop rettrue 0x52 [])
-(defop ret 0x54 [])
+(defop retval 0x50 []
+  (domonad vm-m
+           [rv (stack-pop)
+            _ (reg-set :r0 rv)
+            _ (unwind)]
+           nil))
+
+(defop retnil 0x51 []
+  (domonad vm-m
+           [_ (reg-set :r0 (vm-nil))
+            _ (unwind)]
+           nil))
+
+(defop rettrue 0x52 []
+  (domonad vm-m
+           [_ (reg-set :r0 (vm-true))
+            _ (unwind)]
+           nil))
+
+(defop ret 0x54 []
+  (unwind))
+
+; TODO implement
 (defop namedargptr 0x56 [:ubyte named_arg_count :uint2 table_offset])
+
+; TODO implement
 (defop namedargtab 0x57 [:named-arg-args args])
 
 (defn check-argc [{:keys [param-count opt-param-count]} ac]
