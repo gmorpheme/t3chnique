@@ -469,7 +469,7 @@
             _ (stack-push (vm-codeofs ep))
             _ (stack-push (vm-int arg_count))
             _ (stack-push (vm-int fp))
-             sp (reg-get :sp)
+            sp (reg-get :sp)
             _ (reg-set :fp sp)
             _ (reg-set :ep func_offset)
             mh (get-method-header func_offset)
@@ -532,10 +532,16 @@
            nil))
 
 (defop getarg1 0x82 [:ubyte param_number]
-  #_(stack-push (stack-get (- fp param_number))))
+  (domonad vm-m [fp (reg-get :fp)
+                 val (stack-get (- fp (+ 9 param_number)))
+                 _ (stack-push val)]
+           nil))
 
 (defop getarg2 0x83 [:UNIT2 param_number]
-  #_(stack-push (stack-get (- fp param_number))))
+  (domonad vm-m [fp (reg-get :fp)
+                 val (stack-get (- fp (+ 9 param_number)))
+                 _ (stack-push val)]
+           nil))
 
 (defop pushself 0x84 [])
 (defop getdblcl 0x85 [:uint2 local_number])
@@ -640,7 +646,9 @@
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id])
 (defop trnew1 0xC2 [:ubyte arg_count :ubyte metaclass_id])
 (defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id])
+
 (defop inclcl 0xD0 [:uint2 local_number])
+
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id])
 (defop declcl 0xD1 [:uint2 local_number])
 (defop addilcl1 0xD2 [:ubyte local_number :sbyte val])

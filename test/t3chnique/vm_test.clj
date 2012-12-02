@@ -193,6 +193,22 @@
         (is (= (apply-with-stack stack [(f i)])
                (conj stack (vm-int i))))))))
 
+(deftest test-arg-access
+  (testing "Test argument access"
+    (let [init (merge (vm-state) {:fp 10
+                                  :sp 14
+                                  :stack [(vm-int 101) (vm-int 100)
+                                          (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                          (vm-codeofs 0x20)
+                                          (vm-codeofs 0x10)
+                                          (vm-int 2)
+                                          (vm-int 0)
+                                          (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})]
+      (doseq [i (range 2) op [op-getarg1 op-getarg2]]
+        (let [after (apply-to-state init [(op i)])]
+          (is (= (:sp after) 15))
+          (is (= (value (last (:stack after))) (+ 100 i))))))))
+
 (deftest test-jump
   (testing "Jumps"
     (is (= (apply-to-state (merge (vm-state) {:ip 0x66}) [(op-jmp 0x11)])
@@ -201,6 +217,10 @@
             (merge (vm-state)
                    {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-je 0x11)])
            (merge (vm-state) {:ip 0x75})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-jne 0x11)])
+           (merge (vm-state) {:ip 0x66})))
     (is (= (apply-to-state
             (merge (vm-state)
                    {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jt 0x11)])
@@ -217,3 +237,4 @@
             (merge (vm-state)
                    {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jf 0x11)])
            (merge (vm-state) {:ip 0x75})))))
+
