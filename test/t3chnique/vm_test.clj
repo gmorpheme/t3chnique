@@ -123,6 +123,67 @@
                             :fp 0
                             :sp 0
                             :r0 (vm-int 99)
+                            :stack []})))
+    (is (=
+         (apply-to-state
+           (merge (vm-state) {:ep 0x1234
+                              :ip 0x123e
+                              :fp 10
+                              :sp 14
+                              :stack [(vm-int 1) (vm-int 2)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                      (vm-codeofs 0x20)
+                                      (vm-codeofs 0x10)
+                                      (vm-int 2)
+                                      (vm-int 0)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
+           [(op-retnil)])
+         (merge (vm-state) {:ep 0x20
+                            :ip 0x30
+                            :fp 0
+                            :sp 0
+                            :r0 (vm-nil)
+                            :stack []})))
+    (is (=
+         (apply-to-state
+           (merge (vm-state) {:ep 0x1234
+                              :ip 0x123e
+                              :fp 10
+                              :sp 14
+                              :stack [(vm-int 1) (vm-int 2)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                      (vm-codeofs 0x20)
+                                      (vm-codeofs 0x10)
+                                      (vm-int 2)
+                                      (vm-int 0)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
+           [(op-rettrue)])
+         (merge (vm-state) {:ep 0x20
+                            :ip 0x30
+                            :fp 0
+                            :sp 0
+                            :r0 (vm-true)
+                            :stack []})))
+    (is (=
+         (apply-to-state
+           (merge (vm-state) {:ep 0x1234
+                              :ip 0x123e
+                              :fp 10
+                              :sp 14
+                              :r0 (vm-int 111)
+                              :stack [(vm-int 1) (vm-int 2)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                      (vm-codeofs 0x20)
+                                      (vm-codeofs 0x10)
+                                      (vm-int 2)
+                                      (vm-int 0)
+                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
+           [(op-ret)])
+         (merge (vm-state) {:ep 0x20
+                            :ip 0x30
+                            :fp 0
+                            :sp 0
+                            :r0 (vm-int 111)
                             :stack []})))))
 
 (deftest test-local-access
@@ -139,4 +200,20 @@
     (is (= (apply-to-state
             (merge (vm-state)
                    {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-je 0x11)])
+           (merge (vm-state) {:ip 0x75})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jt 0x11)])
+           (merge (vm-state) {:ip 0x75})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jt 0x11)])
+           (merge (vm-state) {:ip 0x66})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jf 0x11)])
+           (merge (vm-state) {:ip 0x66})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jf 0x11)])
            (merge (vm-state) {:ip 0x75})))))

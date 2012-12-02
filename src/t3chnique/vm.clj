@@ -473,7 +473,7 @@
             _ (reg-set :fp sp)
             _ (reg-set :ep func_offset)
             mh (get-method-header func_offset)
-            ;;                             ; :when (check-argc mh arg_count)
+;            _ (m-when (check-argc mh arg_count))
             _ (m-seq (repeat (:local-variable-count mh) (stack-push (vm-nil))))
             _ (reg-set :ip (+ func_offset (:code-offset mh)))]
            nil))
@@ -672,4 +672,5 @@
 (defop setlcl1r0 0xEE [:ubyte local_number])
 (defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val])
 (defop bp 0xF1 [])
+
 (defop nop 0xF2 [])
