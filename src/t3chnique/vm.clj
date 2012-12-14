@@ -183,6 +183,10 @@
               (update-in [:stack] pop)
               (update-in [:sp] dec))]))
 
+(defn stack-peek []
+  (fn [s]
+    [(last (:stack s)) identity]))
+
 (defn stack-set [idx val]
   (fn [s]
     [nil (assoc-in s [:stack idx] val)]))
@@ -240,21 +244,38 @@
     vm-sstring? (value x)
     :else (abort "other types")))
 
-; TODO non numeric
-(defn vm-< [a b]
-  (cond
-   (vm-int? a) (if (vm-int? b)
-                 (< a b)
-                 (abort "invalid comparison"))
-   :else (abort "non-numeric")))
+; TODO non-numerics
+(defn- vm-lift2
+  ([op retf]
+     (fn [a b]
+       (cond
+        (vm-int? a) (if (vm-int? b)
+                      (retf (op (value a) (value b)))
+                      (abort "invalid numeric op"))
+        :else (abort "NUM_VAL_REQD"))))
+  ([op]
+     (vm-lift2 op identity)))
 
-; TODO non numeric
-(defn vm-> [a b]
-  (cond
-   (vm-int? a) (if (vm-int? b)
-                 (> a b)
-                 (abort "invalid comparison"))))
+(defn- vm-lift1
+  ([op retf]
+     (fn [a]
+       (cond
+        (vm-int? a) (retf (op (value a)))
+        :else (abort "NUM_VAL_REQD")))))
 
+;; comparisons operating on type values but returning raw booleans
+
+(def vm->? (vm-lift2 >))
+(def vm->=? (vm-lift2 >=))
+(def vm-<? (vm-lift2 <))
+(def vm-<=? (vm-lift2 <=))
+
+(def vm-> (vm-lift2 > vm-bool))
+(def vm->= (vm-lift2 >= vm-bool))
+(def vm-< (vm-lift2 < vm-bool))
+(def vm-<= (vm-lift2 <= vm-bool))
+
+;; operations operating on type values and returing typed values
 
 ; TODO non numerics
 (defn- vm-+ [a b]
@@ -265,37 +286,26 @@
    (vm-sstring? a) (str (value a) (convert-to-string b))
    :else (abort "BAD_TYPE_ADD")))
 
-; TODO non numerics
-(defn- vm-- [a b]
-  (cond
-   (vm-int? a) (if (vm-int? b)
-                 (vm-int (- (value a) (value b)))
-                 (abort "NUM_VAL_REQD"))))
+;; TODO non numerics
 
-; TODO non numerics
-(defn- vm-* [a b]
-  (cond
-   (vm-int? a) (if (vm-int? b)
-                 (vm-int (* (value a) (value b)))
-                 (abort "NUM_VAL_REQD"))
-   :else (abort "NUM_VAL_REQD")))
+(def vm-- (vm-lift2 - vm-int))
+(def vm-* (vm-lift2 * vm-int))
+(def vm-div (vm-lift2 / vm-int)) ; TODO div by zero
+(def vm-mod (vm-lift2 mod vm-int)) ; TODO div by zero
+(def vm-<< (vm-lift2 bit-shift-left vm-int))
+(def vm->> (vm-lift2 bit-shift-right vm-int))
+(def vm-inc (vm-lift1 inc vm-int))
+(def vm-dec (vm-lift1 dec vm-int))
 
-(defn- vm-div [a b]
-  (cond
-   (vm-int? a) (if (= (value b) 0)
-                 (abort "DIVIDE_BY_ZERO")
-                 (if (vm-int? b)
-                   (vm-int (/ (value a) (value b)))
-                   (abort "NUM_VAL_REQD")))
-   :else (abort "num vals")))
+;; Clojure doesn't expose java's >>>, this is from http://pastebin.com/4PgeHmPJ
+(defn logical-shift-right [n s] 
+  (if (neg? n) 
+    (bit-or (bit-shift-right (bit-and n 0x7fffffff) s)
+            (bit-shift-right 0x40000000 (dec s)))
+    (bit-shift-right n s)))
 
-(defn- vm-mod [a b]
-  (cond
-   (vm-int? a) (if (= (value b) 0)
-                 (abort "DIVIDE_BY_ZERO")
-                 (if (vm-int? b)
-                   (vm-int (mod (value a) (value b)))
-                   (abort "NUM_VAL_REQD")))))
+(def vm->>> (vm-lift2 logical-shift-right vm-int))
+(def vm-xor (vm-lift2 bit-xor vm-int))
 
 (defn- vm-falsey? [val]
   (or (vm-nil? val) (and (vm-int? val) (vm-zero? val))))
@@ -369,25 +379,38 @@
   (with-stack [val]
     [(if (vm-int? val) (vm-int (bit-not (value val))) (abort "non-numerics"))]))
 
+(defn- stack-op1 [op]
+  (with-stack [val] [(op val)]))
+
+(defn- stack-op2 [op]
+  (with-stack [a b] [(op a b)]))
+
 (defop add 0x22 []
-  (with-stack [a b] [(vm-+ a b)]))
+  (stack-op2 vm-+))
 
 (defop sub 0x23 []
-  (with-stack [a b] [(vm-- a b)]))
+  (stack-op2 vm--))
 
 (defop mul 0x24 []
-  (with-stack [a b] [(vm-* a b)]))
+  (stack-op2 vm-*))
 
-(defop shl 0x27 [])
-(defop ashr 0x28 [])
-(defop xor 0x29 [])
-(defop lshr 0x30 [])
+(defop shl 0x27 []
+  (stack-op2 vm-<<))
+  
+(defop ashr 0x28 []
+  (stack-op2 vm->>))
+
+(defop xor 0x29 []
+  (stack-op2 vm-xor))
+
+(defop lshr 0x30 []
+  (stack-op2 vm->>>))
 
 (defop div 0x2A []
-  (with-stack [a b] [(vm-div a b)]))
+  (stack-op2 vm-div))
 
 (defop mod 0x2B []
-  (with-stack [a b] [(vm-mod a b)]))
+  (stack-op2 vm-mod))
 
 (defop not 0x2c []
   (with-stack [val]
@@ -397,15 +420,11 @@
   (with-stack [val]
     [(vm-bool (not (vm-falsey? val)))]))
 
-; TODO check type
 (defop inc 0x2e []
-  (with-stack [val]
-    [(vm-int (inc (value val)))]))
+  (stack-op1 vm-inc))
 
-; TODO check type
 (defop dec 0x2f []
-  (with-stack [val]
-    [(vm-int (dec (value val)))]))
+  (stack-op1 vm-dec))
 
 (defop eq 0x40 []
   (with-stack [a b] [(vm-bool (vm-eq? a b))]))
@@ -414,16 +433,16 @@
   (with-stack [a b] [(vm-bool (not (vm-eq? a b)))]))
 
 (defop lt 0x42 []
-  (with-stack [a b] [(vm-bool (vm-< a b))]))
+  (stack-op2 vm-<))
 
 (defop le 0x43 []
-  (with-stack [a b] [(vm-bool (not (vm-> a b)))]))
+  (stack-op2 vm-<=))
 
 (defop gt 0x44 []
-  (with-stack [a b] [(vm-bool (vm-> a b))]))
+  (stack-op2 vm->))
 
 (defop ge 0x45 []
-  (with-stack [a b] [(vm-bool (not (vm-< a b)))]))
+  (stack-op2 vm->=))
 
 (defn unwind []
   (domonad vm-m
@@ -533,39 +552,54 @@
             _ (stack-swap (- sp idx1) (- sp idx2))]
            nil))
 
-(defop getargn0 0x7C [])
-(defop getargn1 0x7D [])
-(defop getargn2 0x7E [])
-(defop getargn3 0x7F [])
+;; A set of operations which retrieve an item from lower down the
+;; stack and push it onto the stack
+
+(defn- copy [offsetf]
+  (domonad vm-m [fp (reg-get :fp)
+                 rv (stack-get (offsetf fp))
+                 _ (stack-push rv)]
+           nil))
 
 (defop getlcl1 0x80 [:ubyte local_number]
-  (domonad vm-m [fp (reg-get :fp)
-                 rv (stack-get (+ fp local_number))
-                 _ (stack-push rv)]
-           nil))
+  (copy (partial + local_number)))
 
 (defop getlcl2 0x81 [:uint2 local_number]
-  (domonad vm-m [fp (reg-get :fp)
-                 rv (stack-get (+ fp local_number))
-                 _ (stack-push rv)]
-           nil))
+  (copy (partial + local_number)))
 
 (defop getarg1 0x82 [:ubyte param_number]
-  (domonad vm-m [fp (reg-get :fp)
-                 val (stack-get (- fp (+ 9 param_number)))
-                 _ (stack-push val)]
-           nil))
+  (copy #(- % (+ 9 param_number))))
 
 (defop getarg2 0x83 [:UNIT2 param_number]
-  (domonad vm-m [fp (reg-get :fp)
-                 val (stack-get (- fp (+ 9 param_number)))
-                 _ (stack-push val)]
-           nil))
+  (copy #(- % (+ 9 param_number))))
 
-(defop pushself 0x84 [])
-(defop getdblcl 0x85 [:uint2 local_number])
-(defop getdbarg 0x86 [:uint2 param_number])
-(defop getargc 0x87 [])
+(defop getargn0 0x7C []
+  (copy #(- % 9)))
+
+(defop getargn1 0x7D []
+  (copy #(- % 10)))
+
+(defop getargn2 0x7E []
+  (copy #(- % 11)))
+
+(defop getargn3 0x7F []
+  (copy #(- % 12)))
+
+(defop pushself 0x84 []
+  (copy #(- % 5)))
+
+; TODO debugger
+(defop getdblcl 0x85 [:uint2 local_number]
+  (abort "Not implemented"))
+
+; TODO debugger
+(defop getdbarg 0x86 [:uint2 param_number]
+  (abort "Not implemented"))
+
+(defop getargc 0x87 []
+  (copy #(- % 2)))
+
+;; Simple stack manipulations
 
 (defop dup 0x88 []
   (with-stack [x] [x x]))
@@ -579,59 +613,84 @@
 (defop getr0 0x8B []
   (reg-get :r0))
 
-; TODO 
+; TODO debugger
 (defop getdbargc 0x8C [])
 
 (defop swap 0x8D []
   (with-stack [x y] [y x]))
 
-; TODO
+; TODO context store / retrieve
 (defop pushctxele 0x8E [:ubyte element])
 
 (defop dup2 0x8F []
   (with-stack [a b] [a b a b]))
 
-; TODO
+; TODO switch
 (defop switch 0x90 [:SPECIAL])
+
+;; Various jump and branch operations
 
 (defop jmp 0x91 [:int2 branch_offset]
   (jump branch_offset))
 
-(defop jt 0x92 [:int2 branch_offset]
+(defn- jump-cond1
+  [jumpif? branch_offset]
   (domonad vm-m
            [v (stack-pop)
-            _ (m-when (not (vm-falsey? v)) (jump branch_offset))]
+            _ (m-when (jumpif? v) (jump branch_offset))]
            nil))
+
+(defn- jump-cond2
+  [jumpif? branch_offset]
+   (domonad vm-m
+            [v2 (stack-pop)
+             v1 (stack-pop)
+             _ (m-when (jumpif? v1 v2) (jump branch_offset))]
+            nil))
+
+(defop jt 0x92 [:int2 branch_offset]
+  (jump-cond1 (complement vm-falsey?) branch_offset))
 
 (defop jf 0x93 [:int2 branch_offset]
-  (domonad vm-m
-           [v (stack-pop)
-            _ (m-when (vm-falsey? v) (jump branch_offset))]
-           nil))
+  (jump-cond1 vm-falsey? branch_offset))
 
 (defop je 0x94 [:int2 branch_offset]
-  (domonad vm-m
-           [v2 (stack-pop)
-            v1 (stack-pop)
-            _ (m-when (vm-eq? v1 v2) (jump branch_offset))]
-           nil))
+  (jump-cond2 vm-eq? branch_offset))
 
 (defop jne 0x95 [:int2 branch_offset]
-  (domonad vm-m
-           [v2 (stack-pop)
-            v1 (stack-pop)
-            _ (m-when (not (vm-eq? v1 v2)) (jump branch_offset))]
+  (jump-cond2 (complement vm-eq?) branch_offset))
+
+(defop jgt 0x96 [:int2 branch_offset]
+  (jump-cond2 vm->? branch_offset))
+
+(defop jge 0x97 [:int2 branch_offset]
+  (jump-cond2 vm->=? branch_offset))
+
+(defop jlt 0x98 [:int2 branch_offset]
+  (jump-cond2 vm-<? branch_offset))
+
+(defop jle 0x99 [:int2 branch_offset]
+  (jump-cond2 vm-<=? branch_offset))
+
+(defop jst 0x9A [:int2 branch_offset]
+  (domonad vm-m [v (stack-peek)
+                 _ (if (not (vm-falsey? v))
+                     (jump branch_offset)
+                     (stack-pop))]
            nil))
 
-(defop jgt 0x96 [:int2 branch_offset])
-(defop jge 0x97 [:int2 branch_offset])
-(defop jlt 0x98 [:int2 branch_offset])
-(defop jle 0x99 [:int2 branch_offset])
-(defop jst 0x9A [:int2 branch_offset])
-(defop jsf 0x9B [:int2 branch_offset])
+(defop jsf 0x9B [:int2 branch_offset]
+  (domonad vm-m [v (stack-peek)
+                 _ (if (vm-falsey? v)
+                     (jump branch_offset)
+                     (stack-pop))]
+           nil))
+
+;; Local jumps
 
 (defop ljsr 0x9C [:int2 branch_offset])
 (defop lret 0x9D [:int2 local_variable_number])
+
 (defop jnil 0x9E [:int2 branch_offset])
 (defop jnotnil 0x9F [:int2 branch_offset])
 (defop jr0t 0xA0 [:int2 branch_offset])

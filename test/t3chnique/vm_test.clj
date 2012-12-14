@@ -221,6 +221,20 @@
           (is (= (:sp after) 15))
           (is (= (value (last (:stack after))) (+ 100 i))))))))
 
+(deftest test-push-sefl
+  (testing "Test push self"
+    (let [init (merge (vm-state) {:fp 10
+                                  :sp 14
+                                  :stack [(vm-int 101) (vm-int 100)
+                                          (vm-prop 10) (vm-obj 0x12) (vm-obj 0x22) (vm-obj 0x33)
+                                          (vm-codeofs 0x20)
+                                          (vm-codeofs 0x10)
+                                          (vm-int 2)
+                                          (vm-int 0)
+                                          (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
+          after (apply-to-state init [(op-pushself)])]
+      (is (= (value (last (:stack after))) 0x33)))))
+
 (deftest test-jump
   (testing "Jumps"
     (is (= (apply-to-state (merge (vm-state) {:ip 0x66}) [(op-jmp 0x11)])

@@ -10,5 +10,5 @@
                  [compojure "1.1.3"]
                  [ring/ring-jetty-adapter "1.1.0"]
                  [ring-middleware-format "0.2.2"]
-                 [hiccup "1.0.1"]
+                 [hiccup "1.0.2"]
                  [org.clojure/tools.trace "0.7.3"]])

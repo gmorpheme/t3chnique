@@ -1,4 +1,4 @@
-(ns t3chnique.vm-test
+(ns t3chnique.image-test
   (:use clojure.test
         clojure.java.io
         t3chnique.image))

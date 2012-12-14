@@ -1,4 +1,4 @@
-(ns t3chnique.test.metaclass_test
+(ns t3chnique.metaclass_test
   (:use [clojure.test]
         [t3chnique.metaclass])
   (:require [t3chnique.vm :as vm]
