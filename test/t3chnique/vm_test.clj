@@ -4,16 +4,21 @@
         t3chnique.vm
         t3chnique.primitive))
 
+;; helpers
+
 (defn stack-after [& ops]
   (with-monad state-m
     (:stack (second ((m-seq ops) (vm-state))))))
 
-(defn apply-to-state [init ops]
+(defn apply-ops [init ops]
   (with-monad state-m
     (second ((m-seq ops) init))))
 
 (defn apply-with-stack [stack ops]
-  (:stack (apply-to-state (merge (vm-state) {:stack stack :sp (count stack)}) ops)))
+  (:stack (apply-ops (merge (vm-state) {:stack stack :sp (count stack)}) ops)))
+
+(defn vm-state-with [& args]
+  (apply assoc (vm-state) args))
 
 (deftest test-pushes
   (testing "Simple pushes"
@@ -92,31 +97,32 @@
 
 (deftest test-bitwise
   (testing "bnot"
+    ;; TODO fix bnot
     #_(is (= (stack-after (op-pushint 0xffffffff) (op-bnot)) [(vm-int 0x00000000)]))))
 
 (deftest test-call-stack
   (with-redefs [get-method-header (fn [ptr] (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))]
-    (testing "call stack"
-      (is (=
-           (apply-to-state
-             (merge (vm-state) {:ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)]})
-             [(op-call 2 0x1234)])
-           (merge (vm-state) {:ep 0x1234
-                              :ip 0x123e
-                              :fp 10
-                              :sp 14
-                              :stack [(vm-int 1) (vm-int 2)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                      (vm-codeofs 0x20)
-                                      (vm-codeofs 0x10)
-                                      (vm-int 2)
-                                      (vm-int 0)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]}))))))
+    (let [st (vm-state-with :ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)])]
+      (testing "call stack"
+        (is (=
+             (apply-ops st [(op-call 2 0x1234)])
+             (assoc st
+               :ep 0x1234
+               :ip 0x123e
+               :fp 10
+               :sp 14
+               :stack [(vm-int 1) (vm-int 2)
+                       (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                       (vm-codeofs 0x20)
+                       (vm-codeofs 0x10)
+                       (vm-int 2)
+                       (vm-int 0)
+                       (vm-nil) (vm-nil) (vm-nil) (vm-nil)])))))))
 
 (deftest test-returns
   (testing "Testing returns"
     (is (=
-         (apply-to-state
+         (apply-ops
            (merge (vm-state) {:ep 0x1234
                               :ip 0x123e
                               :fp 10
@@ -137,7 +143,7 @@
                             :r0 (vm-int 99)
                             :stack []})))
     (is (=
-         (apply-to-state
+         (apply-ops
            (merge (vm-state) {:ep 0x1234
                               :ip 0x123e
                               :fp 10
@@ -157,7 +163,7 @@
                             :r0 (vm-nil)
                             :stack []})))
     (is (=
-         (apply-to-state
+         (apply-ops
            (merge (vm-state) {:ep 0x1234
                               :ip 0x123e
                               :fp 10
@@ -177,7 +183,7 @@
                             :r0 (vm-true)
                             :stack []})))
     (is (=
-         (apply-to-state
+         (apply-ops
            (merge (vm-state) {:ep 0x1234
                               :ip 0x123e
                               :fp 10
@@ -217,7 +223,7 @@
                                           (vm-int 0)
                                           (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})]
       (doseq [i (range 2) op [op-getarg1 op-getarg2]]
-        (let [after (apply-to-state init [(op i)])]
+        (let [after (apply-ops init [(op i)])]
           (is (= (:sp after) 15))
           (is (= (value (last (:stack after))) (+ 100 i))))))))
 
@@ -232,69 +238,43 @@
                                           (vm-int 2)
                                           (vm-int 0)
                                           (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
-          after (apply-to-state init [(op-pushself)])]
+          after (apply-ops init [(op-pushself)])]
       (is (= (value (last (:stack after))) 0x33)))))
 
 (deftest test-jump
   (testing "Jumps"
-    (is (= (apply-to-state (merge (vm-state) {:ip 0x66}) [(op-jmp 0x11)])
-           (merge (vm-state) {:ip 0x75})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-je 0x11)])
-           (merge (vm-state) {:ip 0x75})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-jne 0x11)])
-           (merge (vm-state) {:ip 0x66})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jt 0x11)])
-           (merge (vm-state) {:ip 0x75})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jt 0x11)])
-           (merge (vm-state) {:ip 0x66})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jf 0x11)])
-           (merge (vm-state) {:ip 0x66})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jf 0x11)])
-           (merge (vm-state) {:ip 0x75})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jnil 0x11)])
-           (merge (vm-state) {:ip 0x75})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jnotnil 0x11)])
-           (merge (vm-state) {:ip 0x66})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jnotnil 0x11)])
-           (merge (vm-state) {:ip 0x75})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jnil 0x11)])
-           (merge (vm-state) {:ip 0x66})))))
+    (is (= (apply-ops (vm-state-with :ip 0x66) [(op-jmp 0x11)])
+           (vm-state-with :ip 0x75)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]) [(op-je 0x11)])
+           (vm-state-with :ip 0x75)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]) [(op-jne 0x11)])
+           (vm-state-with :ip 0x66)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jt 0x11)])
+           (vm-state-with :ip 0x75)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jt 0x11)])
+           (vm-state-with :ip 0x66)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jf 0x11)])
+           (vm-state-with :ip 0x66)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jf 0x11)])
+           (vm-state-with :ip 0x75)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jnil 0x11)])
+           (vm-state-with :ip 0x75)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jnotnil 0x11)])
+           (vm-state-with :ip 0x66)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jnotnil 0x11)])
+           (vm-state-with :ip 0x75)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jnil 0x11)])
+           (vm-state-with :ip 0x66)))))
 
 (deftest test-jump-and-save
-  (testing "Jump and save"
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-jst 0x11)])
-           (merge (vm-state) {:sp 1 :stack [(vm-int 0)] :ip 0x66})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 1)]}) [(op-jst 0x11)])
-           (merge (vm-state) {:ip 0x75 :sp 2 :stack [(vm-int 0) (vm-int 1)]})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-jsf 0x11)])
-           (merge (vm-state) {:ip 0x75 :sp 2 :stack [(vm-int 0) (vm-int 0)]})))
-    (is (= (apply-to-state
-            (merge (vm-state)
-                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 1)]}) [(op-jsf 0x11)])
-           (merge (vm-state) {:sp 1 :stack [(vm-int 0)] :ip 0x66})))))
+  (let [false-state (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)])
+        true-state (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 1)])]
+    (testing "Jump and save"
+      (is (= (apply-ops false-state [(op-jst 0x11)])
+             (assoc false-state :sp 1 :stack [(vm-int 0)])))
+      (is (= (apply-ops true-state [(op-jst 0x11)])
+             (assoc true-state :ip 0x75)))
+      (is (= (apply-ops false-state [(op-jsf 0x11)])
+             (assoc false-state :ip 0x75)))
+      (is (= (apply-ops true-state [(op-jsf 0x11)])
+             (assoc true-state :sp 1 :stack [(vm-int 0)]))))))
