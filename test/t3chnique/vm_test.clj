@@ -262,5 +262,39 @@
     (is (= (apply-to-state
             (merge (vm-state)
                    {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jf 0x11)])
-           (merge (vm-state) {:ip 0x75})))))
+           (merge (vm-state) {:ip 0x75})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jnil 0x11)])
+           (merge (vm-state) {:ip 0x75})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-nil)]}) [(op-jnotnil 0x11)])
+           (merge (vm-state) {:ip 0x66})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jnotnil 0x11)])
+           (merge (vm-state) {:ip 0x75})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 1 :stack [(vm-true)]}) [(op-jnil 0x11)])
+           (merge (vm-state) {:ip 0x66})))))
 
+(deftest test-jump-and-save
+  (testing "Jump and save"
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-jst 0x11)])
+           (merge (vm-state) {:sp 1 :stack [(vm-int 0)] :ip 0x66})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 1)]}) [(op-jst 0x11)])
+           (merge (vm-state) {:ip 0x75 :sp 2 :stack [(vm-int 0) (vm-int 1)]})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]}) [(op-jsf 0x11)])
+           (merge (vm-state) {:ip 0x75 :sp 2 :stack [(vm-int 0) (vm-int 0)]})))
+    (is (= (apply-to-state
+            (merge (vm-state)
+                   {:ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 1)]}) [(op-jsf 0x11)])
+           (merge (vm-state) {:sp 1 :stack [(vm-int 0)] :ip 0x66})))))

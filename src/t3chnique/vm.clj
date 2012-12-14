@@ -27,7 +27,7 @@
 
 (defonce table (atom {}))
 
-;; code pool
+(declare runop)
 
 (defmacro defop
   "Define a bytecode instruction"
@@ -35,9 +35,12 @@
   (let [param-defs (partition 2 plist)
         param-types (vec (map first param-defs))
         param-syms (vec (map second param-defs))
-        spec (vec (apply concat (for [[t s] param-defs] [t (keyword s)])))]
+        spec (vec (apply concat (for [[t s] param-defs] [t (keyword s)])))
+        op-fn-name (symbol (str "op-" op))]
     `(do
-       (defn ^{:opcode ~cd} ~(symbol (str "op-" op)) ~param-syms ~@exprs)
+       (defn ^{:opcode ~cd} ~op-fn-name ~param-syms
+         (runop (fn [] ~@exprs)))
+       
        (swap! table assoc ~cd (OpCode. ~cd '~op ~spec ~(symbol (str "op-" op)))))))
 
 (defmacro with-stack 
@@ -53,11 +56,11 @@
 ;; vm state:
 (defn vm-state []
   {:stack []
-   :r0 0
-   :ip 0
-   :ep 0
-   :sp 0
-   :fp 0
+   :r0 0 ; ret val
+   :ip 0 ; instruction pointer
+   :ep 0 ; entry point
+   :sp 0 ; stack pointer
+   :fp 0 ; frame pointer
    :savepoint 0
    :savepoint-count 0
    :code []
@@ -97,54 +100,65 @@
          _# (.position ~bsym o#)]
      ~@exprs))
 
-(defn bump-ip [s count]
-  (update-in s :ip (partial + count)))
+(defn fresh-pc []
+  (fn [s] [nil (assoc s :pc (:ip s))]))
+
+(defn set-pc [p]
+  (fn [s] [nil (assoc s :pc p)]))
+
+(defn commit-pc []
+  (fn [s] [nil (-> s
+                  (assoc :ip (:pc s))
+                  (dissoc :pc))]))
+
+(defn bump-pc [s count]
+  (update-in s [:pc] (partial + count)))
 
 (defn code-read-ubyte []
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-ubyte buf) (bump-ip s 1)])))
+      [(ber/read-ubyte buf) (bump-pc s 1)])))
 
 (defn code-read-sbyte []
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-sbyte buf) (bump-ip s 1)])))
+      [(ber/read-sbyte buf) (bump-pc s 1)])))
 
 (defn code-read-uint2 []
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-uint2 buf) (bump-ip s 2)])))
+      [(ber/read-uint2 buf) (bump-pc s 2)])))
 
 (defn code-read-int2 []
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-int2 buf) (bump-ip s 2)])))
+      [(ber/read-int2 buf) (bump-pc s 2)])))
 
 (defn code-read-uint4 []
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-uint4 buf) (bump-ip s 4)])))
+      [(ber/read-uint4 buf) (bump-pc s 4)])))
 
 (defn code-read-int4 []
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-int4 buf) (bump-ip s 4)])))
+      [(ber/read-int4 buf) (bump-pc s 4)])))
 
 (defn code-read-utf8 [count]
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-utf8 count) (bump-ip s count)])))
+      [(ber/read-utf8 count) (bump-pc s count)])))
 
 (defn code-read-pref-utf8 []
   (fn [s]
     (with-buffer [buf s]
       (let [count (ber/read-uint2 buf)]
-        [(ber/read-utf8 count) (bump-ip s count)]))))
+        [(ber/read-utf8 count) (bump-pc s count)]))))
 
 (defn code-read-data-holder []
   (fn [s]
     (with-buffer [buf s]
-      [(ber/read-data-holder buf) (bump-ip s 5)])))
+      [(ber/read-data-holder buf) (bump-pc s 5)])))
 
 (defn code-read-item [type-sym]
   (condp = type-sym
@@ -185,7 +199,7 @@
 
 (defn stack-peek []
   (fn [s]
-    [(last (:stack s)) identity]))
+    [(last (:stack s)) s]))
 
 (defn stack-set [idx val]
   (fn [s]
@@ -211,6 +225,9 @@
           stack (concat prei [jv] prej [iv] postj)]
       [nil (assoc s :stack stack)])))
 
+(defn pc []
+  (fn [s] [(:pc s) s]))
+
 (defn reg-get [k]
   (fn [s] [(k s) s]))
 
@@ -228,10 +245,14 @@
   (fn [s] [(get-in s [:objs oid]) s]))
 
 (defn jump [offset]
-  (domonad vm-m
-           [ip (reg-get :ip)
-            _ (reg-set :ip (+ (- ip 2) offset))]
-           nil))
+  (fn [s] [nil (bump-pc s (- offset 2))]))
+
+;; The main step function
+(defn runop
+  "Sets up program counter for a single operations implementation and handles
+   exceptions, rollback etc."
+  [op]
+  (with-monad vm-m (m-seq [(fresh-pc) (op) (commit-pc)])))
 
 ;; Operations on primitives / op overloads
 
@@ -456,7 +477,7 @@
             _ (m-seq (repeat (+ 4 (value ac)) (stack-pop)))
             _ (reg-set :fp (value fp))
             _ (reg-set :ep (value ep))
-            _ (reg-set :ip (+ (value ep) (value of)))]
+            _ (set-pc (+ (value ep) (value of)))]
            nil))
 
 (defop retval 0x50 []
@@ -498,9 +519,9 @@
   (domonad vm-m
            [_ (m-seq (repeat 4 (stack-push (vm-nil))))
             ep (reg-get :ep)
-            ip (reg-get :ip)
+            p (pc)
             fp (reg-get :fp)
-            _ (stack-push (vm-codeofs (- ip ep)))
+            _ (stack-push (vm-codeofs (- p ep)))
             _ (stack-push (vm-codeofs ep))
             _ (stack-push (vm-int arg_count))
             _ (stack-push (vm-int fp))
@@ -510,7 +531,7 @@
             mh (get-method-header func_offset)
 ;            _ (m-when (check-argc mh arg_count))
             _ (m-seq (repeat (:local-variable-count mh) (stack-push (vm-nil))))
-            _ (reg-set :ip (+ func_offset (:code-offset mh)))]
+            _ (set-pc (+ func_offset (:code-offset mh)))]
            nil))
 
 (defop ptrcall 0x59 [:ubyte arg_count])
@@ -691,10 +712,16 @@
 (defop ljsr 0x9C [:int2 branch_offset])
 (defop lret 0x9D [:int2 local_variable_number])
 
-(defop jnil 0x9E [:int2 branch_offset])
-(defop jnotnil 0x9F [:int2 branch_offset])
+(defop jnil 0x9E [:int2 branch_offset]
+  (jump-cond1 vm-nil? branch_offset))
+
+(defop jnotnil 0x9F [:int2 branch_offset]
+  (jump-cond1 (complement vm-nil?) branch_offset))
+
 (defop jr0t 0xA0 [:int2 branch_offset])
+
 (defop jr0f 0xA1 [:int2 branch_offset])
+
 (defop getspn 0xA6 [:ubyte index])
 
 (defop getlcln0 0x8AA [])
