@@ -576,38 +576,38 @@
 ;; A set of operations which retrieve an item from lower down the
 ;; stack and push it onto the stack
 
-(defn- copy [offsetf]
-  (domonad vm-m [fp (reg-get :fp)
+(defn- copy [reg offsetf]
+  (domonad vm-m [fp (reg-get reg)
                  rv (stack-get (offsetf fp))
                  _ (stack-push rv)]
            nil))
 
 (defop getlcl1 0x80 [:ubyte local_number]
-  (copy (partial + local_number)))
+  (copy :fp (partial + local_number)))
 
 (defop getlcl2 0x81 [:uint2 local_number]
-  (copy (partial + local_number)))
+  (copy :fp (partial + local_number)))
 
 (defop getarg1 0x82 [:ubyte param_number]
-  (copy #(- % (+ 9 param_number))))
+  (copy :fp #(- % (+ 9 param_number))))
 
 (defop getarg2 0x83 [:UNIT2 param_number]
-  (copy #(- % (+ 9 param_number))))
+  (copy :fp #(- % (+ 9 param_number))))
 
 (defop getargn0 0x7C []
-  (copy #(- % 9)))
+  (copy :fp #(- % 9)))
 
 (defop getargn1 0x7D []
-  (copy #(- % 10)))
+  (copy :fp #(- % 10)))
 
 (defop getargn2 0x7E []
-  (copy #(- % 11)))
+  (copy :fp #(- % 11)))
 
 (defop getargn3 0x7F []
-  (copy #(- % 12)))
+  (copy :fp #(- % 12)))
 
 (defop pushself 0x84 []
-  (copy #(- % 5)))
+  (copy :fp #(- % 5)))
 
 ; TODO debugger
 (defop getdblcl 0x85 [:uint2 local_number]
@@ -618,7 +618,8 @@
   (abort "Not implemented"))
 
 (defop getargc 0x87 []
-  (copy #(- % 2)))
+  (copy :fp #(- % 2)))
+
 
 ;; Simple stack manipulations
 
@@ -718,27 +719,59 @@
 (defop jnotnil 0x9F [:int2 branch_offset]
   (jump-cond1 (complement vm-nil?) branch_offset))
 
-(defop jr0t 0xA0 [:int2 branch_offset])
+(defop jr0t 0xA0 [:int2 branch_offset]
+  (domonad vm-m [r0 (reg-get :r0)
+                 _ (m-when (not (vm-falsey? r0)) (jump branch_offset))]
+           nil))
 
-(defop jr0f 0xA1 [:int2 branch_offset])
+(defop jr0f 0xA1 [:int2 branch_offset]
+  (domonad vm-m [r0 (reg-get :r0)
+                 _ (m-when (vm-falsey? r0) (jump branch_offset))]
+           nil))
 
-(defop getspn 0xA6 [:ubyte index])
+(defop getspn 0xA6 [:ubyte index]
+  (copy :sp #(- % (inc index))))
 
-(defop getlcln0 0x8AA [])
-(defop getlcln1 0x8AB [])
-(defop getlcln2 0x8AC [])
-(defop getlcln3 0x8AD [])
-(defop getlcln4 0x8AE [])
-(defop getlcln5 0x8AF [])
+(defop getlcln0 0x8AA []
+  (copy :fp identity))
 
+(defop getlcln1 0x8AB []
+  (copy :fp inc))
+
+(defop getlcln2 0x8AC []
+  (copy :fp (partial + 2)))
+
+(defop getlcln3 0x8AD []
+  (copy :fp (partial + 3)))
+
+(defop getlcln4 0x8AE []
+  (copy :fp (partial + 4)))
+
+(defop getlcln5 0x8AF []
+  (copy :fp (partial + 5)))
+
+;; TODO
 (defop say 0xB0 [:uint4 offset])
+
+;; TODO bifs
 (defop builtin_a 0xB1 [:ubyte argc :ubyte func_index])
+
+;; TODO bifs
 (defop builtin_b 0xB2 [:ubyte argc :ubyte func_index])
+
+;; TODO bifs
 (defop builtin_c 0xB3 [:ubyte argc :ubyte func_index])
+
+;; TODO bifs
 (defop builtin_d 0xB4 [:ubyte argc :ubyte func_index])
+
+;; TODO bifs
 (defop builtin1 0xB5 [:ubyte argc :ubyte func_index :ubyte set_index])
+
+;; TODO bifs
 (defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index])
-(defop callext 0xB7 [])
+
+(defop callext 0xB7 [] (abort "callext not implemented"))
 
 ; TODO implement
 (defop throw 0xB8 []
@@ -752,35 +785,106 @@
             ]
            nil))
 
+;; TODO
 (defop sayval 0xB9 [])
+
+;; TODO
 (defop index 0xBA [])
+
+;; TODO
 (defop idxlcl1int8 0xBB [:ubyte local_number :ubyte index_val])
+
+;; TODO
 (defop idxint8 0xBC [:ubyte index_val])
+
+;; TODO
 (defop new1 0xC0 [:ubyte arg_count :ubyte metaclass_id])
+
+;; TODO
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id])
+
+;; TODO
 (defop trnew1 0xC2 [:ubyte arg_count :ubyte metaclass_id])
+
+;; TODO
 (defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id])
 
-(defop inclcl 0xD0 [:uint2 local_number])
+(defn- setlcl [i v]
+  (domonad vm-m [fp (reg-get :fp)
+                 _ (stack-set (+ fp i) v)]
+           nil))
 
+(defn- updlcl [i f]
+  (domonad vm-m [fp (reg-get :fp)
+                 v (stack-get (+ fp i))
+                 _ (stack-set (+ fp i) (f v))]
+           nil))
+
+(defop inclcl 0xD0 [:uint2 local_number]
+  (updlcl local_number vm-inc))
+
+; TODO
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id])
-(defop declcl 0xD1 [:uint2 local_number])
-(defop addilcl1 0xD2 [:ubyte local_number :sbyte val])
-(defop addilcl4 0xD3 [:uint2 local_number :int4 val])
-(defop addtolcl 0xD4 [:uint2 local_number])
-(defop subfromlcl 0xD5 [:uint2 local_number])
-(defop zerolcl1 0xD6 [:ubyte local_number])
-(defop zerolcl2 0xD7 [:uint2 local_number])
+
+(defop declcl 0xD1 [:uint2 local_number]
+  (updlcl local_number vm-dec))
+
+(defop addilcl1 0xD2 [:ubyte local_number :sbyte val]
+  (updlcl local_number (partial vm-+ val)))
+
+(defop addilcl4 0xD3 [:uint2 local_number :int4 val]
+  (updlcl local_number (partial vm-+ val)))
+
+(defop addtolcl 0xD4 [:uint2 local_number]
+  (domonad vm-m [v (stack-pop)
+                 _ (updlcl local_number #(vm-+ % v))]
+           nil))
+
+(defop subfromlcl 0xD5 [:uint2 local_number]
+  (domonad vm-m [v (stack-pop)
+                 _ (updlcl local_number #(vm-- % v))]
+           nil))
+
+(defop zerolcl1 0xD6 [:ubyte local_number]
+  (setlcl local_number (vm-int 0)))
+
+(defop zerolcl2 0xD7 [:uint2 local_number]
+  (setlcl local_number (vm-int 0)))
 
 (defop nillcl1 0xD8 [:ubyte local_number]
-  )
-(defop nillcl2 0xD9 [:uint2 local_number])
-(defop onelcl1 0xDA [:ubyte local_number])
-(defop onelcl2 0xDB [:uint2 local_number])
-(defop setlcl1 0xE0 [:ubyte local_number])
-(defop setlcl2 0xE1 [:uint2 local_number])
-(defop setarg1 0xE2 [:ubyte arg_number])
-(defop setarg2 0xE3 [:uint2 arg_number])
+  (setlcl local_number (vm-nil)))
+
+(defop nillcl2 0xD9 [:uint2 local_number]
+  (setlcl local_number (vm-nil)))
+
+(defop onelcl1 0xDA [:ubyte local_number]
+  (setlcl local_number (vm-int 1)))
+
+(defop onelcl2 0xDB [:uint2 local_number]
+  (setlcl local_number (vm-int 1)))
+
+(defop setlcl1 0xE0 [:ubyte local_number]
+  (domonad vm-m [v (stack-pop)
+                 _ (setlcl local_number v)]
+           nil))
+
+(defop setlcl2 0xE1 [:uint2 local_number]
+  (domonad vm-m [v (stack-pop)
+                 _ (setlcl local_number v)]
+           nil))
+
+(defop setarg1 0xE2 [:ubyte arg_number]
+  (domonad vm-m [fp (reg-get :fp)
+                 v (stack-pop)
+                 _ (stack-set (- fp (+ 9 arg_number)) v)]
+           nil))
+
+(defop setarg2 0xE3 [:uint2 arg_number]
+  (domonad vm-m [fp (reg-get :fp)
+                 v (stack-pop)
+                 _ (stack-set (- fp (+ 9 arg_number)) v)]
+           nil))
+
 (defop setind 0xE4 [])
 (defop setprop 0xE5 [:uint2 prop_id])
 (defop ptrsetprop 0xE6 [])
@@ -793,6 +897,8 @@
 (defop storectx 0xED [])
 (defop setlcl1r0 0xEE [:ubyte local_number])
 (defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val])
+
+;; TODO debugger
 (defop bp 0xF1 [])
 
 (defop nop 0xF2 [])

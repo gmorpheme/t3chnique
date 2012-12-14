@@ -227,7 +227,7 @@
           (is (= (:sp after) 15))
           (is (= (value (last (:stack after))) (+ 100 i))))))))
 
-(deftest test-push-sefl
+(deftest test-push-self
   (testing "Test push self"
     (let [init (merge (vm-state) {:fp 10
                                   :sp 14
@@ -264,7 +264,15 @@
     (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jnotnil 0x11)])
            (vm-state-with :ip 0x75)))
     (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jnil 0x11)])
-           (vm-state-with :ip 0x66)))))
+           (vm-state-with :ip 0x66)))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-true)) [(op-jr0t 0x11)])
+           (vm-state-with :ip 0x75 :r0 (vm-true))))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-true)) [(op-jr0f 0x11)])
+           (vm-state-with :ip 0x66 :r0 (vm-true))))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-nil)) [(op-jr0f 0x11)])
+           (vm-state-with :ip 0x75 :r0 (vm-nil))))
+    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-nil)) [(op-jr0t 0x11)])
+           (vm-state-with :ip 0x66 :r0 (vm-nil))))))
 
 (deftest test-jump-and-save
   (let [false-state (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)])
@@ -278,3 +286,37 @@
              (assoc false-state :ip 0x75)))
       (is (= (apply-ops true-state [(op-jsf 0x11)])
              (assoc true-state :sp 1 :stack [(vm-int 0)]))))))
+
+(deftest test-stack-access
+  (let [st (vm-state-with :ep 0x1234
+                          :ip 0x123e
+                          :fp 10
+                          :sp 14
+                          :stack [(vm-int 1) (vm-int 2)
+                                  (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                  (vm-codeofs 0x20)
+                                  (vm-codeofs 0x10)
+                                  (vm-int 2)
+                                  (vm-int 0)
+                                  (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                                  (vm-int 999)])]
+    (is (= (apply-ops st [(op-setarg1 0)])
+           (assoc st
+             :sp 13
+             :stack [(vm-int 1) (vm-int 999)
+                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                     (vm-codeofs 0x20)
+                     (vm-codeofs 0x10)
+                     (vm-int 2)
+                     (vm-int 0)
+                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)])))
+    (is (= (apply-ops st [(op-setarg1 1)])
+           (assoc st
+             :sp13
+             :stack [(vm-int 999) (vm-int 2)
+                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)
+                     (vm-codeofs 0x20)
+                     (vm-codeofs 0x10)
+                     (vm-int 2)
+                     (vm-int 0)
+                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)])))))
