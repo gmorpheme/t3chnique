@@ -1,11 +1,12 @@
 (ns t3chnique.vm
   (:use [t3chnique.primitive])
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val update-val m-seq m-when]])
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when]])
   (:require [t3chnique.ber :as ber]
             [t3chnique.image :as im]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc])
-  (:import [t3chnique.metaclass TadsObject]))
+  (:import [t3chnique.metaclass TadsObject]
+           [t3chnique.intrinsics t3vm]))
 
 (def vm-m state-m)
 
@@ -61,6 +62,10 @@
    :ep 0 ; entry point
    :sp 0 ; stack pointer
    :fp 0 ; frame pointer
+
+   :say-function (vm-nil)
+   :say-method (vm-prop)
+   
    :savepoint 0
    :savepoint-count 0
    :code []
@@ -103,16 +108,20 @@
 (defn fresh-pc []
   (fn [s] [nil (assoc s :pc (:ip s))]))
 
-(defn set-pc [p]
-  (fn [s] [nil (assoc s :pc p)]))
+(def set-pc (partial set-val :pc))
 
 (defn commit-pc []
   (fn [s] [nil (-> s
                   (assoc :ip (:pc s))
                   (dissoc :pc))]))
 
-(defn bump-pc [s count]
+(defn- bump-pc [s count]
   (update-in s [:pc] (partial + count)))
+
+(def get-say-method (fetch-val :say-method))
+(def set-say-method (partial set-val :say-method))
+(def get-say-function (fetch-val :say-function))
+(def set-say-function (partial set-val :say-function))
 
 (defn code-read-ubyte []
   (fn [s]
@@ -228,11 +237,8 @@
 (defn pc []
   (fn [s] [(:pc s) s]))
 
-(defn reg-get [k]
-  (fn [s] [(k s) s]))
-
-(defn reg-set [k v]
-  (fn [s] [nil (assoc s k v)]))
+(def reg-get fetch-val)
+(def reg-set set-val)
 
 (defn obj-store [o]
   (fn [s]
@@ -902,3 +908,51 @@
 (defop bp 0xF1 [])
 
 (defop nop 0xF2 [])
+
+
+;;;;;;;; intrinsic impls
+
+
+(deftype TadsT3 []
+  t3vm
+  (t3RunGC [_]
+    (with-monad vm-m (m-result nil)))
+  (t3SetSay [_ n]
+    (let [no-method 2
+          no-func   1
+          in (fn [v] (if (vm-int? v)
+                      (condp = (value v)
+                        no-func (vm-nil)
+                        no-method (vm-prop)
+                        :else (abort "VMERR_BAD_TYPE_BIF"))))
+          out (fn [v] (condp = v
+                       (vm-nil) (vm-int no-func)
+                       (vm-prop) (vm-int no-method)
+                      :else v))]
+      (domonad vm-m
+               [val (stack-pop)
+                val' (in val)
+                current (if (vm-prop? val') (get-say-method) (get-say-function))
+                _ (if (vm-prop? val') (set-say-method val') (set-say-function val'))
+                _ (reg-set :r0 (out current))]
+               nil)))
+  (t3GetVMVsn [_]
+    (domonad vm-m [_ (reg-set :r0 (vm-int 0x00000001))] nil))
+  (t3GetVMID [_]
+    (domonad vm-m [_ (reg-set :r0 (vm-sstring "t3chnique"))] nil))
+  (t3GetVMBanner [_]
+    (domonad vm-m [_ (reg-set :r0 (vm-sstring "T3chnique Experimental TADS 3 VM - Copyright 2012 Greg Hawkins"))] nil))
+  (t3GetVMPreinitMode [_]
+    (domonad vm-m [_ (reg-set :r0 (vm-nil))] nil))
+  (t3DebugTrace [_ mode & args]
+    (domonad vm-m [_ (reg-set :r0 (vm-nil))] nil))
+  ;; TODO symbol table access
+  (t3GetGlobalSymbols [_ which?])
+  ;; TODO prop allocation
+  (t3AllocProp [_])
+  ;; TODO exceptions
+  (t3GetStackTrace [_ level? flags?])
+  ;; TODO named args
+  (t3GetNamedArg [_ name defval?])
+  ;; TODO named args
+  (t3GetNamedArgList [_]))

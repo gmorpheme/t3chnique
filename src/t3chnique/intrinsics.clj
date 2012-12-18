@@ -3,18 +3,18 @@
 
 (defprotocol ^{:id "t3vm/010006"} t3vm
   "Internal VM operations"
-  (t3AllocProp [_])
+  (t3RunGC [_])
+  (t3SetSay [_ val])
+  (t3GetVMVsn [_])
+  (t3GetVMID [_])
+  (t3GetVMBanner [_])
+  (t3GetVMPreinitMode [_])
   (t3DebugTrace [_ mode & args])
   (t3GetGlobalSymbols [_ which?])
-  (t3GetNamedArg [_ name defval?])
-  (t3GetNamedArgList [_])
+  (t3AllocProp [_])
   (t3GetStackTrace [_ level? flags?])
-  (t3GetVMBanner [_])
-  (t3GetVMID [_])
-  (t3GetVMPreinitMode [_])
-  (t3GetVMVsn [_])
-  (t3RunGC [_])
-  (t3SetSay [_ val]))
+  (t3GetNamedArg [_ name defval?])
+  (t3GetNamedArgList [_]))
 
 (defprotocol ^{:id "tads-gen/030008"} tads-gen
   "General utility and data manipulation functions"

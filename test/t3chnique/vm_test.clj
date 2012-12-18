@@ -312,7 +312,7 @@
                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)])))
     (is (= (apply-ops st [(op-setarg1 1)])
            (assoc st
-             :sp13
+             :sp 13
              :stack [(vm-int 999) (vm-int 2)
                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
                      (vm-codeofs 0x20)
