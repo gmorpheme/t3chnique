@@ -1,10 +1,19 @@
 (ns t3chnique.vm-test
-  (:use clojure.test
-        clojure.algo.monads
-        t3chnique.vm
-        t3chnique.primitive))
+  (:use [clojure.test]
+        [clojure.algo.monads]
+        [t3chnique.vm]
+        [t3chnique.primitive]
+        [midje.sweet]))
 
 ;; helpers
+
+(defn st [& xs]
+  (vec (map #(cond
+              (number? %) (vm-int %)
+              (string? %) (vm-sstring %)
+              (= % true) (vm-true)
+              :else (vm-nil))
+            xs)))
 
 (defn stack-after [& ops]
   (with-monad state-m
@@ -20,28 +29,32 @@
 (defn vm-state-with [& args]
   (apply assoc (vm-state) args))
 
-(deftest test-pushes
-  (testing "Simple pushes"
-    (are [ops stack] (= (apply stack-after ops) stack)
-         [(op-push_0)] [(vm-int 0)]
-         [(op-push_1)] [(vm-int 1)]
-         [(op-pushint8 100)] [(vm-int 100)]
-         [(op-pushint 123456)] [(vm-int 123456)]
-         [(op-pushlst 0xff)] [(vm-list 0xff)]
-         [(op-pushnil) (op-pushtrue)] [(vm-nil) (vm-true)]
-         [(op-pushenum 9876)] [(vm-enum 9876)])))
+;; facts
 
-(deftest test-stack-ops
-  (testing "Simple stack ops"
-    (are [before ops after] (= (apply-with-stack before ops) after)
-         [(vm-int 10)] [(op-dup)] [(vm-int 10) (vm-int 10)]
-         [(vm-nil)] [(op-dup)] [(vm-nil) (vm-nil)]
-         [(vm-true)] [(op-disc)] []
-         [(vm-int 100) (vm-int 99) (vm-int 98)] [(op-disc)] [(vm-int 100) (vm-int 99)]
-         [(vm-nil) (vm-nil)] [(op-disc1 2)] []
-         [(vm-nil) (vm-nil)] [(op-disc1 1)] [(vm-nil)]
-         [(vm-int 1) (vm-int 2)] [(op-swap)] [(vm-int 2) (vm-int 1)]
-         [(vm-int 1) (vm-int 2)] [(op-dup2)] [(vm-int 1) (vm-int 2) (vm-int 1) (vm-int 2)])))
+(tabular
+ (fact "Simple pushes" (apply stack-after ?ops) => ?stack)
+ 
+ ?ops                         ?stack
+ [(op-push_0)]                (st 0)
+ [(op-push_1)]                (st 1)
+ [(op-pushint8 100)]          (st 100)
+ [(op-pushint 123456)]        (st 123456)
+ [(op-pushlst 0xff)]          [(vm-list 0xff)]
+ [(op-pushnil) (op-pushtrue)] (st nil true)
+ [(op-pushenum 9876)]         [(vm-enum 9876)])
+
+(tabular
+ (fact "Simple stack ops" (apply-with-stack ?before ?ops) => ?after)
+
+ ?before        ?ops             ?after
+ (st 10)        [(op-dup)]       (st 10 10)
+ (st nil)       [(op-dup)]       (st nil nil)
+ (st true)      [(op-disc)]      [] 
+ (st 100 99 98) [(op-disc)]      (st 100 99)
+ (st nil nil)   [(op-disc1 2)]   []
+ (st nil nil)   [(op-disc1 1)]   (st nil)
+ (st 1 2)       [(op-swap)]      (st 2 1)
+ (st 1 2)       [(op-dup2)]      (st 1 2 1 2))
 
 (deftest test-arithmetic
   (testing "Testing inc"

@@ -1,4 +1,4 @@
-(defproject t3chnique "0.1.0-SNAPSHOT"
+(defproject t3chnique "0.0.1-SNAPSHOT"
   :description "TADS 3 implementation"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -11,4 +11,5 @@
                  [ring/ring-jetty-adapter "1.1.0"]
                  [ring-middleware-format "0.2.2"]
                  [hiccup "1.0.2"]
-                 [org.clojure/tools.trace "0.7.3"]])
+                 [org.clojure/tools.trace "0.7.3"]
+                 [midje "1.4.0"]])
