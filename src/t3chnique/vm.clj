@@ -123,6 +123,13 @@
 (def get-say-function (fetch-val :say-function))
 (def set-say-function (partial set-val :say-function))
 
+(defn resolve-bif [set func]
+  (domonad vm-m
+           [fs (fetch-val :fnsd)]
+           (-> fs
+               (nth set)
+               (nth func))))
+
 (defn code-read-ubyte []
   (fn [s]
     (with-buffer [buf s]
@@ -912,10 +919,10 @@
 
 ;;;;;;;; intrinsic impls
 
-
+;; TODO check argc - exceptions
 (deftype TadsT3 []
   t3vm
-  (t3RunGC [_]
+  (t3RunGC [_ argc]
     (with-monad vm-m (m-result nil)))
   (t3SetSay [_ n]
     (let [no-method 2
@@ -936,23 +943,23 @@
                 _ (if (vm-prop? val') (set-say-method val') (set-say-function val'))
                 _ (reg-set :r0 (out current))]
                nil)))
-  (t3GetVMVsn [_]
+  (t3GetVMVsn [_ argc]
     (domonad vm-m [_ (reg-set :r0 (vm-int 0x00000001))] nil))
-  (t3GetVMID [_]
+  (t3GetVMID [_ argc]
     (domonad vm-m [_ (reg-set :r0 (vm-sstring "t3chnique"))] nil))
-  (t3GetVMBanner [_]
+  (t3GetVMBanner [_ argc]
     (domonad vm-m [_ (reg-set :r0 (vm-sstring "T3chnique Experimental TADS 3 VM - Copyright 2012 Greg Hawkins"))] nil))
-  (t3GetVMPreinitMode [_]
+  (t3GetVMPreinitMode [_ argc]
     (domonad vm-m [_ (reg-set :r0 (vm-nil))] nil))
-  (t3DebugTrace [_ mode & args]
+  (t3DebugTrace [_ argc]
     (domonad vm-m [_ (reg-set :r0 (vm-nil))] nil))
   ;; TODO symbol table access
-  (t3GetGlobalSymbols [_ which?])
+  (t3GetGlobalSymbols [_ argc])
   ;; TODO prop allocation
-  (t3AllocProp [_])
+  (t3AllocProp [_ argc])
   ;; TODO exceptions
-  (t3GetStackTrace [_ level? flags?])
+  (t3GetStackTrace [_ argc])
   ;; TODO named args
-  (t3GetNamedArg [_ name defval?])
+  (t3GetNamedArg [_ argc])
   ;; TODO named args
-  (t3GetNamedArgList [_]))
+  (t3GetNamedArgList [_ argc]))
