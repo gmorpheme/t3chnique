@@ -117,10 +117,8 @@
    [(op-pushint 0) (op-not)]    (st true)
    [(op-pushint 1) (op-not)]    (st nil)))
 
-(deftest test-bitwise
-  (testing "bnot"
-    ;; TODO fix bnot
-    #_(is (= (stack-after (op-pushint 0xffffffff) (op-bnot)) [(vm-int 0x00000000)]))))
+(future-fact "bnot"
+             (stack-after (op-pushint 0xffffffff) (op-bnot)) => (st 0))
 
 (fact "Call stack construction"
   (let [vm (vm-state-with :ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)])]
@@ -220,36 +218,13 @@
      false-state (op-jsf offs) (contains {:ip dest})
      true-state  (op-jsf offs) (contains {:stack (st 0)}))))
 
-(deftest test-stack-access
-  (let [st (vm-state-with :ep 0x1234
+(facts "Stack access"
+  (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
                           :fp 10
-                          :sp 14
-                          :stack [(vm-int 1) (vm-int 2)
-                                  (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                  (vm-codeofs 0x20)
-                                  (vm-codeofs 0x10)
-                                  (vm-int 2)
-                                  (vm-int 0)
-                                  (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                  (vm-int 999)])]
-    (is (= (apply-ops st [(op-setarg1 0)])
-           (assoc st
-             :sp 13
-             :stack [(vm-int 1) (vm-int 999)
-                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                     (vm-codeofs 0x20)
-                     (vm-codeofs 0x10)
-                     (vm-int 2)
-                     (vm-int 0)
-                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)])))
-    (is (= (apply-ops st [(op-setarg1 1)])
-           (assoc st
-             :sp 13
-             :stack [(vm-int 999) (vm-int 2)
-                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                     (vm-codeofs 0x20)
-                     (vm-codeofs 0x10)
-                     (vm-int 2)
-                     (vm-int 0)
-                     (vm-nil) (vm-nil) (vm-nil) (vm-nil)])))))
+                          :stack (st 1 2 nil nil nil nil
+                                     (vm-codeofs 0x20)
+                                     (vm-codeofs 0x10)
+                                     2 0 nil nil nil nil 999))]
+    (fact (apply-ops vm [(op-setarg1 0)]) => (contains {:stack (has-prefix (st 1 999))}))
+    (fact (apply-ops vm [(op-setarg1 1)]) => (contains {:stack (has-prefix (st 999 2))}))))
