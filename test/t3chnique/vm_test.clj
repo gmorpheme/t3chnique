@@ -1,6 +1,5 @@
 (ns t3chnique.vm-test
-  (:use [clojure.test]
-        [clojure.algo.monads]
+  (:use [clojure.algo.monads]
         [t3chnique.vm]
         [t3chnique.primitive]
         [midje.sweet]))
