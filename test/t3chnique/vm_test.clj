@@ -49,9 +49,9 @@
  ?before        ?ops             ?after
  (st 10)        [(op-dup)]       (st 10 10)
  (st nil)       [(op-dup)]       (st nil nil)
- (st true)      [(op-disc)]      [] 
+ (st true)      [(op-disc)]      (st)
  (st 100 99 98) [(op-disc)]      (st 100 99)
- (st nil nil)   [(op-disc1 2)]   []
+ (st nil nil)   [(op-disc1 2)]   (st)
  (st nil nil)   [(op-disc1 1)]   (st nil)
  (st 1 2)       [(op-swap)]      (st 2 1)
  (st 1 2)       [(op-dup2)]      (st 1 2 1 2))
@@ -98,24 +98,21 @@
     (doseq [i (range 100)]
       (stack-after (op-pushint8 i) (op-neg)) => [(vm-int (- i))])))
 
-
-(deftest test-logical
-  (testing "Not"
-    (are [ops stack] (= (apply stack-after ops) stack)
-         [(op-pushnil) (op-not)] [(vm-true)]
-         [(op-pushtrue) (op-not)] [(vm-nil)]
-         [(op-pushint8 0) (op-not)] [(vm-true)]
-         [(op-pushint8 1) (op-not)] [(vm-nil)]
-         [(op-pushint 0) (op-not)] [(vm-true)]
-         [(op-pushint 1) (op-not)] [(vm-nil)]))
-  (testing "Boolize"
-    (are [ops stack] (= (apply stack-after ops) stack)
-         [(op-pushnil) (op-boolize)] [(vm-nil)]
-         [(op-pushtrue) (op-boolize)] [(vm-true)]
-         [(op-pushint8 0) (op-not)] [(vm-true)]
-         [(op-pushint8 1) (op-not)] [(vm-nil)]
-         [(op-pushint 0) (op-not)] [(vm-true)]
-         [(op-pushint 1) (op-not)] [(vm-nil)])))
+(tabular
+ (fact "Logical operations" (apply stack-after ?ops) => ?stack)
+ ?ops                         ?stack
+ [(op-pushnil) (op-not)]      (st true)
+ [(op-pushtrue) (op-not)]     (st nil)
+ [(op-pushint8 0) (op-not)]   (st true)
+ [(op-pushint8 1) (op-not)]   (st nil)
+ [(op-pushint 0) (op-not)]    (st true)
+ [(op-pushint 1) (op-not)]    (st nil)
+ [(op-pushnil) (op-boolize)]  (st nil)
+ [(op-pushtrue) (op-boolize)] (st true)
+ [(op-pushint8 0) (op-not)]   (st true)
+ [(op-pushint8 1) (op-not)]   (st nil)
+ [(op-pushint 0) (op-not)]    (st true)
+ [(op-pushint 1) (op-not)]    (st nil))
 
 (deftest test-bitwise
   (testing "bnot"
@@ -271,21 +268,21 @@
            (vm-state-with :ip 0x75)))
     (is (= (apply-ops (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]) [(op-jne 0x11)])
            (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jt 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jt 0x11)])
            (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jt 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jt 0x11)])
            (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jf 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jf 0x11)])
            (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jf 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jf 0x11)])
            (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jnil 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jnil 0x11)])
            (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-nil)]) [(op-jnotnil 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jnotnil 0x11)])
            (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jnotnil 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jnotnil 0x11)])
            (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack [(vm-true)]) [(op-jnil 0x11)])
+    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jnil 0x11)])
            (vm-state-with :ip 0x66)))
     (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-true)) [(op-jr0t 0x11)])
            (vm-state-with :ip 0x75 :r0 (vm-true))))
