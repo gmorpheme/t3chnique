@@ -82,7 +82,7 @@
 (def metaclasses {:tads-object tads-object
                   :string tads-string
                   :list tads-list
-                  :vector #(throw (RuntimeException. "Vector in image file."))
+                  :vector unknown-metaclass
                   :dictionary2 unknown-metaclass
                   :grammar-production unknown-metaclass
                   :anon-func-ptr anon-fn
@@ -108,8 +108,7 @@
   (for [{:keys [name pids]} mcld]
     (let [[n version-required] (string/split name #"/")
           k (keyword n)
-          metaclass (k metaclasses)
-          _ (println (str "Metaclass " k " in image file."))]
+          metaclass (k metaclasses)]
       (when (nil? metaclass) (throw (RuntimeException. (str "Metaclass " k " not available"))))
       {:metaclass-id k :pids pids :metaclass metaclass})))
 

@@ -84,20 +84,22 @@
                        [page-size (reduce #(assoc %1 (:pool-index %2) %2) (vec (repeat page-count 0)) pages)]))
         [code-page-size code-pages] (load-pages 1)
         [const-page-size const-pages] (load-pages 2)
+        entp (dissoc (first (filter #(= (:id %) "ENTP") im)) :id :flags)
         mcld (mc/wire-up-metaclasses (:entries (first (filter #(= (:id %) "MCLD") im))))
         fnsd (:entries (first (filter #(= (:id %) "FNSD") im)))
         objs (apply merge (map #(mc/read-object-block mcld %) (filter #(= (:id %) "OBJS") im)))]
-    (assoc (vm-state)
-      :code code-pages :code-page-size code-page-size
-      :const const-pages :const-page-size const-page-size
-      :mcld mcld
-      :fnsd fnsd
-      :objs objs
-      :next-oid (inc (apply max (keys objs))))))
+    (merge (vm-state)
+           entp
+           {:code code-pages :code-page-size code-page-size
+            :const const-pages :const-page-size const-page-size
+            :mcld mcld
+            :fnsd fnsd
+            :objs objs
+            :next-oid (inc (apply max (keys objs)))})))
 
 (defn offset [{:keys [code-page-size code ip]} & ptr]
-  (let [p (or ptr ip)]
-    [(:bytes (nth (/ p code-page-size) code)) (mod p code-page-size)]))
+  (let [p (or (first ptr) ip)]
+    [(:bytes (nth code (/ p code-page-size))) (mod p code-page-size)]))
   
 (defmacro with-buffer [[bsym s p] & exprs]
   `(let [[b# o#] (offset ~s ~p)
@@ -193,7 +195,7 @@
   [ptr]
   (fn [s]
     (with-buffer [buf s ptr]
-      [(im/read-method-header buf) s])))
+      [(im/read-method-header buf (:method-header-size s)) s])))
 
 (defn get-exception-table
   "Read exception table at specified offset."

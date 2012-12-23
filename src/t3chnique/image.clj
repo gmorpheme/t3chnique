@@ -34,6 +34,11 @@
         _ (.order buf ByteOrder/LITTLE_ENDIAN)]
     buf))
 
+(defn parse-file [name]
+  (let [f (io/file name)
+        buf (load-image-file f)]
+    (parse-image buf)))
+
 (defn parse-resource [name]
   (let [f (io/file (io/resource name))
         buf (load-image-file f)]
@@ -144,33 +149,6 @@
 (defmethod read-block "EOF " [{size :size} buf] {})
 
 (defmethod read-block :default [block buf] {:unknown (:id block)} )
-
-(comment
-  (defn dis1
-    "Disassemble single instruction from buffer, incrementing pointer."
-    [buf]
-    (let [offset (.position buf)
-          opcode (ber/read-ubyte buf)
-          op (@table opcode)
-          _ (if (nil? op) (throw (RuntimeException. (str "No op for opcode " opcode))))
-          mnemonic (mnemonic op)
-          spec (parse-spec op)
-          args (ber/parse spec buf)]
-      {:offset offset :opcode opcode :mnemonic mnemonic :args args}))
-
-  (defn disn
-    "Disassemble n instructions"
-    [buf n]
-    (for [i (range n)]
-      (dis1 buf)))
-
-  (defn dis 
-    "Disassemble an entire buffer."
-    [buf]
-    (loop [ret []]
-      (if (pos? (.remaining buf))
-        (recur (conj ret (dis1 buf)))
-        ret))))
 
 (defn read-method-header [buf size]
   (let [b (ber/slice buf size)]

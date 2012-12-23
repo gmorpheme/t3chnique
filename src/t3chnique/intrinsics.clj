@@ -1,5 +1,5 @@
 (ns t3chnique.intrinsics
-  (:refer-clojure :exclude [_ argc]))
+  (:refer-clojure :exclude [min max rand concat]))
 
 (defprotocol ^{:id "t3vm/010006"} t3vm
   "Internal VM operations"
