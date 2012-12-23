@@ -163,82 +163,62 @@
     (doseq [i (range 4) f [op-getlcl1 op-getlcl2]]
       (apply-with-stack stack [(f i)]) => (conj stack (vm-int i)))))
 
+(fact "Argument access"
+  (let [vm (vm-state-with :fp 10
+                          :stack (st 101 100 nil nil nil nil (vm-codeofs 0x20) (vm-codeofs 0x10)
+                                     2 0 nil nil nil nil))]
+    (doseq [i (range 2) op [op-getarg1 op-getarg2]]
+      (apply-ops vm [(op i)]) => 
+      (contains {:sp 15 :stack (has-suffix (vm-int (+ 100 i)))}))))
 
-(deftest test-arg-access
-  (testing "Test argument access"
-    (let [init (merge (vm-state) {:fp 10
-                                  :sp 14
-                                  :stack [(vm-int 101) (vm-int 100)
-                                          (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                          (vm-codeofs 0x20)
-                                          (vm-codeofs 0x10)
-                                          (vm-int 2)
-                                          (vm-int 0)
-                                          (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})]
-      (doseq [i (range 2) op [op-getarg1 op-getarg2]]
-        (let [after (apply-ops init [(op i)])]
-          (is (= (:sp after) 15))
-          (is (= (value (last (:stack after))) (+ 100 i))))))))
+(fact "Push self"
+  (let [vm (vm-state-with :fp 10
+             :stack (st 101 100
+                        (vm-prop 10) (vm-obj 0x12) (vm-obj 0x22) (vm-obj 0x33)
+                        (vm-codeofs 0x20)
+                        (vm-codeofs 0x10)
+                        2 0 nil nil nil nil))]
+    (apply-ops vm [(op-pushself)]) => (contains {:sp 15 :stack (has-suffix (vm-obj 0x33))})))
 
-(deftest test-push-self
-  (testing "Test push self"
-    (let [init (merge (vm-state) {:fp 10
-                                  :sp 14
-                                  :stack [(vm-int 101) (vm-int 100)
-                                          (vm-prop 10) (vm-obj 0x12) (vm-obj 0x22) (vm-obj 0x33)
-                                          (vm-codeofs 0x20)
-                                          (vm-codeofs 0x10)
-                                          (vm-int 2)
-                                          (vm-int 0)
-                                          (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
-          after (apply-ops init [(op-pushself)])]
-      (is (= (value (last (:stack after))) 0x33)))))
+(facts "Jumps"
+  (let [init 0x66
+        offs 0x11
+        dest (- (+ init offs) 2)]
+    (tabular
+     (fact (apply-ops (vm-state-with :ip init :stack ?stack) [?op]) => ?check)
+     ?stack        ?op            ?check
+     (st)          (op-jmp offs)      (contains {:ip dest})
+     (st 0 0)      (op-je offs)       (contains {:ip dest})
+     (st 0 0)      (op-jne offs)      (contains {:ip init})
+     (st true)     (op-jt offs)       (contains {:ip dest})
+     (st nil)      (op-jt offs)       (contains {:ip init})
+     (st true)     (op-jf offs)       (contains {:ip init})
+     (st nil)      (op-jf offs)       (contains {:ip dest})
+     (st nil)      (op-jnil offs)     (contains {:ip dest})
+     (st nil)      (op-jnotnil offs)  (contains {:ip init})
+     (st true)     (op-jnotnil offs)  (contains {:ip dest})
+     (st true)     (op-jnil offs)     (contains {:ip init}))
+    (tabular
+     (fact (apply-ops (vm-state-with :ip init :stack ?stack :r0 ?r0) [?op]) => ?check)
+     ?stack     ?r0        ?op            ?check
+     (st true)  (vm-true)  (op-jr0t offs) (contains {:ip dest :r0 (vm-true)})
+     (st true)  (vm-true)  (op-jr0f offs) (contains {:ip init :r0 (vm-true)})
+     (st nil)   (vm-nil)   (op-jr0f offs) (contains {:ip dest :r0 (vm-nil)})
+     (st nil)   (vm-nil)   (op-jr0t offs) (contains {:ip init :r0 (vm-nil)}))))
 
-(deftest test-jump
-  (testing "Jumps"
-    (is (= (apply-ops (vm-state-with :ip 0x66) [(op-jmp 0x11)])
-           (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]) [(op-je 0x11)])
-           (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)]) [(op-jne 0x11)])
-           (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jt 0x11)])
-           (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jt 0x11)])
-           (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jf 0x11)])
-           (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jf 0x11)])
-           (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jnil 0x11)])
-           (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st nil)) [(op-jnotnil 0x11)])
-           (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jnotnil 0x11)])
-           (vm-state-with :ip 0x75)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :sp 1 :stack (st true)) [(op-jnil 0x11)])
-           (vm-state-with :ip 0x66)))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-true)) [(op-jr0t 0x11)])
-           (vm-state-with :ip 0x75 :r0 (vm-true))))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-true)) [(op-jr0f 0x11)])
-           (vm-state-with :ip 0x66 :r0 (vm-true))))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-nil)) [(op-jr0f 0x11)])
-           (vm-state-with :ip 0x75 :r0 (vm-nil))))
-    (is (= (apply-ops (vm-state-with :ip 0x66 :r0 (vm-nil)) [(op-jr0t 0x11)])
-           (vm-state-with :ip 0x66 :r0 (vm-nil))))))
-
-(deftest test-jump-and-save
-  (let [false-state (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 0)])
-        true-state (vm-state-with :ip 0x66 :sp 2 :stack [(vm-int 0) (vm-int 1)])]
-    (testing "Jump and save"
-      (is (= (apply-ops false-state [(op-jst 0x11)])
-             (assoc false-state :sp 1 :stack [(vm-int 0)])))
-      (is (= (apply-ops true-state [(op-jst 0x11)])
-             (assoc true-state :ip 0x75)))
-      (is (= (apply-ops false-state [(op-jsf 0x11)])
-             (assoc false-state :ip 0x75)))
-      (is (= (apply-ops true-state [(op-jsf 0x11)])
-             (assoc true-state :sp 1 :stack [(vm-int 0)]))))))
+(facts "Jump and save"
+  (let [init 0x66
+        offs 0x11
+        dest (- (+ init offs) 2)
+        false-state (vm-state-with :ip init :stack (st 0 0))
+        true-state (vm-state-with :ip init :stack (st 0 1))]
+    (tabular
+     (fact (apply-ops ?state [?op]) => ?check)
+     ?state      ?op           ?check
+     false-state (op-jst offs) (contains {:stack (st 0)})
+     true-state  (op-jst offs) (contains {:ip dest})
+     false-state (op-jsf offs) (contains {:ip dest})
+     true-state  (op-jsf offs) (contains {:stack (st 0)}))))
 
 (deftest test-stack-access
   (let [st (vm-state-with :ep 0x1234
