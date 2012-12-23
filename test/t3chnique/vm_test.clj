@@ -11,8 +11,9 @@
   (vec (map #(cond
               (number? %) (vm-int %)
               (string? %) (vm-sstring %)
+              (nil? %) (vm-nil)
               (= % true) (vm-true)
-              :else (vm-nil))
+              :else %)
             xs)))
 
 (defn stack-after [& ops]
@@ -27,34 +28,35 @@
   (:stack (apply-ops (merge (vm-state) {:stack stack :sp (count stack)}) ops)))
 
 (defn vm-state-with [& args]
-  (apply assoc (vm-state) args))
+  (let [vm (apply assoc (vm-state) args)]
+    (assoc vm :sp (count (:stack vm)))))
 
-;; facts
+(facts "Simple pushes"
+  (tabular
+   (fact (apply stack-after ?ops) => ?stack)
+   
+   ?ops                         ?stack
+   [(op-push_0)]                (st 0)
+   [(op-push_1)]                (st 1)
+   [(op-pushint8 100)]          (st 100)
+   [(op-pushint 123456)]        (st 123456)
+   [(op-pushlst 0xff)]          [(vm-list 0xff)]
+   [(op-pushnil) (op-pushtrue)] (st nil true)
+   [(op-pushenum 9876)]         [(vm-enum 9876)]))
 
-(tabular
- (fact "Simple pushes" (apply stack-after ?ops) => ?stack)
- 
- ?ops                         ?stack
- [(op-push_0)]                (st 0)
- [(op-push_1)]                (st 1)
- [(op-pushint8 100)]          (st 100)
- [(op-pushint 123456)]        (st 123456)
- [(op-pushlst 0xff)]          [(vm-list 0xff)]
- [(op-pushnil) (op-pushtrue)] (st nil true)
- [(op-pushenum 9876)]         [(vm-enum 9876)])
+(facts "Simple stack ops"
+  (tabular
+   (fact  (apply-with-stack ?before ?ops) => ?after)
 
-(tabular
- (fact "Simple stack ops" (apply-with-stack ?before ?ops) => ?after)
-
- ?before        ?ops             ?after
- (st 10)        [(op-dup)]       (st 10 10)
- (st nil)       [(op-dup)]       (st nil nil)
- (st true)      [(op-disc)]      (st)
- (st 100 99 98) [(op-disc)]      (st 100 99)
- (st nil nil)   [(op-disc1 2)]   (st)
- (st nil nil)   [(op-disc1 1)]   (st nil)
- (st 1 2)       [(op-swap)]      (st 2 1)
- (st 1 2)       [(op-dup2)]      (st 1 2 1 2))
+   ?before        ?ops             ?after
+   (st 10)        [(op-dup)]       (st 10 10)
+   (st nil)       [(op-dup)]       (st nil nil)
+   (st true)      [(op-disc)]      (st)
+   (st 100 99 98) [(op-disc)]      (st 100 99)
+   (st nil nil)   [(op-disc1 2)]   (st)
+   (st nil nil)   [(op-disc1 1)]   (st nil)
+   (st 1 2)       [(op-swap)]      (st 2 1)
+   (st 1 2)       [(op-dup2)]      (st 1 2 1 2)))
 
 (facts "Arithmetic"
   
@@ -98,137 +100,69 @@
     (doseq [i (range 100)]
       (stack-after (op-pushint8 i) (op-neg)) => [(vm-int (- i))])))
 
-(tabular
- (fact "Logical operations" (apply stack-after ?ops) => ?stack)
- ?ops                         ?stack
- [(op-pushnil) (op-not)]      (st true)
- [(op-pushtrue) (op-not)]     (st nil)
- [(op-pushint8 0) (op-not)]   (st true)
- [(op-pushint8 1) (op-not)]   (st nil)
- [(op-pushint 0) (op-not)]    (st true)
- [(op-pushint 1) (op-not)]    (st nil)
- [(op-pushnil) (op-boolize)]  (st nil)
- [(op-pushtrue) (op-boolize)] (st true)
- [(op-pushint8 0) (op-not)]   (st true)
- [(op-pushint8 1) (op-not)]   (st nil)
- [(op-pushint 0) (op-not)]    (st true)
- [(op-pushint 1) (op-not)]    (st nil))
+(facts "Logical operations"
+  (tabular
+   (fact (apply stack-after ?ops) => ?stack)
+   ?ops                         ?stack
+   [(op-pushnil) (op-not)]      (st true)
+   [(op-pushtrue) (op-not)]     (st nil)
+   [(op-pushint8 0) (op-not)]   (st true)
+   [(op-pushint8 1) (op-not)]   (st nil)
+   [(op-pushint 0) (op-not)]    (st true)
+   [(op-pushint 1) (op-not)]    (st nil)
+   [(op-pushnil) (op-boolize)]  (st nil)
+   [(op-pushtrue) (op-boolize)] (st true)
+   [(op-pushint8 0) (op-not)]   (st true)
+   [(op-pushint8 1) (op-not)]   (st nil)
+   [(op-pushint 0) (op-not)]    (st true)
+   [(op-pushint 1) (op-not)]    (st nil)))
 
 (deftest test-bitwise
   (testing "bnot"
     ;; TODO fix bnot
     #_(is (= (stack-after (op-pushint 0xffffffff) (op-bnot)) [(vm-int 0x00000000)]))))
 
-(deftest test-call-stack
-  (with-redefs [get-method-header (fn [ptr] (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))]
-    (let [st (vm-state-with :ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)])]
-      (testing "call stack"
-        (is (=
-             (apply-ops st [(op-call 2 0x1234)])
-             (assoc st
-               :ep 0x1234
-               :ip 0x123e
-               :fp 10
-               :sp 14
-               :stack [(vm-int 1) (vm-int 2)
-                       (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                       (vm-codeofs 0x20)
-                       (vm-codeofs 0x10)
-                       (vm-int 2)
-                       (vm-int 0)
-                       (vm-nil) (vm-nil) (vm-nil) (vm-nil)])))))))
+(fact "Call stack construction"
+  (let [vm (vm-state-with :ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)])]
+    (apply-ops vm [(op-call 2 0x1234)]) =>
+    (assoc vm
+      :ep 0x1234
+      :ip 0x123e
+      :fp 10
+      :sp 14
+      :stack (st 1 2 nil nil nil nil
+                 (vm-codeofs 0x20)
+                 (vm-codeofs 0x10)
+                 2 0 nil nil nil nil)))
+  (provided
+    (get-method-header 0x1234) =>
+    (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s])))
 
-(deftest test-returns
-  (testing "Testing returns"
-    (is (=
-         (apply-ops
-           (merge (vm-state) {:ep 0x1234
-                              :ip 0x123e
-                              :fp 10
-                              :sp 15
-                              :stack [(vm-int 1) (vm-int 2)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                      (vm-codeofs 0x20)
-                                      (vm-codeofs 0x10)
-                                      (vm-int 2)
-                                      (vm-int 0)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                      (vm-int 99)]})
-           [(op-retval)])
-         (merge (vm-state) {:ep 0x20
-                            :ip 0x30
-                            :fp 0
-                            :sp 0
-                            :r0 (vm-int 99)
-                            :stack []})))
-    (is (=
-         (apply-ops
-           (merge (vm-state) {:ep 0x1234
-                              :ip 0x123e
-                              :fp 10
-                              :sp 14
-                              :stack [(vm-int 1) (vm-int 2)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                      (vm-codeofs 0x20)
-                                      (vm-codeofs 0x10)
-                                      (vm-int 2)
-                                      (vm-int 0)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
-           [(op-retnil)])
-         (merge (vm-state) {:ep 0x20
-                            :ip 0x30
-                            :fp 0
-                            :sp 0
-                            :r0 (vm-nil)
-                            :stack []})))
-    (is (=
-         (apply-ops
-           (merge (vm-state) {:ep 0x1234
-                              :ip 0x123e
-                              :fp 10
-                              :sp 14
-                              :stack [(vm-int 1) (vm-int 2)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                      (vm-codeofs 0x20)
-                                      (vm-codeofs 0x10)
-                                      (vm-int 2)
-                                      (vm-int 0)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
-           [(op-rettrue)])
-         (merge (vm-state) {:ep 0x20
-                            :ip 0x30
-                            :fp 0
-                            :sp 0
-                            :r0 (vm-true)
-                            :stack []})))
-    (is (=
-         (apply-ops
-           (merge (vm-state) {:ep 0x1234
-                              :ip 0x123e
-                              :fp 10
-                              :sp 14
-                              :r0 (vm-int 111)
-                              :stack [(vm-int 1) (vm-int 2)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)
-                                      (vm-codeofs 0x20)
-                                      (vm-codeofs 0x10)
-                                      (vm-int 2)
-                                      (vm-int 0)
-                                      (vm-nil) (vm-nil) (vm-nil) (vm-nil)]})
-           [(op-ret)])
-         (merge (vm-state) {:ep 0x20
-                            :ip 0x30
-                            :fp 0
-                            :sp 0
-                            :r0 (vm-int 111)
-                            :stack []})))))
+(facts "Returns"
+  (let [vm (vm-state-with :ep 0x1234
+                          :ip 0x123e
+                          :fp 10
+                          :stack (st 1 2 nil nil nil nil 
+                                     (vm-codeofs 0x20)
+                                     (vm-codeofs 0x10)
+                                     2 0 nil nil nil nil 99))]
+    (fact (apply-ops vm [(op-retval)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 99))))
+  (let [vm (vm-state-with :ep 0x1234
+                          :ip 0x123e
+                          :fp 10
+                          :stack (st 1 2 nil nil nil nil 
+                                     (vm-codeofs 0x20)
+                                     (vm-codeofs 0x10)
+                                     2 0 nil nil nil nil))]
+    (fact (apply-ops vm [(op-retnil)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-nil)))
+    (fact (apply-ops vm [(op-rettrue)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-true)))
+    (fact (apply-ops (assoc vm :r0 (vm-int 111)) [(op-ret)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 111)))))
 
-(deftest test-local-access
-  (testing "Test local access"
-    (let [stack (map vm-int (range 4))]
-      (doseq [i (range 4) f [op-getlcl1 op-getlcl2]]
-        (is (= (apply-with-stack stack [(f i)])
-               (conj stack (vm-int i))))))))
+(fact "Local access"
+  (let [stack (map vm-int (range 4))]
+    (doseq [i (range 4) f [op-getlcl1 op-getlcl2]]
+      (apply-with-stack stack [(f i)]) => (conj stack (vm-int i)))))
+
 
 (deftest test-arg-access
   (testing "Test argument access"
