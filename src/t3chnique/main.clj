@@ -3,6 +3,7 @@
   (:use [clojure.tools.cli :only [cli]])
   (:require [t3chnique.vm :as vm]
             [t3chnique.image :as im]
+            [t3chnique.ber :as ber]
             [clojure.java.io :as io]
             [clojure.pprint :as pp]))
 
@@ -37,22 +38,25 @@
   (let [e (first (filter #(= (:id %) "ENTP") image))]
     (output "ENTP Block" e)))
 
+
+(defn dis1
+  "Disassemble single instruction from buffer, incrementing pointer."
+  [buf offs]
+  (let [_ (.position buf offs)
+        opcode (ber/read-ubyte buf)
+        op (@vm/table opcode)
+        _ (if (nil? op) (throw (RuntimeException. (str "No op for opcode " opcode))))
+        mnemonic (vm/mnemonic op)
+        spec (vm/parse-spec op)
+        args (ber/parse spec buf)]
+    {:offset offs :opcode opcode :mnemonic mnemonic :args args}))
+
 (defn dis
   "Print disassembled code at offset"
-  [offset state]
-  (println offset)
-  (let [[mh s] ((vm/get-method-header offset) state)]
-    (output "Method Header" mh)))
-
-(comment
-  (defn dis1
-    "Disassemble single instruction from buffer, incrementing pointer."
-    [buf]
-    (let [offset (.position buf)
-          opcode (ber/read-ubyte buf)
-          op (@table opcode)
-          _ (if (nil? op) (throw (RuntimeException. (str "No op for opcode " opcode))))
-          mnemonic (mnemonic op)
-          spec (parse-spec op)
-          args (ber/parse spec buf)]
-      {:offset offset :opcode opcode :mnemonic mnemonic :args args})))
+  [offs state]
+  (let [[mh s] ((vm/get-method-header offs) state)
+        code (+ offs (:code-offset mh))
+        etable (+ offs (:etable-offset mh))
+        dtable (+ offs (:dtable-offset mh))]
+    (output "Method Header" mh)
+    (output "Dissasembly" (apply dis1 (vm/offset state code)))))
