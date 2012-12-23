@@ -56,39 +56,48 @@
  (st 1 2)       [(op-swap)]      (st 2 1)
  (st 1 2)       [(op-dup2)]      (st 1 2 1 2))
 
-(deftest test-arithmetic
-  (testing "Testing inc"
+(facts "Arithmetic"
+  
+  (fact "Integer increment"
     (doseq [i (range 100)]
-      (are [ops stack] (= (apply stack-after ops) stack)
-           [(op-pushint i) (op-inc)] [(vm-int (inc i))])))
-  (testing "Testing dec"
+      (stack-after (op-pushint i) (op-inc)) => [(vm-int (inc i))]))
+
+  (fact "Integer decrement"
     (doseq [i (range 100)]
-      (are [ops stack] (= (apply stack-after ops) stack)
-           [(op-pushint i) (op-dec)] [(vm-int (dec i))])))
-  (testing "Integer addition"
+      (stack-after (op-pushint i) (op-dec)) => [(vm-int (dec i))]))
+
+  (fact "Integer addition"
     (doseq [i (range 10) j (range 10)]
-      (is (= (stack-after (op-pushint8 i) (op-pushint8 j) (op-add)) [(vm-int (+ i j))]))))
-  (testing "Integer equality"
+      (stack-after (op-pushint8 i) (op-pushint8 j) (op-add)) => [(vm-int (+ i j))]))
+
+  (fact "Integer equality"
     (doseq [i (range 10) j (range 10)]
-      (is (= (stack-after (op-pushint8 i) (op-pushint8 j) (op-eq)) [(vm-bool (= i j))]))))
-  (testing "Integer inequality"
+      (stack-after (op-pushint8 i) (op-pushint8 j) (op-eq)) => [(vm-bool (= i j))]))
+
+  (fact "Integer inequality"
     (doseq [i (range 10) j (range 10)]
-      (is (= (stack-after (op-pushint8 i) (op-pushint8 j) (op-ne)) [(vm-bool (not= i j))]))))
-  (testing "Integer subtraction"
+      (stack-after (op-pushint8 i) (op-pushint8 j) (op-ne)) => [(vm-bool (not= i j))]))
+
+  (fact "Integer subtraction"
     (doseq [i (range 10) j (range 10)]
-      (is (= (stack-after (op-pushint8 i) (op-pushint8 j) (op-sub)) [(vm-int (- i j))]))))
-  (testing "Integer multiplication"
+      (stack-after (op-pushint8 i) (op-pushint8 j) (op-sub)) =>  [(vm-int (- i j))]))
+
+  (fact "Integer multiplication"
     (doseq [i (range 10) j (range 10)]
-      (is (= (stack-after (op-pushint8 i) (op-pushint8 j) (op-mul)) [(vm-int (* i j))]))))
-  (testing "Integer division"
+      (stack-after (op-pushint8 i) (op-pushint8 j) (op-mul)) => [(vm-int (* i j))]))
+
+  (fact "Integer division"
     (doseq [i (range 10) j (range 1 10)]
-      (is (= (stack-after (op-pushint8 i) (op-pushint8 j) (op-div)) [(vm-int (/ i j))]))))
-  (testing "Integer modulo"
+      (stack-after (op-pushint8 i) (op-pushint8 j) (op-div)) => [(vm-int (/ i j))]))  
+
+  (fact "Integer modulo"
     (doseq [i (range 10) j (range 1 10)]
-      (is (= (stack-after (op-pushint8 i) (op-pushint8 j) (op-mod)) [(vm-int (mod i j))]))))  
-  (testing "Negation"
+      (stack-after (op-pushint8 i) (op-pushint8 j) (op-mod)) => [(vm-int (mod i j))]))
+
+  (fact "Negation"
     (doseq [i (range 100)]
-      (is (= (stack-after (op-pushint8 i) (op-neg)) [(vm-int (- i))])))))
+      (stack-after (op-pushint8 i) (op-neg)) => [(vm-int (- i))])))
+
 
 (deftest test-logical
   (testing "Not"
