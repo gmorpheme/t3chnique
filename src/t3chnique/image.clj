@@ -171,7 +171,7 @@
   (let [count (ber/read-uint2 buf)
         etable (loop [n 0 entries []]
                  (if (< n count)
-                   (recur (inc n) (conj entries (read-exception-table buf)))
+                   (recur (inc n) (conj entries (read-exception-handler buf)))
                    entries))]
     etable))
 
