@@ -7,7 +7,7 @@
             [clojure.java.io :as io]
             [clojure.pprint :as pp]))
 
-(declare entp dis output)
+(declare entp dis object output)
 
 (defn -main [& args]
   (let [[opts args h] (cli args
@@ -15,6 +15,7 @@
                            ["-e" "--entp" "Output entry point information" :flag true]
                            ["-s" "--state" "Output initial vm state (without binary entries)" :flag true]
                            ["-d" "--disassemble" "Output disassembled code for function at specified address" :parse-fn #(Integer. %)]
+                           ["-o" "--object" "Output object information for specified object id" :parse-fn #(Integer. %)]
                            ["-h" "--help" "Output this help text." :flag true])
         game (first args)
         image (if (:resource opts)
@@ -24,7 +25,8 @@
     (cond
      (:entp opts) (entp image)
      (:state opts) (output "Initial VM State" state)
-     (:disassemble opts) (dis (:disassemble opts) state))))
+     (:disassemble opts) (dis (:disassemble opts) state)
+     (:object opts) (object (:object opts) state))))
 
 (defn output [title m]
   (println "=======================================")
@@ -103,3 +105,8 @@
                            (:last-offset e)
                            (:oid e)
                            (:handler-offset e))))))))
+
+(defn object
+  "Dump out object information for object with specified oid."
+  [oid state]
+  (output (str "Object " oid) (get (:objs state) oid)))

@@ -113,6 +113,10 @@
       {:metaclass-id k :pids pids :metaclass metaclass})))
 
 (defn read-object-block [mcld oblock]
-  (let [mclass-ctor (:metaclass (nth mcld (:mcld-index oblock)))
+  (let [mcld-index (:mcld-index oblock)
+        mclass-ctor (:metaclass (nth mcld mcld-index))
         prototype (mclass-ctor)]
-    (into {} (map (fn [obj] [(:oid obj) (load-from-image prototype (:bytes obj) 0)]) (:objects oblock)))))
+    (into {} (map (fn [obj] [(:oid obj)
+                            (-> (load-from-image prototype (:bytes obj) 0)
+                                (assoc :metaclass mcld-index))])
+                  (:objects oblock)))))

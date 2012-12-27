@@ -72,7 +72,7 @@
    :code-page-size 0
    :const []
    :const-page-size 0
-   :objs []
+   :objs {}
    :next-oid 0
    :mcld []
    :fnsd []})
