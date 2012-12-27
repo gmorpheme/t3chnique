@@ -37,7 +37,7 @@
 (defprimitive vm-objx 17 "Reserved for implementation use for an executable object, as a 32-bit object ID number (see note below)" :uint4)
 
 (defn vm-string? [x] (some [vm-sstring? vm-dstring?] x))
-(defn vm-bool [v] (if v (vm-true nil) (vm-nil nil)))
+(defn vm-bool [v] (if v (vm-true) (vm-nil)))
 (defn typeid [entry] (:type entry))
 (defn value [entry] (:value entry))
 (defn vm-zero? [v] (and (vm-int? v) (zero? (value v))))
