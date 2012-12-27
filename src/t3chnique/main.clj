@@ -7,13 +7,15 @@
             [clojure.java.io :as io]
             [clojure.pprint :as pp]))
 
-(declare entp dis object output)
+(declare entp dis object constant-string constant-list output)
 
 (defn -main [& args]
   (let [[opts args h] (cli args
                            ["-r" "--resource" "Load game from resource instead of file system." :flag true]
                            ["-e" "--entp" "Output entry point information" :flag true]
                            ["-s" "--state" "Output initial vm state (without binary entries)" :flag true]
+                           ["-c" "--constant-string" "Output the string value at specified address in the constant pool" :parse-fn #(Integer. %)]
+                           ["-l" "--constant-list" "Output the list value at specified address in the constant pool" :parse-fn #(Integer. %)]
                            ["-d" "--disassemble" "Output disassembled code for function at specified address" :parse-fn #(Integer. %)]
                            ["-o" "--object" "Output object information for specified object id" :parse-fn #(Integer. %)]
                            ["-h" "--help" "Output this help text." :flag true])
@@ -26,7 +28,9 @@
      (:entp opts) (entp image)
      (:state opts) (output "Initial VM State" state)
      (:disassemble opts) (dis (:disassemble opts) state)
-     (:object opts) (object (:object opts) state))))
+     (:object opts) (object (:object opts) state)
+     (:constant-string opts) (constant-string (:constant-string opts) state)
+     (:constant-list opts) (constant-list (:constant-list opts) state))))
 
 (defn output [title m]
   (println "=======================================")
@@ -110,3 +114,19 @@
   "Dump out object information for object with specified oid."
   [oid state]
   (output (str "Object " oid) (get (:objs state) oid)))
+
+(defn constant-string
+  "Dump out constant information for object at specified address in the constant pool."
+  [addr state]
+  (let [[b o] (vm/const-offset state addr)]
+    (.position b o)
+    (println (format "String @ %d\n" addr))
+    (println (ber/read-pref-utf8 b))))
+
+(defn constant-list
+  "Dump out constant list at specified address in the constant pool."
+  [addr state]
+  (let [[b o] (vm/const-offset state addr)]
+    (.position b o)
+    (println (format "List @ %d\n" addr))
+    (println (ber/read-list b))))

@@ -100,9 +100,12 @@
 (defn offset [{:keys [code-page-size code ip]} & ptr]
   (let [p (or (first ptr) ip)]
     [(:bytes (nth code (/ p code-page-size))) (mod p code-page-size)]))
-  
-(defmacro with-buffer [[bsym s p] & exprs]
-  `(let [[b# o#] (offset ~s ~p)
+
+(defn const-offset [{:keys [const-page-size const]} ptr]
+  [(:bytes (nth const (/ ptr const-page-size))) (mod ptr const-page-size)])
+
+(defmacro with-buffer [[bsym s addr] & exprs]
+  `(let [[b# o#] (offset ~s ~addr)
          ~bsym (.slice b#)
          _# (.position ~bsym o#)]
      ~@exprs))
@@ -134,48 +137,48 @@
 
 (defn code-read-ubyte []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-ubyte buf) (bump-pc s 1)])))
 
 (defn code-read-sbyte []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-sbyte buf) (bump-pc s 1)])))
 
 (defn code-read-uint2 []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-uint2 buf) (bump-pc s 2)])))
 
 (defn code-read-int2 []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-int2 buf) (bump-pc s 2)])))
 
 (defn code-read-uint4 []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-uint4 buf) (bump-pc s 4)])))
 
 (defn code-read-int4 []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-int4 buf) (bump-pc s 4)])))
 
 (defn code-read-utf8 [count]
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-utf8 count) (bump-pc s count)])))
 
 (defn code-read-pref-utf8 []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       (let [count (ber/read-uint2 buf)]
         [(ber/read-utf8 count) (bump-pc s count)]))))
 
 (defn code-read-data-holder []
   (fn [s]
-    (with-buffer [buf s]
+    (with-buffer [buf s (:pc s)]
       [(ber/read-data-holder buf) (bump-pc s 5)])))
 
 (defn code-read-item [type-sym]
@@ -246,6 +249,9 @@
 (defn pc []
   (fn [s] [(:pc s) s]))
 
+(defn jump [offset]
+  (fn [s] [nil (bump-pc s (- offset 2))]))
+
 (def reg-get fetch-val)
 (def reg-set set-val)
 
@@ -259,8 +265,8 @@
 (defn obj-retrieve [oid]
   (fn [s] [(get-in s [:objs oid]) s]))
 
-(defn jump [offset]
-  (fn [s] [nil (bump-pc s (- offset 2))]))
+(defn get-string [addr]
+  (fn [s] []))
 
 ;; The main step function
 (defn runop

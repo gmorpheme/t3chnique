@@ -61,7 +61,7 @@
 (defn read-pref-utf8
   "Read utf-8 prefixed with length as ubyte"
   [b]
-  (let [count (read-ubyte b)]
+  (let [count (read-uint2 b)]
     (read-utf8 b count)))
 
 (declare read-item)
@@ -75,6 +75,14 @@
         value (if (nil? encoding) nil (read-item encoding b))
         _ (.position b (+ pos 5))]
     (prim/typed-value typeid value)))
+
+(defn read-list
+  "Read prefix-counted list of data holders."
+  [b]
+  (loop [n (read-uint2 b) items []]
+    (if (pos? n)
+      (recur (dec n) (conj items (read-data-holder b)))
+      items)))
 
 (defn read-byte-array [b count]
   (let [dest (byte-array count)
