@@ -5,7 +5,8 @@
             [t3chnique.image :as im]
             [t3chnique.ber :as ber]
             [clojure.java.io :as io]
-            [clojure.pprint :as pp]))
+            [clojure.pprint :as pp])
+  (:import [java.nio Buffer]))
 
 (declare entp dis object constant-string constant-list output)
 
@@ -24,13 +25,14 @@
                 (im/parse-resource game)
                 (im/parse-file game))
         state (vm/vm-from-image image)]
-    (cond
-     (:entp opts) (entp image)
-     (:state opts) (output "Initial VM State" state)
-     (:disassemble opts) (dis (:disassemble opts) state)
-     (:object opts) (object (:object opts) state)
-     (:constant-string opts) (constant-string (:constant-string opts) state)
-     (:constant-list opts) (constant-list (:constant-list opts) state))))
+    (time 
+     (cond
+      (:entp opts) (entp image)
+      (:state opts) (output "Initial VM State" state)
+      (:disassemble opts) (dis (:disassemble opts) state)
+      (:object opts) (object (:object opts) state)
+      (:constant-string opts) (constant-string (:constant-string opts) state)
+      (:constant-list opts) (constant-list (:constant-list opts) state)))))
 
 (defn output [title m]
   (println "=======================================")
@@ -49,7 +51,7 @@
 
 (defn- dis1
   "Disassemble single instruction from buffer, incrementing pointer."
-  [buffer-addr method-addr buf ptr]
+  [buffer-addr method-addr ^Buffer buf ptr]
   (let [_ (.position buf ptr)
         opcode (ber/read-ubyte buf)]
     (when-let [op (@vm/table opcode)]
@@ -61,7 +63,7 @@
        (.position buf)])))
 
 (defn dis-method
-  [buffer-addr method-addr buf start end]
+  [buffer-addr method-addr ^Buffer buf start end]
   (loop [ops [] ptr start]
     (if (or (zero? end) (< (.position buf) end))
       (if-let [[d nextptr] (dis1 buffer-addr method-addr buf ptr)]
@@ -100,7 +102,7 @@
     ;; exception table
     (when (pos? etable-offset)
       (println (format "\nException Table @ %d\n" etable-addr))
-      (let [[b o] (vm/offset state etable-addr)
+      (let [[^Buffer b o] (vm/offset state etable-addr)
             _ (.position b o)
             erecords (im/read-exception-table b)]
         (doseq [e erecords]
@@ -118,7 +120,7 @@
 (defn constant-string
   "Dump out constant information for object at specified address in the constant pool."
   [addr state]
-  (let [[b o] (vm/const-offset state addr)]
+  (let [[^Buffer b o] (vm/const-offset state addr)]
     (.position b o)
     (println (format "String @ %d\n" addr))
     (println (ber/read-pref-utf8 b))))
@@ -126,7 +128,7 @@
 (defn constant-list
   "Dump out constant list at specified address in the constant pool."
   [addr state]
-  (let [[b o] (vm/const-offset state addr)]
+  (let [[^Buffer b o] (vm/const-offset state addr)]
     (.position b o)
     (println (format "List @ %d\n" addr))
     (println (ber/read-list b))))

@@ -4,8 +4,40 @@
 (def vm-m (state-t cont-m))
 
 (with-monad vm-m
-  ;; state-t cont-m
 
+  (defn >> [mva mvb]
+    (m-bind mva (fn [_] mvb)))
+
+  (defn >>- [mvs]
+    (reduce >> mvs))
+  
+  ;; primitives for working in the vm monad
+  
+  (defn fetch-val [key]
+    (fn [s]
+      (fn [k]
+        (k (get key s)))))
+
+  (defn set-val [key val]
+    (fn [s]
+      (fn [k]
+        (k (assoc s key val)))))
+
+  (defn copy-val [k1 k2]
+    (fn [s]
+      (fn [k]
+        (k (assoc s k1 (get s k2))))))
+
+  (defn unset-val [key]
+    (fn [s]
+      (fn [k]
+        (k (dissoc s key)))))
+
+  ;; machine primitives
+  (def fresh-pc (copy-val :ip :pc))
+  (def set-pc (partial set-val :pc))
+  (def commit-pc )
+  
   (defn code-read []
     (fn [s]
       (fn [k]

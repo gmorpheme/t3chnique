@@ -3,7 +3,9 @@
   (:require [nio.core :as nio]
             [clojure.java.io :as io])
   (:import [java.nio.charset Charset]
-           [java.nio ByteOrder MappedByteBuffer]))
+           [java.nio ByteOrder MappedByteBuffer ByteBuffer]))
+
+(set! *warn-on-reflection* true)
 
 (defn read-sig [b]
   (let [sig (ber/read-utf8 b 11)
@@ -83,10 +85,17 @@
   (let [slice (ber/slice buf size)]
     (ber/parse [:uint2 :pool-id :uint4 :page-count :uint4 :page-size] slice)))
 
+(defn- de-xor
+  "Could be improved by chunking."
+  [^ByteBuffer buf mask]
+  (doseq [p (range (.position buf) (.limit buf))]
+    (.put buf ^int p (unchecked-byte (bit-xor mask (.get buf ^int p))))))
+
 (defmethod read-block "CPPG" [{size :size} buf]
   (let [slice (ber/slice buf size)
         m (ber/parse [:uint2 :pool-id :uint4 :pool-index :ubyte :xor-mask] slice)
-        bytes (ber/slice slice (- size 7))]
+        bytes (ber/slice slice (- size 7))
+        _ (de-xor bytes (:xor-mask m))]
     (assoc m :bytes bytes)))
 
 (defmethod read-block "MCLD" [{size :size} buf]

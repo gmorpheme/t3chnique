@@ -5,7 +5,9 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :resources-path "resources"
   :main t3chnique.main
-  :dependencies [[org.clojure/clojure "1.4.0"]
+  :warn-on-reflection true
+  :jvm-opts ["-Xmx1g" "-Xshare:off"]
+  :dependencies [[org.clojure/clojure "1.5.0-RC4"]
                  [org.clojure/algo.monads "0.1.0"]
                  [nio "0.0.3"]
                  [compojure "1.1.3"]

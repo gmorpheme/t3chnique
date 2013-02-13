@@ -111,7 +111,10 @@
      ~@exprs))
 
 (defn fresh-pc []
-  (fn [s] [nil (assoc s :pc (:ip s))]))
+  (domonad vm-m
+           [ip (fetch-val :ip)
+            _ (set-val :pc ip)]
+           nil))
 
 (def set-pc (partial set-val :pc))
 
@@ -134,64 +137,64 @@
            (-> fs
                (nth set)
                (nth func))))
+(comment
+  (defn code-read-ubyte []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-ubyte buf) (bump-pc s 1)])))
 
-(defn code-read-ubyte []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-ubyte buf) (bump-pc s 1)])))
+  (defn code-read-sbyte []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-sbyte buf) (bump-pc s 1)])))
 
-(defn code-read-sbyte []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-sbyte buf) (bump-pc s 1)])))
+  (defn code-read-uint2 []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-uint2 buf) (bump-pc s 2)])))
 
-(defn code-read-uint2 []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-uint2 buf) (bump-pc s 2)])))
+  (defn code-read-int2 []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-int2 buf) (bump-pc s 2)])))
 
-(defn code-read-int2 []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-int2 buf) (bump-pc s 2)])))
+  (defn code-read-uint4 []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-uint4 buf) (bump-pc s 4)])))
 
-(defn code-read-uint4 []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-uint4 buf) (bump-pc s 4)])))
+  (defn code-read-int4 []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-int4 buf) (bump-pc s 4)])))
 
-(defn code-read-int4 []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-int4 buf) (bump-pc s 4)])))
+  (defn code-read-utf8 [count]
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-utf8 count) (bump-pc s count)])))
 
-(defn code-read-utf8 [count]
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-utf8 count) (bump-pc s count)])))
+  (defn code-read-pref-utf8 []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        (let [count (ber/read-uint2 buf)]
+          [(ber/read-utf8 count) (bump-pc s count)]))))
 
-(defn code-read-pref-utf8 []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      (let [count (ber/read-uint2 buf)]
-        [(ber/read-utf8 count) (bump-pc s count)]))))
+  (defn code-read-data-holder []
+    (fn [s]
+      (with-buffer [buf s (:pc s)]
+        [(ber/read-data-holder buf) (bump-pc s 5)])))
 
-(defn code-read-data-holder []
-  (fn [s]
-    (with-buffer [buf s (:pc s)]
-      [(ber/read-data-holder buf) (bump-pc s 5)])))
-
-(defn code-read-item [type-sym]
-  (condp = type-sym
-    :uint2 (code-read-uint2)
-    :int2 (code-read-int2)
-    :uint4 (code-read-uint4)
-    :int4 (code-read-int4)
-    :ubyte (code-read-ubyte)
-    :sbyte (code-read-sbyte)
-    :data-holder (code-read-data-holder)
-    :pref-utf8 (code-read-pref-utf8)
-    (code-read-utf8 (second type-sym))))
+  (defn code-read-item [type-sym]
+    (condp = type-sym
+      :uint2 (code-read-uint2)
+      :int2 (code-read-int2)
+      :uint4 (code-read-uint4)
+      :int4 (code-read-int4)
+      :ubyte (code-read-ubyte)
+      :sbyte (code-read-sbyte)
+      :data-holder (code-read-data-holder)
+      :pref-utf8 (code-read-pref-utf8)
+      (code-read-utf8 (second type-sym)))))
 
 (defn get-method-header
   "Read method header at specified offset."
