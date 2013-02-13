@@ -11,21 +11,21 @@
 (declare entp dis object constant-string constant-list output)
 
 (defn -main [& args]
-  (let [[opts args h] (cli args
-                           ["-r" "--resource" "Load game from resource instead of file system." :flag true]
-                           ["-e" "--entp" "Output entry point information" :flag true]
-                           ["-s" "--state" "Output initial vm state (without binary entries)" :flag true]
-                           ["-c" "--constant-string" "Output the string value at specified address in the constant pool" :parse-fn #(Integer. %)]
-                           ["-l" "--constant-list" "Output the list value at specified address in the constant pool" :parse-fn #(Integer. %)]
-                           ["-d" "--disassemble" "Output disassembled code for function at specified address" :parse-fn #(Integer. %)]
-                           ["-o" "--object" "Output object information for specified object id" :parse-fn #(Integer. %)]
-                           ["-h" "--help" "Output this help text." :flag true])
-        game (first args)
-        image (if (:resource opts)
-                (im/parse-resource game)
-                (im/parse-file game))
-        state (vm/vm-from-image image)]
-    (time 
+  (time
+   (let [[opts args h] (cli args
+                            ["-r" "--resource" "Load game from resource instead of file system." :flag true]
+                            ["-e" "--entp" "Output entry point information" :flag true]
+                            ["-s" "--state" "Output initial vm state (without binary entries)" :flag true]
+                            ["-c" "--constant-string" "Output the string value at specified address in the constant pool" :parse-fn #(Integer. %)]
+                            ["-l" "--constant-list" "Output the list value at specified address in the constant pool" :parse-fn #(Integer. %)]
+                            ["-d" "--disassemble" "Output disassembled code for function at specified address" :parse-fn #(Integer. %)]
+                            ["-o" "--object" "Output object information for specified object id" :parse-fn #(Integer. %)]
+                            ["-h" "--help" "Output this help text." :flag true])
+         game (first args)
+         image (if (:resource opts)
+                 (im/parse-resource game)
+                 (im/parse-file game))
+         state (vm/vm-from-image image)]
      (cond
       (:entp opts) (entp image)
       (:state opts) (output "Initial VM State" state)
