@@ -3,15 +3,17 @@
             [clojure.java.io :as io]
             [t3chnique.primitive :as prim])
   (:import [java.nio.charset Charset]
-           [java.nio ByteOrder MappedByteBuffer]))
+           [java.nio ByteOrder MappedByteBuffer ByteBuffer]))
+
+(set! *warn-on-reflection* true)
 
 (defn slice 
   "Slice a new buffer off the base of count bytes"
-  ([b]
+  ([^ByteBuffer b]
      (let [slice (.slice b)
            _ (.order slice ByteOrder/LITTLE_ENDIAN)]
        slice))
-  ([b count]
+  ([^ByteBuffer b count]
      (let [save (.limit b)
            _ (.limit b (+ count (.position b)))
            slice (.slice b)
@@ -22,37 +24,37 @@
 
 (defn read-sbyte
   "Read a singly ubyte from the buffer (advancing position 1)"
-  [b]
+  [^ByteBuffer b]
   (.get b))
 
 (defn read-ubyte
   "Read a singly ubyte from the buffer (advancing position 1)"
-  [b]
+  [^ByteBuffer b]
   (bit-and (.get b) 0xff))
 
 (defn read-uint2 
   "Read a single uint2 from the buffer (advancing position 2)"
-  [b]
+  [^ByteBuffer b]
   (bit-and (.getShort b) 0xffff))
 
 (defn read-int2
   "Read a single int2 from the buffer (advancing position 2)"
-  [b]
+  [^ByteBuffer b]
   (.getShort b))
 
 (defn read-uint4 
   "Read a single uint4 from the buffer (advancing position 4)"
-  [b]
+  [^ByteBuffer b]
   (bit-and (.getInt b) 0xffffffff))
 
 (defn read-int4
   "Read a single int4 from the buffer (advancing position 4)"
-  [b]
+  [^ByteBuffer b]
   (.getInt b))
 
 (defn read-utf8 
   "Read to limit at utf-8"
-  [b count]
+  [^ByteBuffer b count]
   (let [utf8 (Charset/forName "utf-8")
         decoder (.newDecoder utf8)
         slice (slice b count)]
@@ -60,7 +62,7 @@
 
 (defn read-pref-utf8
   "Read utf-8 prefixed with length as ubyte"
-  [b]
+  [^ByteBuffer b]
   (let [count (read-uint2 b)]
     (read-utf8 b count)))
 
@@ -68,7 +70,7 @@
 
 (defn read-data-holder
   "Read a data holder from the buffer (advancing position 5"
-  [b]
+  [^ByteBuffer b]
   (let [pos (.position b)
         typeid (.get b)
         encoding (:encoding (prim/primitive typeid))
@@ -78,25 +80,25 @@
 
 (defn read-list
   "Read prefix-counted list of data holders."
-  [b]
+  [^ByteBuffer b]
   (loop [n (read-uint2 b) items []]
     (if (pos? n)
       (recur (dec n) (conj items (read-data-holder b)))
       items)))
 
-(defn read-byte-array [b count]
+(defn read-byte-array [^ByteBuffer b count]
   (let [dest (byte-array count)
         _ (.get b dest 0 count)]
     dest))
 
 (defn show-bytes
   "Peek into the buffer to display the next few bytes as hex."
-  ([b count]
+  ([^ByteBuffer b count]
      (let [b' (.slice b)]
        (apply str 
               (for [i (range count)]
                 (format "%02x" (.get b'))))))
-  ([b]
+  ([^ByteBuffer b]
      (show-bytes b 10)))
 
 (defn read-item [type-sym buf]

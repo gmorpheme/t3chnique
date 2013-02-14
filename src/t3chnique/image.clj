@@ -7,20 +7,20 @@
 
 (set! *warn-on-reflection* true)
 
-(defn read-sig [b]
+(defn read-sig [^ByteBuffer b]
   (let [sig (ber/read-utf8 b 11)
         ver (ber/read-uint2 b)
         _ (.position b 45)
         timestamp (ber/read-utf8 b 24)]
     [ver timestamp]))
 
-(defn read-block-header [b]
+(defn read-block-header [^ByteBuffer b]
   (let [m (ber/parse [[:utf8 4] :id :uint4 :size :uint2 :flags] b)]
     (assoc m :mandatory (= (bit-and 1 (:flags m)) 1))))
 
 (defmulti read-block (fn [block buf] (:id block)))
 
-(defn parse-image [b]
+(defn parse-image [^ByteBuffer b]
   (let [_ (.position b 0)
         [version timestamp] (read-sig b)]
     (loop [buf b blocks []]
@@ -89,7 +89,12 @@
   "Could be improved by chunking."
   [^ByteBuffer buf mask]
   (doseq [p (range (.position buf) (.limit buf))]
-    (.put buf ^int p (unchecked-byte (bit-xor mask (.get buf ^int p))))))
+    (.put buf ^int p (unchecked-byte (bit-xor mask (.get buf ^int p)))))
+  #_(let [l (- (.limit buf) (.position buf))
+        a (byte-array l)
+        _ (.get buf ^bytes a 0 l)
+        _ (amap ^bytes a i ret (unchecked-byte (bit-xor mask (aget ^bytes a i))))
+        _ (.put buf ^bytes a 0 l)]))
 
 (defmethod read-block "CPPG" [{size :size} buf]
   (let [slice (ber/slice buf size)
@@ -133,8 +138,8 @@
                     (recur (inc n) (conj objects {:oid oid :bytes bytes})))
                   objects))}))
 
-(defmethod read-block "MRES" [{size :size} buf]
-  (let [slice (ber/slice buf size)
+(defmethod read-block "MRES" [{size :size} ^ByteBuffer buf]
+  (let [slice ^ByteBuffer (ber/slice buf size)
         entry-count (ber/read-uint2 slice)
         toc (loop [n 0 entries []]
               (if (< n entry-count)
@@ -143,7 +148,7 @@
                       chars (ber/read-ubyte slice)
                       barr (ber/read-byte-array slice chars)
                       xbytes (amap ^bytes barr i _ (byte (bit-xor (aget ^bytes barr i) (byte -1))))
-                      name (String. xbytes "ascii")]
+                      name (String. ^bytes xbytes "ascii")]
                   (recur (inc n) (conj entries {:size size :offset offset :name name})))
                 entries))
         entries (reduce

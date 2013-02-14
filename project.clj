@@ -6,7 +6,7 @@
   :resources-path "resources"
   :main t3chnique.main
   :warn-on-reflection true
-  :jvm-opts ["-Xmx1g" "-Xshare:off"]
+  :jvm-opts ["-Xmx1g" "-Xshare:off" "-agentpath:C:/Program Files/YourKit Java Profiler 12.0.3/bin/win32/yjpagent.dll=sampling"]
   :dependencies [[org.clojure/clojure "1.5.0-RC4"]
                  [org.clojure/algo.monads "0.1.0"]
                  [nio "0.0.3"]
