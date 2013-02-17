@@ -85,7 +85,7 @@
   (let [slice (ber/slice buf size)]
     (ber/parse [:uint2 :pool-id :uint4 :page-count :uint4 :page-size] slice)))
 
-(defn- de-xor
+(defn de-xor
   "Could be improved by chunking."
   [^ByteBuffer buf mask]
   (doseq [p (range (.position buf) (.limit buf))]
