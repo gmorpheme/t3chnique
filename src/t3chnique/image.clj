@@ -86,15 +86,14 @@
     (ber/parse [:uint2 :pool-id :uint4 :page-count :uint4 :page-size] slice)))
 
 (defn de-xor
-  "Could be improved by chunking."
   [^ByteBuffer buf mask]
-  (doseq [p (range (.position buf) (.limit buf))]
-    (.put buf ^int p (unchecked-byte (bit-xor mask (.get buf ^int p)))))
-  #_(let [l (- (.limit buf) (.position buf))
-        a (byte-array l)
-        _ (.get buf ^bytes a 0 l)
-        _ (amap ^bytes a i ret (unchecked-byte (bit-xor mask (aget ^bytes a i))))
-        _ (.put buf ^bytes a 0 l)]))
+  (let [l (.remaining buf)
+        a (byte-array l)]
+    (.mark buf)
+    (.get buf ^bytes a 0 l)
+    (let [a' (amap ^bytes a i ret (unchecked-byte (bit-xor mask (aget ^bytes a i))))]
+      (.reset buf)
+      (.put buf ^bytes a' 0 l))))
 
 (defmethod read-block "CPPG" [{size :size} buf]
   (let [slice (ber/slice buf size)
