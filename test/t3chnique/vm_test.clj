@@ -130,10 +130,10 @@
       :stack (st 1 2 nil nil nil nil
                  (vm-codeofs 0x20)
                  (vm-codeofs 0x10)
-                 2 0 nil nil nil nil)))
-  (provided
-    (get-method-header 0x1234) =>
-    (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s])))
+                 2 0 nil nil nil nil))
+    (provided
+      (get-method-header 0x1234) =>
+      (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))))
 
 (facts "Returns"
   (let [vm (vm-state-with :ep 0x1234
