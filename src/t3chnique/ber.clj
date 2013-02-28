@@ -7,6 +7,17 @@
 
 (set! *warn-on-reflection* true)
 
+(defprotocol ByteSource
+  (read-sbyte [self])
+  (read-ubyte [self])
+  (read-bytes [self count])
+  (read-int2 [self])
+  (read-uint2 [self])
+  (read-int4 [self])
+  (read-uint4 [self])
+  (read-utf8 [self count]))
+
+;; byte buffer based implementation
 (defn slice 
   "Slice a new buffer off the base of count bytes"
   ([^ByteBuffer b]
@@ -22,47 +33,29 @@
            _ (.limit b save)]
        slice)))
 
-(defn read-sbyte
-  "Read a singly ubyte from the buffer (advancing position 1)"
-  [^ByteBuffer b]
-  (.get b))
+(extend-protocol ByteSource
+  ByteBuffer
+  (read-sbyte [b] (.get b))
+  (read-ubyte [b] (bit-and (.get b) 0xff))
+  (read-bytes [b count] (let [dest (byte-array count)]
+                          (.get b dest 0 count)
+                          dest))
+  (read-int2 [b] (.getShort b))
+  (read-uint2 [b] (bit-and (.getShort b) 0xffff))
+  (read-int4 [b] (.getInt b))
+  (read-uint4 [b] (bit-and (.getInt 0xffffffff)))
+  (read-utf8 [b count] (let [utf8 (Charset/forName "utf-8")
+                             decoder (.newDecoder utf8)
+                             slice (slice b count)]
+                         (String. (.array (.decode decoder slice))))))
 
-(defn read-ubyte
-  "Read a singly ubyte from the buffer (advancing position 1)"
-  [^ByteBuffer b]
-  (bit-and (.get b) 0xff))
 
-(defn read-uint2 
-  "Read a single uint2 from the buffer (advancing position 2)"
-  [^ByteBuffer b]
-  (bit-and (.getShort b) 0xffff))
 
-(defn read-int2
-  "Read a single int2 from the buffer (advancing position 2)"
-  [^ByteBuffer b]
-  (.getShort b))
-
-(defn read-uint4 
-  "Read a single uint4 from the buffer (advancing position 4)"
-  [^ByteBuffer b]
-  (bit-and (.getInt b) 0xffffffff))
-
-(defn read-int4
-  "Read a single int4 from the buffer (advancing position 4)"
-  [^ByteBuffer b]
-  (.getInt b))
-
-(defn read-utf8 
-  "Read to limit at utf-8"
-  [^ByteBuffer b count]
-  (let [utf8 (Charset/forName "utf-8")
-        decoder (.newDecoder utf8)
-        slice (slice b count)]
-    (String. (.array (.decode decoder slice)))))
+;; functions built on top of the base protocols
 
 (defn read-pref-utf8
   "Read utf-8 prefixed with length as ubyte"
-  [^ByteBuffer b]
+  [b]
   (let [count (read-uint2 b)]
     (read-utf8 b count)))
 
@@ -70,7 +63,7 @@
 
 (defn read-data-holder
   "Read a data holder from the buffer (advancing position 5"
-  [^ByteBuffer b]
+  [^ByteSource b]
   (let [pos (.position b)
         typeid (.get b)
         encoding (:encoding (prim/primitive typeid))
@@ -80,28 +73,23 @@
 
 (defn read-list
   "Read prefix-counted list of data holders."
-  [^ByteBuffer b]
+  [^ByteSource b]
   (loop [n (read-uint2 b) items []]
     (if (pos? n)
       (recur (dec n) (conj items (read-data-holder b)))
       items)))
 
-(defn read-byte-array [^ByteBuffer b count]
-  (let [dest (byte-array count)
-        _ (.get b dest 0 count)]
-    dest))
-
 (defn show-bytes
   "Peek into the buffer to display the next few bytes as hex."
-  ([^ByteBuffer b count]
+  ([^ByteSource b count]
      (let [b' (.slice b)]
        (apply str 
               (for [i (range count)]
                 (format "%02x" (.get b'))))))
-  ([^ByteBuffer b]
+  ([^ByteSource b]
      (show-bytes b 10)))
 
-(defn read-item [type-sym buf]
+(defn read-item [type-sym ^ByteSource buf]
   (condp = type-sym
     :uint2 (read-uint2 buf)
     :int2 (read-int2 buf)
@@ -114,32 +102,9 @@
     (read-utf8 buf (second type-sym))))
 
 (defn parse
-  "e.g. (parse [:uint2 :foo :uint4 :bar [:utf8 4] :str] buf) returns {:foo 123 :bar 1234 :str \"blah\"}"
+  "e.g. (parse [:uint2 :foo :uint4 :bar [:utf8 4] :str] buf) returns
+ {:foo 123 :bar 1234 :str \"blah\"}"
   [spec buf]
   (reduce merge (for [[t n] (partition 2 spec)]
                   (sorted-map (keyword n) (read-item t buf)))))
-
-(comment
-  (defblock header [[:utf8 4] :id
-                    :uint4 :size
-                    :uint2 :flags])
-  (defblock fnsd [:uint2 :count
-                  (:* :count
-                      [:ubyte :bytes
-                       [:utf8 :ubyte] :name]) :entries])
-  (defblock cpdf [:uint2 :pool-id
-                  :uint4 :page-count
-                  :uint4 :page-size])
-  (defblock cppg [size] [:uint2 :pool-id
-                         :uint4 :pool-index
-                         :ubyte :xor-mask
-                         [:bytes :> size] :bytes])
-  (defblock mcld [:uint2 :count
-                  (* :count
-                     [:uint2 :offset
-                      :ubyte :chars
-                      [:utf8 :chars] :name
-                      :uint2 :pid-count
-                      :uint2 :pid-size
-                      (* :pid-count [:uint2 :pid]) :pids])] :entries))
 
