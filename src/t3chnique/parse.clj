@@ -1,5 +1,7 @@
 (ns t3chnique.parse
   (:use [clojure.algo.monads])
+  (:require [nio.core :as nio]
+            [clojure.java.io :as io])
   (:require [t3chnique.primitive :as prim])
   (:import [java.nio.charset Charset]
            [java.nio ByteOrder MappedByteBuffer ByteBuffer]))
@@ -53,29 +55,29 @@
 (defmacro defbasic [n f s]
   `(defn ~n []
      (domonad byteparser-m
-      [[b# i#] (fetch-val :parse-state)
-       _# (set-val :parse-state [b# (+ ~s i#)])]
+      [[b# i#] (fetch-state)
+       _# (set-state [b# (+ ~s i#)])]
       (~f b# i#))))
 
-(defn init [buf] {:parse-state [buf 0]})
+(defn init-state [buf] [buf 0])
 
 (defn parse [parser buffer]
-  (let [st (init buffer)]
+  (let [st (init-state buffer)]
     (first (parser st))))
 
 (with-monad byteparser-m
   
   (defn skip [n]
     (domonad
-     [[b i] (fetch-val :parse-state)
-      _ (set-val :parse-state [b (+ i n)])]
+     [[b i] (fetch-state)
+      _ (set-state [b (+ i n)])]
      nil))
 
   (defn within [count parser]
     (domonad
-     [[_ start] (fetch-val :parse-state)
+     [[_ start] (fetch-state)
       value parser
-      [_ end] (fetch-val :parse-state)
+      [_ end] (fetch-state)
       _ (skip (- count (- end start)))]
      value))
 
@@ -88,8 +90,8 @@
 
   (defn utf8 [byte-count]
     (domonad
-     [[b i] (fetch-val :parse-state)
-      _ (set-val :parse-state [b (+ byte-count i)])]
+     [[b i] (fetch-state)
+      _ (set-state [b (+ byte-count i)])]
      (read-utf8 b i byte-count)))
 
   (defn prefixed-utf8 []
@@ -100,14 +102,14 @@
 
   (defn binary [n]
         (domonad
-     [[b i] (fetch-val :parse-state)
-      _ (set-val :parse-state [b (+ n i)])]
+     [[b i] (fetch-state)
+      _ (set-state [b (+ n i)])]
      (read-bytes b i n)))
 
   (defn xor-bytes [n mask]
     (domonad
-     [[b i] (fetch-val :parse-state)
-      _ (set-val :parse-state [b (+ n i)])]
+     [[b i] (fetch-state)
+      _ (set-state [b (+ n i)])]
      (let [a (read-bytes b i n)]
        (amap ^bytes a i _ (unchecked-byte (bit-xor mask (aget ^bytes a i)))))))
 
@@ -249,6 +251,21 @@
      [[version timestamp] (signature)
       blocks (parse-until #(= (:id %) "EOF ") (block))]
      blocks)))
+
+(defn load-image-file [f]
+  (let [buf (nio/mmap f)
+        _ (.order buf ByteOrder/LITTLE_ENDIAN)]
+    buf))
+
+(defn parse-file [name]
+  (let [f (io/file name)
+        buf (load-image-file f)]
+    (parse (image) buf)))
+
+(defn parse-resource [name]
+  (let [f (io/file (io/resource name))
+        buf (load-image-file f)]
+    (parse (image) buf)))
 
 ;; testing functions
 
