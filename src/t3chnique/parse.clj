@@ -27,7 +27,8 @@
   (read-uint2 [self idx])
   (read-int4 [self idx])
   (read-uint4 [self idx])
-  (read-utf8 [self idx count]))
+  (read-utf8 [self idx count])
+  (read-bytes [self idx count]))
 
 (extend-protocol ByteSource
   ByteBuffer
@@ -43,19 +44,18 @@
   (read-utf8 [b idx count] (let [utf8 (Charset/forName "utf-8")
                                  decoder (.newDecoder utf8)
                                  slice (slice b count)]
-                             (String. (.array (.decode decoder slice))))))
-
+                             (String. (.array (.decode decoder slice)))))
+  (read-bytes [b idx count] (let [a (byte-array count)]
+                              (.get b ^bytes a idx count))))
 
 (def byteparser-m (state-t maybe-m))
 
-
-(defmacro defprimitive [n f s]
+(defmacro defbasic [n f s]
   `(defn ~n []
      (domonad byteparser-m
       [[b# i#] (fetch-val :parse-state)
        _# (set-val :parse-state [b# (+ ~s i#)])]
       (~f b# i#))))
-
 
 (defn init [buf] {:parse-state [buf 0]})
 
@@ -71,12 +71,20 @@
       _ (set-val :parse-state [b (+ i n)])]
      nil))
 
-  (defprimitive ubyte read-ubyte 1)
-  (defprimitive sbyte read-sbyte 1)
-  (defprimitive uint2 read-uint2 2)
-  (defprimitive int2 read-int2 2)
-  (defprimitive uint4 read-uint4 4)
-  (defprimitive int4 read-int4 4)
+  (defn within [count parser]
+    (domonad
+     [[_ start] (fetch-val :parse-state)
+      value parser
+      [_ end] (fetch-val :parse-state)
+      _ (skip (- count (- end start)))]
+     value))
+
+  (defbasic ubyte read-ubyte 1)
+  (defbasic sbyte read-sbyte 1)
+  (defbasic uint2 read-uint2 2)
+  (defbasic int2 read-int2 2)
+  (defbasic uint4 read-uint4 4)
+  (defbasic int4 read-int4 4)
 
   (defn utf8 [byte-count]
     (domonad
@@ -90,6 +98,26 @@
       value (utf8 count)]
      value))
 
+  (defn binary [n]
+        (domonad
+     [[b i] (fetch-val :parse-state)
+      _ (set-val :parse-state [b (+ n i)])]
+     (read-bytes b i n)))
+
+  (defn xor-bytes [n mask]
+    (domonad
+     [[b i] (fetch-val :parse-state)
+      _ (set-val :parse-state [b (+ n i)])]
+     (let [a (read-bytes b i n)]
+       (amap ^bytes a i _ (unchecked-byte (bit-xor mask (aget ^bytes a i)))))))
+
+  (defn prefixed-xor-ascii []
+    (domonad
+     [n (ubyte)
+      a (binary n)]
+     (let [xbytes (amap ^bytes a i _ (unchecked-byte (bit-xor 0xff (aget ^bytes a i))))]
+       (String. ^bytes xbytes "ascii"))))
+
   (defn record [& args]
     (let [[keywords parsers] (map #(take-nth 2 %) [args (rest args)])]
       (domonad
@@ -99,19 +127,24 @@
   (defn times [n parser]
     (m-seq (repeat n parser)))
 
+  (defn parse-until [p parser]
+    (domonad
+     [val parser
+      more (if (p val) (parse-until p parser) nil)]
+     (cons val more)))
+
   (defn tagged-parser [kw]
     (cond
-     (= :kw :uint2) (uint2)
-     (= :kw :int2) (int2)
-     (= :kw :uint4) (uint4)
-     :else nil)
+     (= kw :uint2) (uint2)
+     (= kw :int2) (int2)
+     (= kw :uint4) (uint4)
+     :else nil))
   
   (defn data-holder []
     (domonad
      [typeid (ubyte)
-      :let [encoding (:encoding prim/primitive typeid)]
-      value (tagged-parser encoding)]
-     value))
+      value (tagged-parser (:encoding (prim/primitive typeid)))]
+     (prim/typed-value typeid value)))
   
   (defn lst []
     (domonad
@@ -119,7 +152,7 @@
       v (times n (data-holder))]
      v))
   
-  (defn image-signature []
+  (defn signature []
     (domonad
      [sig (utf8 11)
       ver (uint2)
@@ -127,10 +160,12 @@
       timestamp (utf8 24)]
      [ver timestamp]))
   
-  (defn image-block-header []
+  (defn block-header []
     (record :id (utf8 4) :size (uint4) :flags (uint2)))
 
-  (defn entp []
+  (defmulti block-body :id)
+  
+  (defmethod block-body "ENTP" [_]
     (apply record
            [:entry-point-offset (uint4)
             :method-header-size (uint2)
@@ -141,20 +176,79 @@
             :debug-records-version-number (uint2)])) ;todo frame
                                         ;header size
 
-  (defn symd []
+  (defmethod block-body "SYMD" [_]
     (domonad
      [n (uint2)
       entries (times n (record :value (data-holder) :name (prefixed-utf8)))]
      {:entry-count n :entries entries}))
 
-  (defn fnsd []
+  (defmethod block-body "FNSD" [_]
     (domonad
      [n (uint2)
       entries (times n (prefixed-utf8))]
      {:entry-count n :entries entries}))
 
-  (defn cppf []
-    (record :pool-id (uint2) :page-count (uint4) :page-size (uint4))))
+  (defmethod block-body "CPDF" [_]
+    (record :pool-id (uint2) :page-count (uint4) :page-size (uint4)))
+
+  (defmethod block-body "CPPG" [{size :size}]
+    (domonad
+     [m (record :pool-id (uint2) :pool-index (uint4))
+      mask (ubyte)
+      bytes (xor-bytes (- size 7) mask)]
+     (assoc m :bytes bytes)))
+
+  (defmethod block-body "MCLD" [_]
+    (domonad
+     [n (uint2)
+      entries (times n
+                     (record :offset (uint2)
+                             :name (prefixed-utf8)
+                             :pids (domonad [pid-count (uint2)
+                                             pid-size (uint2)
+                                             pids (times pid-count (uint2))] pids)))]
+     {:entry-count n :entries entries}))
+
+  (defmethod block-body "OBJS" [_]
+    (domonad
+     [n (uint2)
+      mcld-index (uint2)
+      flags (uint2)
+      :let [large (= (bit-and flags 1) 1)
+            transient (= (bit-and flags 2) 1)]
+      objects (times n (domonad
+                        [oid (uint4)
+                         count (if large (uint4) (uint2))
+                         bytes (binary count)]
+                        {:oid oid :bytes bytes}))]
+     {:mcld-index mcld-index
+      :large large
+      :transient transient
+      :objects objects}))
+
+  (defmethod block-body "MRES" [_]
+    (domonad
+     [n (uint2)
+      toc (times n (record :offset (uint4) :size (uint4) :name (prefixed-xor-ascii)))
+      :let [names (map :name toc)]
+      entries (apply m-seq (map (fn [{:keys [offset size]}] (binary offset size)) toc))]
+     (zipmap names entries)))
+
+  (defmethod block-body "EOF " [_]
+    (m-result {}))
+
+  (defn block []
+    (domonad
+     [header (block-header)
+      data (within (:size header)
+                   (block-body header))]
+     (merge header data)))
+  
+  (defn image []
+    (domonad
+     [[version timestamp] (signature)
+      blocks (parse-until #(= (:id %) "EOF ") (block))]
+     blocks)))
 
 ;; testing functions
 
