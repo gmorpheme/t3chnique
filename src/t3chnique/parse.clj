@@ -13,22 +13,18 @@
            _ (.order slice ByteOrder/LITTLE_ENDIAN)]
        slice))
   ([^ByteBuffer b count]
-     (let [save (.limit b)
-           _ (.limit b (+ count (.position b)))
-           slice (.slice b)
-           _ (.order slice ByteOrder/LITTLE_ENDIAN)
-           _ (.position b (.limit b))
-           _ (.limit b save)]
-       slice))
+     (slice b (.position b) count))
   ([^ByteBuffer b offset count]
-     (let [[pos limit] [(.position b) (.limit b)]
-           _ (.position b offset)
-           _ (.limit b (+ offset count))
-           slice (.slice b)
-           _ (.order slice ByteOrder/LITTLE_ENDIAN)
-           _ (.position b pos)
-           _ (.limit b limit)]
-       slice)))
+     {:pre [(not (nil? b)), (not (neg? offset)), (pos? count)]}
+     (let [[pos limit] [(.position b) (.limit b)]]
+       (try
+         (.position b offset)
+         (.limit b (+ offset count))
+         (doto (.slice b)
+           (.order ByteOrder/LITTLE_ENDIAN))
+         (finally 
+          (.limit b limit)
+          (.position b pos))))))
 
 (defprotocol ByteSource
   (read-sbyte [self idx])
@@ -251,7 +247,8 @@
      [header (block-header)
       data (within (:size header)
                    (block-body header))]
-     (merge header data)))
+     (do (println (:id header))
+         (merge header data))))
   
   (defn image []
     (domonad
