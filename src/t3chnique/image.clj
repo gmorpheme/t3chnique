@@ -3,7 +3,8 @@
   (:require [nio.core :as nio]
             [clojure.java.io :as io])
   (:import [java.nio.charset Charset]
-           [java.nio ByteOrder MappedByteBuffer ByteBuffer]))
+           [java.nio ByteOrder MappedByteBuffer ByteBuffer]
+           [t3chnique.ber ByteSource]))
 
 (set! *warn-on-reflection* true)
 

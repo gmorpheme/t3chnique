@@ -53,7 +53,8 @@
                                  slice (slice b idx count)]
                              (String. (.array (.decode decoder slice)))))
   (read-bytes [b idx count] (let [a (byte-array count)]
-                              (.get b ^bytes a idx count)
+                              (.position b idx)
+                              (.get b ^bytes a 0 count)
                               a)))
 
 (def byteparser-m (state-t maybe-m))
@@ -108,8 +109,8 @@
 
   (defn binary [n]
         (domonad
-     [[b i] (fetch-state)
-      _ (set-state [b (+ n i)])]
+         [[b i] (fetch-state)
+          _ (set-state [b (+ n i)])]
      (read-bytes b i n)))
 
   (defn xor-bytes [n mask]
@@ -151,7 +152,7 @@
   (defn data-holder []
     (domonad
      [typeid (ubyte)
-      value (tagged-parser (:encoding (prim/primitive typeid)))]
+      value (within 4 (tagged-parser (:encoding (prim/primitive typeid))))]
      (prim/typed-value typeid value)))
   
   (defn lst []
