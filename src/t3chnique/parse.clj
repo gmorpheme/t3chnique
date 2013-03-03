@@ -19,12 +19,20 @@
            _ (.order slice ByteOrder/LITTLE_ENDIAN)
            _ (.position b (.limit b))
            _ (.limit b save)]
+       slice))
+  ([^ByteBuffer b offset count]
+     (let [[pos limit] [(.position b) (.limit b)]
+           _ (.position b offset)
+           _ (.limit b (+ offset count))
+           slice (.slice b)
+           _ (.order slice ByteOrder/LITTLE_ENDIAN)
+           _ (.position b pos)
+           _ (.limit b limit)]
        slice)))
 
 (defprotocol ByteSource
   (read-sbyte [self idx])
   (read-ubyte [self idx])
-  (read-bytes [self idx count])
   (read-int2 [self idx])
   (read-uint2 [self idx])
   (read-int4 [self idx])
@@ -34,21 +42,19 @@
 
 (extend-protocol ByteSource
   ByteBuffer
-  (read-sbyte [b idx] (.get b))
-  (read-ubyte [b idx] (bit-and (.get b) 0xff))
-  (read-bytes [b idx count] (let [dest (byte-array count)]
-                              (.get b dest 0 count)
-                              dest))
-  (read-int2 [b idx] (.getShort b))
-  (read-uint2 [b idx] (bit-and (.getShort b) 0xffff))
-  (read-int4 [b idx] (.getInt b))
-  (read-uint4 [b idx] (bit-and (.getInt 0xffffffff)))
+  (read-sbyte [b idx] (.get b idx))
+  (read-ubyte [b idx] (bit-and (.get b idx) 0xff))
+  (read-int2 [b idx] (.getShort b idx))
+  (read-uint2 [b idx] (bit-and (.getShort b idx) 0xffff))
+  (read-int4 [b idx] (.getInt b idx))
+  (read-uint4 [b idx] (bit-and (.getInt b idx) 0xffffffff))
   (read-utf8 [b idx count] (let [utf8 (Charset/forName "utf-8")
                                  decoder (.newDecoder utf8)
-                                 slice (slice b count)]
+                                 slice (slice b idx count)]
                              (String. (.array (.decode decoder slice)))))
   (read-bytes [b idx count] (let [a (byte-array count)]
-                              (.get b ^bytes a idx count))))
+                              (.get b ^bytes a idx count)
+                              a)))
 
 (def byteparser-m (state-t maybe-m))
 
@@ -160,7 +166,7 @@
       ver (uint2)
       _ (skip 32)
       timestamp (utf8 24)]
-     [ver timestamp]))
+     [ver timestamp sig]))
   
   (defn block-header []
     (record :id (utf8 4) :size (uint4) :flags (uint2)))
