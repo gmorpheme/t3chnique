@@ -20,8 +20,8 @@
    :sp 0 ; stack pointer
    :fp 0 ; frame pointer
 
-   :say-function (prim/vm-nil)
-   :say-method (prim/vm-prop)
+   :say-function (vm-nil)
+   :say-method (vm-prop)
    
    :savepoint 0
    :savepoint-count 0

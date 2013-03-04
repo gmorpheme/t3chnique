@@ -2,7 +2,7 @@
   (:gen-class)
   (:use [clojure.tools.cli :only [cli]])
   (:require [t3chnique.vm :as vm]
-            [t3chnique.parse :as ps]
+            [t3chnique.parse :as parse]
             [clojure.java.io :as io]
             [clojure.pprint :as pp])
   (:import [java.nio Buffer]))
@@ -22,8 +22,8 @@
                             ["-h" "--help" "Output this help text." :flag true])
          game (first args)
          image (if (:resource opts)
-                 (im/parse-resource game)
-                 (im/parse-file game))
+                 (parse/parse-resource game)
+                 (parse/parse-file game))
          state (vm/vm-from-image image)]
      (cond
       (:entp opts) (entp image)
@@ -51,15 +51,14 @@
 (defn- dis1
   "Disassemble single instruction from buffer, incrementing pointer."
   [buffer-addr method-addr ^Buffer buf ptr]
-  (let [_ (.position buf ptr)
-        opcode (ber/read-ubyte buf)]
+  (let [opcode (first ((parse/ubyte) [buf ptr]))]
     (when-let [op (@vm/table opcode)]
       [{:address (+ buffer-addr ptr)
         :offset (- (+ buffer-addr ptr) method-addr)
         :opcode opcode
         :mnemonic (vm/mnemonic op)
-        :args (ber/parse (vm/parse-spec op) buf)}
-       (.position buf)])))
+        :args (ber/parse (vm/parse-spec op) buf)}]
+      nil)))
 
 (defn dis-method
   [buffer-addr method-addr ^Buffer buf start end]
@@ -120,14 +119,12 @@
   "Dump out constant information for object at specified address in the constant pool."
   [addr state]
   (let [[^Buffer b o] (vm/const-offset state addr)]
-    (.position b o)
     (println (format "String @ %d\n" addr))
-    (println (ber/read-pref-utf8 b))))
+    (println (first ((parse/prefixed-utf8) [b o])))))
 
 (defn constant-list
   "Dump out constant list at specified address in the constant pool."
   [addr state]
   (let [[^Buffer b o] (vm/const-offset state addr)]
-    (.position b o)
     (println (format "List @ %d\n" addr))
-    (println (ber/read-list b))))
+    (println (first ((parse/lst) [b o])))))
