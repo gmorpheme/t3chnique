@@ -6,6 +6,8 @@
   (:import [java.nio.charset Charset]
            [java.nio ByteOrder MappedByteBuffer ByteBuffer]))
 
+(set! *warn-on-reflection* true)
+
 (defn slice 
   "Slice a new buffer off the base of count bytes"
   ([^ByteBuffer b]
@@ -38,8 +40,8 @@
 
 (extend-protocol ByteSource
   ByteBuffer
-  (read-sbyte [b idx] (.get b idx))
-  (read-ubyte [b idx] (bit-and (.get b idx) 0xff))
+  (read-sbyte [b idx] (.get b ^int idx))
+  (read-ubyte [b idx] (bit-and (.get b ^int idx) 0xff))
   (read-int2 [b idx] (.getShort b idx))
   (read-uint2 [b idx] (bit-and (.getShort b idx) 0xffff))
   (read-int4 [b idx] (.getInt b idx))
@@ -82,13 +84,13 @@
       _ (set-state [b n])]
      nil))
 
-  (defn within [count parser]
+  (defn within [n parser]
     (domonad
      [[_ start] (fetch-state)
-      value parser
+      val parser
       [_ end] (fetch-state)
-      _ (skip (- count (- end start)))]
-     value))
+      _ (skip (- n (- end start)))]
+     val))
 
   (defbasic ubyte read-ubyte 1)
   (defbasic sbyte read-sbyte 1)
@@ -97,17 +99,17 @@
   (defbasic uint4 read-uint4 4)
   (defbasic int4 read-int4 4)
 
-  (defn utf8 [byte-count]
+  (defn utf8 [n]
     (domonad
      [[b i] (fetch-state)
-      _ (set-state [b (+ byte-count i)])]
-     (read-utf8 b i byte-count)))
+      _ (set-state [b (+ n i)])]
+     (read-utf8 b i n)))
 
   (defn prefixed-utf8 []
     (domonad
-     [count (ubyte)
-      value (utf8 count)]
-     value))
+     [n (ubyte)
+      val (utf8 n)]
+     val))
 
   (defn binary [n]
         (domonad
@@ -261,8 +263,7 @@
       header (block-header)
       data (within (:size header)
                    (block-body header))]
-     (do (println (:id header) " at " i)
-         (merge header data))))
+     (merge header data)))
   
   (defn image []
     (domonad
@@ -293,7 +294,7 @@
     (map unchecked-byte bytes))))
 
 (defn utf8-buf [str]
-  (make-buf (seq (.getBytes str "utf-8"))))
+  (make-buf (seq (.getBytes ^String str "utf-8"))))
 
 (defn utf8-pbuf [c str]
-  (make-buf (cons c (seq (.getBytes str "utf-8")))))
+  (make-buf (cons c (seq (.getBytes ^String str "utf-8")))))
