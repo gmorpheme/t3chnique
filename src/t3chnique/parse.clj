@@ -276,7 +276,7 @@
      [m (within size (record :param-count (ubyte)
                              :opt-param-count (ubyte)
                              :local-variable-count (uint2)
-                             :max-slots (utin2)
+                             :max-slots (uint2)
                              :etable-offset (uint2)
                              :dtable-offset (uint2)))]
      (assoc m :code-offset size)))

@@ -1,12 +1,73 @@
 (ns t3chnique.vm
   (:use [t3chnique.primitive])
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when]])
-  (:require [t3chnique.ber :as ber]
-            [t3chnique.image :as im]
+  (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc])
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when]])
   (:import [t3chnique.metaclass TadsObject]
            [t3chnique.intrinsics t3vm]))
+
+(set! *warn-on-reflection* true)
+
+;; vm-m implementation
+;;
+;; vm state:
+(defn vm-state []
+  {:stack []
+   :r0 0 ; ret val
+   :ip 0 ; instruction pointer
+   :ep 0 ; entry point
+   :sp 0 ; stack pointer
+   :fp 0 ; frame pointer
+
+   :say-function (prim/vm-nil)
+   :say-method (prim/vm-prop)
+   
+   :savepoint 0
+   :savepoint-count 0
+   :code []
+   :code-page-size 0
+   :const []
+   :const-page-size 0
+   :objs {}
+   :next-oid 0
+   :mcld []
+   :fnsd []})
+
+;; image loading
+
+(defmulti load-image-block (fn [s b] (:id b)))
+
+(defmethod load-image-block "ENTP" [s b]
+  (merge s (dissoc b :flags)))
+
+(defmethod load-image-block "FNSD" [s b]
+  (assoc s :fnsd (:entries b)))
+
+(defmethod load-image-block "SYMD" [s b]
+  (assoc s :fnsd (:entries b)))
+
+(defmethod load-image-block "CPDF" [s {:keys [pool-id page-count page-size]}]
+  (if (= pool-id 1)
+    (assoc s :code-page-size page-size :code-page-count page-count :code-pages (vec (repeat page-size nil)))
+    (assoc s :const-page-size page-size :const-page-count page-count :const-pages (vec (repeat page-size nil)))))
+
+(defmethod load-image-block "CPPG" [s {:keys [pool-id pool-index] :as page}]
+  (if (= pool-id 1)
+    (assoc-in s [:code-pages pool-index] page)
+    (assoc-in s [:const-pages pool-index] page)))
+
+(defmethod load-image-block "MCLD" [s b]
+  (assoc s :mcld (mc/wire-up-metaclasses (:entries b))))
+
+(defmethod load-image-block "OBJS" [s b]
+  (merge s {:objs (mc/read-object-block (:mcld s) b)}))
+
+(defmethod load-image-block "EOF " [s b]
+  (assoc s :next-oid (inc (apply max (keys (:objs s))))))
+
+(defn vm-from-image [bs]
+  (reduce load-image-block (vm-state) bs))
 
 (def vm-m state-m)
 
@@ -52,51 +113,6 @@
              _# (m-seq (map stack-push ~exprs))]
             nil))
 
-;; vm-m implementation
-;;
-;; vm state:
-(defn vm-state []
-  {:stack []
-   :r0 0 ; ret val
-   :ip 0 ; instruction pointer
-   :ep 0 ; entry point
-   :sp 0 ; stack pointer
-   :fp 0 ; frame pointer
-
-   :say-function (vm-nil)
-   :say-method (vm-prop)
-   
-   :savepoint 0
-   :savepoint-count 0
-   :code []
-   :code-page-size 0
-   :const []
-   :const-page-size 0
-   :objs {}
-   :next-oid 0
-   :mcld []
-   :fnsd []})
-
-(defn vm-from-image [im]
-  (let [load-pages (fn [type]
-                     (let [{:keys [page-count page-size]} (first (filter #(and (= (:id %) "CPDF") (= (:pool-id %) type)) im))
-                           pages (filter #(and (= (:id %) "CPPG") (= (:pool-id %) type)) im)]
-                       [page-size (reduce #(assoc %1 (:pool-index %2) %2) (vec (repeat page-count 0)) pages)]))
-        [code-page-size code-pages] (load-pages 1)
-        [const-page-size const-pages] (load-pages 2)
-        entp (dissoc (first (filter #(= (:id %) "ENTP") im)) :id :flags)
-        mcld (mc/wire-up-metaclasses (:entries (first (filter #(= (:id %) "MCLD") im))))
-        fnsd (:entries (first (filter #(= (:id %) "FNSD") im)))
-        objs (apply merge (map #(mc/read-object-block mcld %) (filter #(= (:id %) "OBJS") im)))]
-    (merge (vm-state)
-           entp
-           {:code code-pages :code-page-size code-page-size
-            :const const-pages :const-page-size const-page-size
-            :mcld mcld
-            :fnsd fnsd
-            :objs objs
-            :next-oid (inc (apply max (keys objs)))})))
-
 (defn offset [{:keys [code-page-size code ip]} & ptr]
   (let [p (or (first ptr) ip)]
     [(:bytes (nth code (/ p code-page-size))) (mod p code-page-size)]))
@@ -137,78 +153,6 @@
            (-> fs
                (nth set)
                (nth func))))
-(comment
-  (defn code-read-ubyte []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-ubyte buf) (bump-pc s 1)])))
-
-  (defn code-read-sbyte []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-sbyte buf) (bump-pc s 1)])))
-
-  (defn code-read-uint2 []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-uint2 buf) (bump-pc s 2)])))
-
-  (defn code-read-int2 []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-int2 buf) (bump-pc s 2)])))
-
-  (defn code-read-uint4 []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-uint4 buf) (bump-pc s 4)])))
-
-  (defn code-read-int4 []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-int4 buf) (bump-pc s 4)])))
-
-  (defn code-read-utf8 [count]
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-utf8 count) (bump-pc s count)])))
-
-  (defn code-read-pref-utf8 []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        (let [count (ber/read-uint2 buf)]
-          [(ber/read-utf8 count) (bump-pc s count)]))))
-
-  (defn code-read-data-holder []
-    (fn [s]
-      (with-buffer [buf s (:pc s)]
-        [(ber/read-data-holder buf) (bump-pc s 5)])))
-
-  (defn code-read-item [type-sym]
-    (condp = type-sym
-      :uint2 (code-read-uint2)
-      :int2 (code-read-int2)
-      :uint4 (code-read-uint4)
-      :int4 (code-read-int4)
-      :ubyte (code-read-ubyte)
-      :sbyte (code-read-sbyte)
-      :data-holder (code-read-data-holder)
-      :pref-utf8 (code-read-pref-utf8)
-      (code-read-utf8 (second type-sym)))))
-
-(defn get-method-header
-  "Read method header at specified offset."
-  [ptr]
-  (fn [s]
-    (with-buffer [buf s ptr]
-      [(im/read-method-header buf (:method-header-size s)) s])))
-
-(defn get-exception-table
-  "Read exception table at specified offset."
-  [ptr]
-  (fn [s]
-    (with-buffer [buf s ptr]
-      (im/read-exception-table buf) s)))
 
 (defn stack-push [val]
   (fn [s] [nil (-> s
@@ -270,6 +214,20 @@
 
 (defn get-string [addr]
   (fn [s] []))
+
+(defn get-method-header
+  "Read method header at specified offset."
+  [ptr]
+  (fn [s]
+    (with-buffer [buf s ptr]
+      [((parse/method-header) [buf ptr]) s])))
+
+(defn get-exception-table
+  "Read exception table at specified offset."
+  [ptr]
+  (fn [s]
+    (with-buffer [buf s ptr]
+      [((parse/exception-table) [buf ptr]) s])))
 
 ;; The main step function
 (defn runop

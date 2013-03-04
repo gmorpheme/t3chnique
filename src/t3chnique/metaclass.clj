@@ -1,6 +1,7 @@
 (ns t3chnique.metaclass
-  (:require [t3chnique.ber :as ber])
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string])
+  (:use [clojure.algo.monads :only [domonad with-monad m-seq]]
+        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
 (defprotocol MetaClass
   "Operations available to the VM for each metaclass."
@@ -11,31 +12,14 @@
 (defrecord TadsObject [is-class bases properties]
   MetaClass
   (load-from-image [self buf o]
-    (let [b (ber/slice buf)
-          _ (.position b 0)
-          base-count (ber/read-uint2 b)
-          prop-count (ber/read-uint2 b)
-          flags (ber/read-uint2 b)
-          class (= (bit-and flags 1) 1)
-          bases (loop [n 0 entries []]
-                  (if (< n base-count)
-                    (recur (inc n) (conj entries (ber/read-uint4 b)))
-                    entries))
-          properties (loop [n 0 entries {}]
-                       (if (< n prop-count)
-                         (let [pid (ber/read-uint2 b)
-                               val (ber/read-data-holder b)]
-                           (recur (inc n) (assoc entries pid val)))
-                         entries))]
-      (TadsObject. class bases properties)))
-  (get-property [self pid]
-    (if-let [prop (get (properties self) pid)]
-      (fn [s] [prop s])
-      #_(domonad state-m
-               [scs (m-seq (map #(obj-retrieve %) bases))]
-               (if-let [prop (some #(get (properties %) pid) scs)]
-                 prop
-                 (map (fn [sc] ((get-property sc pid))) scs))))))
+    ((domonad byteparser-m
+      [base-count (uint2)
+       prop-count (uint2)
+       flags (uint2)
+       :let [class (= (bit-and flags 1) 1)]
+       bases (times base-count (uint4))
+       properties (times prop-count (m-seq (uint2) (data-holder)))]
+      (TadsObject. class bases (into {} properties))) [buf o])))
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))
@@ -44,24 +28,18 @@
 (defrecord TadsString [text]
   MetaClass
   (load-from-image [self buf o]
-    (let [b (ber/slice buf)
-          _ (.position b o)
-          text (ber/read-pref-utf8 b)]
-      (TadsString. text))))
+    (with-monad byteparser-m
+      (TadsString. ((prefixed-utf8) [buf o])))))
 
 (defn tads-string [] (TadsString. nil))
 
 (defrecord TadsList [val]
   MetaClass
   (load-from-image [self buf o]
-    (let [b (ber/slice buf)
-          _ (.position b 0)
-          count (ber/read-uint2 b)
-          values (loop [n 0 entries []]
-                   (if (< n count)
-                     (recur (inc n) (conj entries (ber/read-data-holder b)))
-                     entries))]
-      (TadsList. values))))
+    ((domonad byteparser-m
+              [n (uint2)
+               values (times n (data-holder))]
+              (TadsList. values)) [buf o])))
 
 (defn tads-list [] (TadsList. nil))
 

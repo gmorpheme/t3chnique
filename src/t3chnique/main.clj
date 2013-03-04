@@ -2,8 +2,7 @@
   (:gen-class)
   (:use [clojure.tools.cli :only [cli]])
   (:require [t3chnique.vm :as vm]
-            [t3chnique.image :as im]
-            [t3chnique.ber :as ber]
+            [t3chnique.parse :as ps]
             [clojure.java.io :as io]
             [clojure.pprint :as pp])
   (:import [java.nio Buffer]))
