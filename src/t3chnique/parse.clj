@@ -269,7 +269,26 @@
     (domonad
      [[version timestamp] (signature)
       blocks (parse-until #(= (:id %) "EOF ") (block))]
-     blocks)))
+     blocks))
+
+  (defn method-header [size]
+    (domonad
+     [m (within size (record :param-count (ubyte)
+                             :opt-param-count (ubyte)
+                             :local-variable-count (uint2)
+                             :max-slots (utin2)
+                             :etable-offset (uint2)
+                             :dtable-offset (uint2)))]
+     (assoc m :code-offset size)))
+
+  (defn exception-table []
+    (domonad
+     [n (uint2)
+      etable (times n (record :first-offset (uint2)
+                              :last-offset (uint2)
+                              :oid (uint4)
+                              :handler-offset (uint2)))]
+     etable)))
 
 (defn load-image-file [f]
   (let [buf (nio/mmap f)
