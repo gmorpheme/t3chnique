@@ -53,7 +53,7 @@
                               (.get b ^bytes a 0 count)
                               a)))
 
-(def byteparser-m (state-t maybe-m))
+(def byteparser-m state-m)
 
 (defmacro defbasic [n f s]
   `(defn ~n []
@@ -74,6 +74,12 @@
     (domonad
      [[b i] (fetch-state)
       _ (set-state [b (+ i n)])]
+     nil))
+
+  (defn skip-to [n]
+    (domonad
+     [[b i] (fetch-state)
+      _ (set-state [b n])]
      nil))
 
   (defn within [count parser]
@@ -135,7 +141,7 @@
   (defn parse-until [p parser]
     (domonad
      [val parser
-      more (if (p val) (parse-until p parser) nil)]
+      more (m-when (not (p val)) (parse-until p parser))]
      (cons val more)))
 
   (defn tagged-parser [kw]
@@ -231,12 +237,19 @@
       :transient transient
       :objects objects}))
 
+  (defn binary-at [idx size]
+    (domonad
+     [_ (skip-to idx)
+      val (binary size)]
+     val))
+  
   (defmethod block-body "MRES" [_]
     (domonad
-     [n (uint2)
+     [[b start] (fetch-state)
+      n (uint2)
       toc (times n (record :offset (uint4) :size (uint4) :name (prefixed-xor-ascii)))
       :let [names (map :name toc)]
-      entries (apply m-seq (map (fn [{:keys [offset size]}] (binary offset size)) toc))]
+      entries (m-seq (map (fn [{:keys [offset size]}] (binary-at (+ offset start) size)) toc))]
      (zipmap names entries)))
 
   (defmethod block-body "EOF " [_]
@@ -244,10 +257,11 @@
 
   (defn block []
     (domonad
-     [header (block-header)
+     [[b i] (fetch-state)
+      header (block-header)
       data (within (:size header)
                    (block-body header))]
-     (do (println (:id header))
+     (do (println (:id header) " at " i)
          (merge header data))))
   
   (defn image []
