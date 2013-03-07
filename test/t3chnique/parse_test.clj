@@ -47,6 +47,22 @@
   (parse (parse-until zero? (ubyte)) (make-buf [1 1 1 1 0 2 2])) => [1 1 1 1 0]) 
 
 (fact
+  (parse
+   (spec :uint2 'arg1
+         :uint4 'arg2
+         :ubyte 'arg3
+         :sbyte 'arg4
+         :int2 'arg5
+         :int4 'arg6)
+   (make-buf [0 1 0 0 0 1 1 1 0 1 0 0 0 1]))
+  => {:arg1 1
+      :arg2 1
+      :arg3 1
+      :arg4 1
+      :arg5 1
+      :arg6 1})
+
+(fact
  (parse-resource "Elysium.t3") => #(not (empty? %)))
 
 (fact

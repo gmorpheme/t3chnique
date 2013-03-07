@@ -148,9 +148,13 @@
 
   (defn tagged-parser [kw]
     (cond
+     (= kw :ubyte) (ubyte) 
+     (= kw :sbyte) (sbyte)
      (= kw :uint2) (uint2)
      (= kw :int2) (int2)
      (= kw :uint4) (uint4)
+     (= kw :int4) (int4)
+     (= kw :pref-utf8) (prefixed-utf8)
      :else nil))
   
   (defn data-holder []
@@ -270,6 +274,14 @@
      [[version timestamp] (signature)
       blocks (parse-until #(= (:id %) "EOF ") (block))]
      blocks))
+
+  (defn spec 
+    "Parse argument spec for vm op"
+    [& args]
+    (let [[types names] (map #(take-nth 2 %) [args (rest args)])]
+      (domonad
+       [vals (m-map tagged-parser types)]
+       (zipmap (map keyword names) vals))))
 
   (defn method-header [size]
     (domonad
