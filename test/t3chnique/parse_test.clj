@@ -48,12 +48,12 @@
 
 (fact
   (parse
-   (spec :uint2 'arg1
-         :uint4 'arg2
-         :ubyte 'arg3
-         :sbyte 'arg4
-         :int2 'arg5
-         :int4 'arg6)
+   (spec [ :uint2 'arg1
+          :uint4 'arg2
+          :ubyte 'arg3
+          :sbyte 'arg4
+          :int2 'arg5
+          :int4 'arg6])
    (make-buf [0 1 0 0 0 1 1 1 0 1 0 0 0 1]))
   => {:arg1 1
       :arg2 1

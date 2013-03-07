@@ -277,7 +277,7 @@
 
   (defn spec 
     "Parse argument spec for vm op"
-    [& args]
+    [args]
     (let [[types names] (map #(take-nth 2 %) [args (rest args)])]
       (domonad
        [vals (m-map tagged-parser types)]

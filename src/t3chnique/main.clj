@@ -49,7 +49,7 @@
     (output "ENTP Block" e)))
 
 (defn- dis1
-  "Disassemble single instruction from buffer, incrementing pointer."
+  "Disassemble single instruction from buffer at ptr."
   [buffer-addr method-addr ^Buffer buf ptr]
   (let [opcode (first ((parse/ubyte) [buf ptr]))]
     (when-let [op (@vm/table opcode)]
@@ -57,7 +57,7 @@
         :offset (- (+ buffer-addr ptr) method-addr)
         :opcode opcode
         :mnemonic (vm/mnemonic op)
-        :args (ber/parse (vm/parse-spec op) buf)}]
+        :args ((parse/spec (vm/parse-spec op)) [buf ptr])}]
       nil)))
 
 (defn dis-method
@@ -101,8 +101,7 @@
     (when (pos? etable-offset)
       (println (format "\nException Table @ %d\n" etable-addr))
       (let [[^Buffer b o] (vm/offset state etable-addr)
-            _ (.position b o)
-            erecords (im/read-exception-table b)]
+            erecords (first ((parse/exception-table) [b o]))]
         (doseq [e erecords]
           (println (format "%8d - %8d: oid: %d offset: %d"
                            (:first-offset e)
