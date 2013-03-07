@@ -1,5 +1,5 @@
 (ns t3chnique.server
-  (:use [t3chnique.parse :only [parse-image load-image-file parse-resource]]
+  (:use [t3chnique.parse :only [load-image-file parse-resource]]
         [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
