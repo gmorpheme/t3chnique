@@ -304,16 +304,3 @@
   (let [f (io/file (io/resource name))
         buf (load-image-file f)]
     (parse (image) buf)))
-
-;; testing functions
-
-(defn make-buf [bytes]
-  (ByteBuffer/wrap
-   (byte-array
-    (map unchecked-byte bytes))))
-
-(defn utf8-buf [str]
-  (make-buf (seq (.getBytes ^String str "utf-8"))))
-
-(defn utf8-pbuf [c str]
-  (make-buf (cons c (seq (.getBytes ^String str "utf-8")))))

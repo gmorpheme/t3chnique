@@ -1,9 +1,22 @@
-(ns t3chnique.test.parse-test
+(ns t3chnique.parse-test
   (:use [t3chnique.parse]
         [midje.sweet])
   (:require [t3chnique.primitive :as prim])
   (:import [java.nio.charset Charset]
            [java.nio ByteOrder MappedByteBuffer ByteBuffer]))
+
+;; testing functions
+
+(defn make-buf [bytes]
+  (ByteBuffer/wrap
+   (byte-array
+    (map unchecked-byte bytes))))
+
+(defn utf8-buf [str]
+  (make-buf (seq (.getBytes ^String str "utf-8"))))
+
+(defn utf8-pbuf [c str]
+  (make-buf (cons c (seq (.getBytes ^String str "utf-8")))))
 
 (fact
   (parse (utf8 5) (utf8-buf "hello")) => "hello")
