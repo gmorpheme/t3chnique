@@ -59,6 +59,9 @@
   (parse (data-holder) (make-buf [prim/vm-prop-id 0xcc 0xcc])) => {:type prim/vm-prop-id, :value 52428})
 
 (fact
+  (parse (data-holder) (make-buf [1 0 0 0 0])) => prim/vm-nil?)
+
+(fact
   (parse (lst) (make-buf [0x00 0x02 prim/vm-prop-id 0xbb 0xbb 0x00 0x00 prim/vm-prop-id 0xcc 0xcc 0x00 0x00]))
   => [{:type prim/vm-prop-id, :value 48059} {:type prim/vm-prop-id, :value 52428}])
 

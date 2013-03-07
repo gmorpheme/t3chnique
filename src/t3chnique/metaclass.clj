@@ -8,18 +8,21 @@
   (load-from-image [self buf o] "Load object data from byte buffer; return new object.")
   (get-property [self propid] "Return state function."))
 
-
 (defrecord TadsObject [is-class bases properties]
   MetaClass
   (load-from-image [self buf o]
-    ((domonad byteparser-m
-      [base-count (uint2)
-       prop-count (uint2)
-       flags (uint2)
-       :let [class (= (bit-and flags 1) 1)]
-       bases (times base-count (uint4))
-       properties (times prop-count (m-seq (uint2) (data-holder)))]
-      (TadsObject. class bases (into {} properties))) [buf o])))
+    (first
+     ((domonad byteparser-m
+               [base-count (uint2)
+                prop-count (uint2)
+                flags (uint2)
+                bases (times base-count (uint4))
+                properties (times prop-count (m-seq [(uint2) (data-holder)]))]
+               (TadsObject. (= (bit-and flags 1) 1)
+                            bases
+                            (if (seq properties)
+                              (apply assoc {} (flatten properties))
+                              {}))) [buf o]))))
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))
@@ -29,17 +32,17 @@
   MetaClass
   (load-from-image [self buf o]
     (with-monad byteparser-m
-      (TadsString. ((prefixed-utf8) [buf o])))))
+      (TadsString. (first ((prefixed-utf8) [buf o]))))))
 
 (defn tads-string [] (TadsString. nil))
 
 (defrecord TadsList [val]
   MetaClass
   (load-from-image [self buf o]
-    ((domonad byteparser-m
-              [n (uint2)
-               values (times n (data-holder))]
-              (TadsList. values)) [buf o])))
+    (first ((domonad byteparser-m
+                     [n (uint2)
+                      values (times n (data-holder))]
+                     (TadsList. values)) [buf o]))))
 
 (defn tads-list [] (TadsList. nil))
 

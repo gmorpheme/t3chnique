@@ -178,7 +178,7 @@
      (= kw :uint4) (uint4)
      (= kw :int4) (int4)
      (= kw :pref-utf8) (prefixed-utf8)
-     :else nil))
+     :else (m-result nil)))
   
   (defn data-holder []
     (domonad
