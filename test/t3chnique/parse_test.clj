@@ -18,6 +18,31 @@
 (defn utf8-pbuf [c str]
   (make-buf (cons c (seq (.getBytes ^String str "utf-8")))))
 
+;; byte array
+(fact
+  (read-sbyte (byte-array [(byte -20)]) 0) => -20)
+
+(fact
+  (read-ubyte (byte-array [(byte -20)]) 0) => 236)
+
+(fact
+  (read-int2 (byte-array [(unchecked-byte 0xff) (unchecked-byte 0xff)]) 0) => -1)
+
+(fact
+  (read-uint2 (byte-array [(unchecked-byte 0xff) (unchecked-byte 0xff)]) 0) => 65535)
+
+(fact
+  (read-int4 (byte-array (repeat 4 (unchecked-byte 0xff))) 0) => -1)
+
+(fact
+  (read-uint4 (byte-array (repeat 4 (unchecked-byte 0xff))) 0) => 4294967295)
+
+(fact
+  (read-utf8 (.getBytes "hello") 0 5) => "hello")
+
+(fact
+  (seq (read-bytes (byte-array (repeat 4 (unchecked-byte 0xff))) 0 2)) => (repeat 2 (unchecked-byte 0xff)))
+
 (fact
   (parse (utf8 5) (utf8-buf "hello")) => "hello")
 
@@ -67,3 +92,4 @@
 
 (fact
  (parse-resource "ditch3.t3") => #(not (empty? %)))
+
