@@ -40,7 +40,7 @@
 (defmulti load-image-block (fn [s b] (:id b)))
 
 (defmethod load-image-block "ENTP" [s b]
-  (merge s (dissoc b :flags)))
+  (merge s (dissoc b :flags :id)))
 
 (defmethod load-image-block "FNSD" [s b]
   (assoc s :fnsd (:entries b)))
@@ -66,6 +66,9 @@
 
 (defmethod load-image-block "EOF " [s b]
   (assoc s :next-oid (inc (apply max (keys (:objs s))))))
+
+(defmethod load-image-block "MRES" [s b]
+  s)
 
 (defn vm-from-image [bs]
   (reduce load-image-block (vm-state) bs))
