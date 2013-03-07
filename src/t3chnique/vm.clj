@@ -5,7 +5,8 @@
             [t3chnique.metaclass :as mc])
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when]])
   (:import [t3chnique.metaclass TadsObject]
-           [t3chnique.intrinsics t3vm]))
+           [t3chnique.intrinsics t3vm]
+           [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
 
@@ -74,7 +75,7 @@
 (defn abort 
   "Abort if we hit something we haven't implemented yet."
   [msg]
-  (throw (RuntimeException. msg)))
+  (throw (RuntimeException. ^String msg)))
 
 (defprotocol ByteCode
   (mnemonic [self])
@@ -121,7 +122,7 @@
   [(:bytes (nth const (/ ptr const-page-size))) (mod ptr const-page-size)])
 
 (defmacro with-buffer [[bsym s addr] & exprs]
-  `(let [[b# o#] (offset ~s ~addr)
+  `(let [[^ByteBuffer b# o#] (offset ~s ~addr)
          ~bsym (.slice b#)
          _# (.position ~bsym o#)]
      ~@exprs))
