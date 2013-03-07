@@ -58,23 +58,23 @@
 (extend-protocol ByteSource
   (Class/forName "[B")
   (read-sbyte [b idx]
-    (aget b idx))
+    (aget ^bytes b idx))
   (read-ubyte [b idx]
-    (bit-and 0xff (aget b idx)))
+    (bit-and 0xff (aget ^bytes b idx)))
   (read-int2 [b idx]
-    (+ (bit-and 0xff (aget b idx))
-       (bit-shift-left (aget b (inc idx)) 8)))
+    (+ (bit-and 0xff (aget ^bytes b idx))
+       (bit-shift-left (aget ^bytes b(inc idx)) 8)))
   (read-uint2 [b idx]
     (bit-and 0xffff (read-int2 b idx)))
   (read-int4 [b idx]
-    (+ (bit-and 0xff (aget b idx))
-       (bit-shift-left (bit-and 0xff (aget b (inc idx))) 8)
-       (bit-shift-left (bit-and 0xff (aget b (+ 2 idx))) 16)
-       (bit-shift-left (aget b (+ 3 idx)) 24)))
+    (+ (bit-and 0xff (aget ^bytes b idx))
+       (bit-shift-left (bit-and 0xff (aget ^bytes b(inc idx))) 8)
+       (bit-shift-left (bit-and 0xff (aget ^bytes b(+ 2 idx))) 16)
+       (bit-shift-left (aget ^bytes b(+ 3 idx)) 24)))
   (read-uint4 [b idx]
     (bit-and 0xffffffff (read-int4 b idx)))
   (read-utf8 [b idx count]
-    (String. b idx count "utf-8"))
+    (String. ^bytes b idx count "utf-8"))
   (read-bytes [b idx count]
     (into-array Byte/TYPE (take count (drop idx b)))))
 
