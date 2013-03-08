@@ -62,7 +62,7 @@
   (assoc s :mcld (mc/wire-up-metaclasses (:entries b))))
 
 (defmethod load-image-block "OBJS" [s b]
-  (merge s {:objs (mc/read-object-block (:mcld s) b)}))
+  (merge-with merge s {:objs (mc/read-object-block (:mcld s) b)}))
 
 (defmethod load-image-block "EOF " [s b]
   (assoc s :next-oid (inc (apply max (keys (:objs s))))))
