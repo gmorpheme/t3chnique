@@ -69,6 +69,9 @@
   (parse (within 4 (uint2)) (make-buf [1 2 3 4])) => 258)
 
 (fact
+  (parse (repeat-up-to 4 (ubyte)) (make-buf [1 2 3 4 5 6])) => [1 2 3 4])
+
+(fact
   (second (second ((within 4 (uint2)) (init-state (make-buf [1 2 3 4]))))) => 4)
 
 (fact

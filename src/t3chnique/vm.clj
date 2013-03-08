@@ -26,9 +26,9 @@
    
    :savepoint 0
    :savepoint-count 0
-   :code []
+   :code-pages []
    :code-page-size 0
-   :const []
+   :const-pages []
    :const-page-size 0
    :objs {}
    :next-oid 0
@@ -80,16 +80,7 @@
   [msg]
   (throw (RuntimeException. ^String msg)))
 
-(defprotocol ByteCode
-  (mnemonic [self])
-  (parse-spec [self]))
-
-(defrecord OpCode [code mnemonic parse-spec run-fn]
-  ByteCode
-  (mnemonic [self]
-    (:mnemonic self))
-  (parse-spec [self]
-    (:parse-spec self)))
+(defrecord OpCode [code mnemonic parse-spec run-fn])
 
 (defonce table (atom {}))
 
@@ -117,18 +108,19 @@
              _# (m-seq (map stack-push ~exprs))]
             nil))
 
-(defn offset [{:keys [code-page-size code ip]} & ptr]
+(defn offset [{:keys [code-page-size code-pages ip]} & ptr]
   (let [p (or (first ptr) ip)]
-    [(:bytes (nth code (/ p code-page-size))) (mod p code-page-size)]))
+    [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
 
-(defn const-offset [{:keys [const-page-size const]} ptr]
-  [(:bytes (nth const (/ ptr const-page-size))) (mod ptr const-page-size)])
+(defn const-offset [{:keys [const-page-size const-pages]} ptr]
+  [(:bytes (nth const-pages (/ ptr const-page-size))) (mod ptr const-page-size)])
 
-(defmacro with-buffer [[bsym s addr] & exprs]
-  `(let [[^ByteBuffer b# o#] (offset ~s ~addr)
-         ~bsym (.slice b#)
-         _# (.position ~bsym o#)]
-     ~@exprs))
+(defn parse-op []
+  (domonad parse/byteparser-m
+    [opcode (parse/ubyte)
+     :let [op (@table opcode)]
+     args (parse/spec (:parse-spec op))]
+    [op args]))
 
 (defn fresh-pc []
   (domonad vm-m
@@ -223,15 +215,15 @@
   "Read method header at specified offset."
   [ptr]
   (fn [s]
-    (with-buffer [buf s ptr]
-      [((parse/method-header) [buf ptr]) s])))
+    (let [[b o] (offset s ptr)]
+      [((parse/method-header (:method-header-size s)) [b o]) s])))
 
 (defn get-exception-table
   "Read exception table at specified offset."
   [ptr]
   (fn [s]
-    (with-buffer [buf s ptr]
-      [((parse/exception-table) [buf ptr]) s])))
+    (let [[b o] (offset s ptr)]
+      [((parse/exception-table) [b o]) s])))
 
 ;; The main step function
 (defn runop

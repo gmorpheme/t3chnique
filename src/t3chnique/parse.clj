@@ -115,6 +115,15 @@
       _ (skip (- n (- end start)))]
      val))
 
+  (defn repeat-up-to [limit parser]
+    (fn [s]
+      (loop [vals [] state s]
+        (let [[val [_ i :as s']] (parser state)
+              vals (conj vals val)]
+          (if (< i limit)
+            (recur vals s')
+            [vals s'])))))
+
   (defbasic ubyte read-ubyte 1)
   (defbasic sbyte read-sbyte 1)
   (defbasic uint2 read-uint2 2)

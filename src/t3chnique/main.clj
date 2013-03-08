@@ -1,6 +1,7 @@
 (ns t3chnique.main
   (:gen-class)
-  (:use [clojure.tools.cli :only [cli]])
+  (:use [clojure.tools.cli :only [cli]]
+        [clojure.algo.monads :only [domonad fetch-state]])
   (:require [t3chnique.vm :as vm]
             [t3chnique.parse :as parse]
             [clojure.java.io :as io]
@@ -39,75 +40,53 @@
   (println "=======================================")
   (pp/pprint m))
 
-(defn format-op [{:keys [address offset mnemonic args]}]
-  (format "%8d %8d  %s %s" address offset mnemonic (apply str args)))
-
 (defn entp
   "Output entry point information from image"
   [image]
   (let [e (first (filter #(= (:id %) "ENTP") image))]
     (output "ENTP Block" e)))
 
-(defn- dis1
-  "Disassemble single instruction from buffer at ptr."
-  [buffer-addr method-addr ^Buffer buf ptr]
-  (let [opcode (first ((parse/ubyte) [buf ptr]))]
-    (when-let [op (@vm/table opcode)]
-      [{:address (+ buffer-addr ptr)
-        :offset (- (+ buffer-addr ptr) method-addr)
-        :opcode opcode
-        :mnemonic (vm/mnemonic op)
-        :args ((parse/spec (vm/parse-spec op)) [buf ptr])}]
-      nil)))
+(defn dis1
+  [buf start-address method-index idx]
+  (let [[op args] (first ((vm/parse-op) [buf idx]))]
+    (dissoc
+     (merge op {:address (+ start-address idx)
+                :offset (- idx method-index)
+                :args args})
+     :run-fn)))
 
-(defn dis-method
-  [buffer-addr method-addr ^Buffer buf start end]
-  (loop [ops [] ptr start]
-    (if (or (zero? end) (< (.position buf) end))
-      (if-let [[d nextptr] (dis1 buffer-addr method-addr buf ptr)]
-        (recur (conj ops d) nextptr)
-        ops)
-      ops)))
+(defn method-limit [index {:keys [code-offset etable-offset dtable-offset]}]
+  (+ index (max code-offset etable-offset dtable-offset)))
+
+(defn disassemble-method [s m-addr]
+  (-> (vm/offset s m-addr)
+      ((domonad parse/byteparser-m
+         [[_ i] (fetch-state)
+          hdr (parse/method-header (:method-header-size s))
+          ops (parse/repeat-up-to (max (+ i 100) (method-limit i hdr)) (vm/parse-op))]
+         (merge hdr {:ops ops})))
+      (first)))
 
 (defn dis
   "Print disassembled code at offset"
-  [offs state]
-  (let [[mh s] ((vm/get-method-header offs) state)
-        {:keys [code-offset etable-offset dtable-offset]} mh
-        code-addr (+ offs code-offset)
-        etable-addr (if (pos? etable-offset) (+ offs etable-offset) 0)
-        dtable-addr (if (pos? dtable-offset) (+ offs dtable-offset) 0)
-        end (if (zero? etable-addr) dtable-addr etable-addr)]
+  [state m-addr]
+  (let [method (disassemble-method state m-addr)]
 
     ;; method header
-    (println (format "Method Header @ %d\n" offs))
-    (println (format "Offsets (code/etable/dtable): %d/%d/%d\n" code-offset etable-offset dtable-offset))
-    (println (format "Locals: %d Slots: %d Params: %d Opt Params: %d\n"
-                     (:local-variable-count mh)
-                     (:max-slots mh)
-                     (:param-count mh)
-                     (:opt-param-count mh)))
+    (println (format "Method Header @ %d\n" m-addr))
+    (println (apply format
+                    "Offsets (code/etable/dtable): %d/%d/%d\n"
+                    ((juxt :code-offset :etable-offset :dtable-offset) method)))
+    (println (apply format
+                    "Locals: %d Slots: %d Params: %d Opt Params: %d\n"
+                    ((juxt :local-variable-count 
+                           :max-slots 
+                           :param-count
+                           :opt-param-count) method)))
 
-    ;; disassembled operations
-    (let [method-addr offs
-          [buf ptr] (vm/offset state code-addr)
-          buffer-addr (- code-addr ptr)
-          [_ endptr] (vm/offset state end)]
-      (println (format "Code @ %d\n" code-addr))
-      (doseq [op (dis-method buffer-addr method-addr buf ptr endptr)]
-        (println (format-op op))))
-
-    ;; exception table
-    (when (pos? etable-offset)
-      (println (format "\nException Table @ %d\n" etable-addr))
-      (let [[^Buffer b o] (vm/offset state etable-addr)
-            erecords (first ((parse/exception-table) [b o]))]
-        (doseq [e erecords]
-          (println (format "%8d - %8d: oid: %d offset: %d"
-                           (:first-offset e)
-                           (:last-offset e)
-                           (:oid e)
-                           (:handler-offset e))))))))
+    (println "Operations:")
+    (doseq [[op args] (:ops method)]
+      (println (:mnemonic op) " " (apply str (for [[k v] args] (str k ":" v " ")))))))
 
 (defn object
   "Dump out object information for object with specified oid."
@@ -117,13 +96,13 @@
 (defn constant-string
   "Dump out constant information for object at specified address in the constant pool."
   [addr state]
-  (let [[^Buffer b o] (vm/const-offset state addr)]
+  (let [[b o] (vm/const-offset state addr)]
     (println (format "String @ %d\n" addr))
     (println (first ((parse/prefixed-utf8) [b o])))))
 
 (defn constant-list
   "Dump out constant list at specified address in the constant pool."
   [addr state]
-  (let [[^Buffer b o] (vm/const-offset state addr)]
+  (let [[b o] (vm/const-offset state addr)]
     (println (format "List @ %d\n" addr))
     (println (first ((parse/lst) [b o])))))
