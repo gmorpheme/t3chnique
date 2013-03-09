@@ -63,7 +63,7 @@
 
 (fact
   (parse (lst) (make-buf [0x00 0x02 prim/vm-prop-id 0xbb 0xbb 0x00 0x00 prim/vm-prop-id 0xcc 0xcc 0x00 0x00]))
-  => [{:type prim/vm-prop-id, :value 48059} {:type prim/vm-prop-id, :value 52428}])
+  => (just [{:type prim/vm-prop-id, :value 48059} {:type prim/vm-prop-id, :value 52428}]))
 
 (fact
   (parse (within 4 (uint2)) (make-buf [1 2 3 4])) => 258)
@@ -79,7 +79,7 @@
 
 (fact
   (parse
-   (spec [ :uint2 'arg1
+   (spec [:uint2 'arg1
           :uint4 'arg2
           :ubyte 'arg3
           :sbyte 'arg4

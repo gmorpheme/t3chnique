@@ -112,8 +112,14 @@
   (let [p (or (first ptr) ip)]
     [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
 
+(defn m-offset [i]
+  (fn [s] [(offset s i) s]))
+
 (defn const-offset [{:keys [const-page-size const-pages]} ptr]
   [(:bytes (nth const-pages (/ ptr const-page-size))) (mod ptr const-page-size)])
+
+(defn m-const-offset [i]
+  (fn [s] [(const-offset s i) s]))
 
 (defn parse-op []
   (domonad parse/byteparser-m
@@ -225,12 +231,26 @@
     (let [[b o] (offset s ptr)]
       [((parse/exception-table) [b o]) s])))
 
+(defn step []
+  (domonad vm-m
+    [ip (fetch-val :ip)
+     [b i] (m-offset ip)
+     :let [[[op args] [_ i']] ((parse-op) [b i])
+           f (:run-fn op)]
+     _ (set-val :ip i')
+     r (apply f (vals args))]
+    nil))
+
 ;; The main step function
 (defn runop
   "Sets up program counter for a single operations implementation and handles
    exceptions, rollback etc."
   [op]
-  (with-monad vm-m (m-seq [(fresh-pc) (op) (commit-pc)])))
+  (domonad vm-m
+    [_ (fresh-pc)
+     exc (op)
+     _ (commit-pc)]
+    nil))
 
 ;; Operations on primitives / op overloads
 

@@ -46,15 +46,6 @@
   (let [e (first (filter #(= (:id %) "ENTP") image))]
     (output "ENTP Block" e)))
 
-(defn dis1
-  [buf start-address method-index idx]
-  (let [[op args] (first ((vm/parse-op) [buf idx]))]
-    (dissoc
-     (merge op {:address (+ start-address idx)
-                :offset (- idx method-index)
-                :args args})
-     :run-fn)))
-
 (defn method-limit [index {:keys [code-offset etable-offset dtable-offset]}]
   (+ index (max code-offset etable-offset dtable-offset)))
 
