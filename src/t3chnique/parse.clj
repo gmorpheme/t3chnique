@@ -308,12 +308,12 @@
      blocks))
 
   (defn spec 
-    "Parse argument spec for vm op"
+    "Parse according to argument spec for vm op. Returns ordered map."
     [args]
     (let [[types names] (map #(take-nth 2 %) [args (rest args)])]
       (domonad
        [vals (m-map tagged-parser types)]
-       (zipmap (map keyword names) vals))))
+       (into (array-map) (map (fn [n v] [(keyword n) v]) names vals)))))
 
   (defn method-header [size]
     (domonad
@@ -345,6 +345,5 @@
     (parse (image) buf)))
 
 (defn parse-resource [name]
-  (let [f (io/file (io/resource name))
-        buf (load-image-file f)]
-    (parse (image) buf)))
+  (when-let [f (io/file (io/resource name))]
+    (parse (image) (load-image-file f))))
