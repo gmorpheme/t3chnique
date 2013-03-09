@@ -222,14 +222,23 @@
   [ptr]
   (fn [s]
     (let [[b o] (offset s ptr)]
-      [((parse/method-header (:method-header-size s)) [b o]) s])))
+      [(first ((parse/method-header (:method-header-size s)) [b o])) s])))
 
 (defn get-exception-table
   "Read exception table at specified offset."
   [ptr]
   (fn [s]
     (let [[b o] (offset s ptr)]
-      [((parse/exception-table) [b o]) s])))
+      [(first ((parse/exception-table) [b o])) s])))
+
+(defn enter 
+  "Set up vm at initial entry point."
+  []
+  (domonad vm-m
+    [entp (fetch-val :entry-point-offset)
+     hdr (get-method-header entp)
+     _ (set-val :ip (+ entp (:code-offset hdr)))]
+    nil))
 
 (defn step []
   (domonad vm-m
@@ -241,7 +250,6 @@
      r (apply f (vals args))]
     nil))
 
-;; The main step function
 (defn runop
   "Sets up program counter for a single operations implementation and handles
    exceptions, rollback etc."
