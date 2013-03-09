@@ -250,6 +250,17 @@
      r (apply f (vals args))]
     nil))
 
+(defn vm-repl 
+  "Run a REPL which applies the read fn to the state s."
+  [s]
+  (let [state (atom s)]
+    (loop [f (eval (read))]
+      (when (ifn? f)
+        (let [[r s] (f s)]
+          (reset! state s)
+          (println r)
+          (recur (read)))))))
+
 (defn runop
   "Sets up program counter for a single operations implementation and handles
    exceptions, rollback etc."
