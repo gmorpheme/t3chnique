@@ -16,22 +16,22 @@
   (defn fetch-val [key]
     (fn [s]
       (fn [k]
-        (k (get key s)))))
+        (k [(get key s) s]))))
 
   (defn set-val [key val]
     (fn [s]
       (fn [k]
-        (k (assoc s key val)))))
+        (k [nil (assoc s key val)]))))
 
   (defn copy-val [k1 k2]
     (fn [s]
       (fn [k]
-        (k (assoc s k1 (get s k2))))))
+        (k [nil (assoc s k1 (get s k2))]))))
 
   (defn unset-val [key]
     (fn [s]
       (fn [k]
-        (k (dissoc s key)))))
+        (k [nil (dissoc s key)]))))
 
   ;; machine primitives
   (def fresh-pc (copy-val :ip :pc))
@@ -50,7 +50,7 @@
       (fn [k]
         (k [nil
             (-> s
-                (update-in [:stack] conj val)
+                (update-in [:stack] conj x)
                 (update-in [:sp] inc))]))))
 
   (defn stack-pop []
@@ -101,10 +101,10 @@
               x (stack-pop)]
              x))
 
-  (def state
-    (atom {:stack []
-           :sp 0
-           :ops [(vnormal) (vinput) (vnormal) (vthrows) (vnormal)]}))
+  (defn state []
+    {:stack []
+     :sp 0
+     :ops [(vnormal) (vinput) (vnormal) (vthrows) (vnormal)]})
   
   (defn vstep [s]
     (run-cont
