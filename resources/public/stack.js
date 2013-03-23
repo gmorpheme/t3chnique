@@ -26,7 +26,7 @@ for (var i = 0; i < depth; ++i) {
   stack.push([rnd(1, 18), rnd(0, 10000)]);
 }
 
-var registers =[ 
+var registers = [ 
   {name: "r0", value: [7, 23]},
   {name: "ip", value: [3, 24]}
 ]
@@ -75,6 +75,54 @@ function init() {
     .attr("width", w)
     .attr("height", (cellHeight + cellPadding) * stack.length)
     .attr("fill", dgrey);
+
+  svg = d3.select("div.register")
+    .append("svg")
+    .attr("class", "register");
+
+  svg.selectAll("rect")
+    .data(registers)
+    .enter()
+    .append("rect")
+    .attr({
+      x: function (d, i) { return rLabelWidth + (cellWidth + rLabelWidth + cellPadding) * i },
+      y: 0,
+      rx: 3,
+      ry: 3,
+      width: cellWidth,
+      height: cellHeight,
+      fill: function(d) { return types[d.value[0]].fill }
+    });
+
+  svg.selectAll("text.label")
+    .data(registers)
+    .enter()
+    .append("text")
+    .attr({
+      class: "label",
+      x: function(d, i) { return (cellWidth + rLabelWidth + cellPadding) * i; },
+      y: 15,
+      fill: lgrey,
+      "font-family": "sans-serif",
+      "font-size": "13px",
+    })
+    .text(function (d) { return d.name });
+
+  svg.selectAll("text.value")
+    .data(registers)
+    .enter()
+    .append("text")
+    .attr({
+      class: "value",
+      x: function (d, i) { return rLabelWidth + (cellWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i },
+      y: 15,
+      "text-anchor": "middle",
+      "font-family": "sans-serif",
+      "font-size": "13px",
+      "font-weight": "bold",
+      fill: function(d) { return types[d.value[0]].text }
+    })
+    .text(function(d) { return types[d.value[0]].render(d.value[1]) });
 }
 
 function updateStack() {
@@ -138,59 +186,29 @@ d3.select("#pop").on("click", function() {
   stack.pop();
   updateStack();
 })
+d3.select("#ret").on("click", function() {
+  registers = [
+    {name: "r0", value: [rnd(1, 18), rnd(0, 10000)]},
+    {name: "ip", value: [4, rnd(0, 10000)]}
+  ];
+  updateRegisters();
+})
 
-function registerDiagram() {
-  svg = d3.select("div.register")
-    .append("svg")
-    .attr("id", "reg");
+
+function updateRegisters() {
+  var svg = d3.select("svg.register");
 
   svg.selectAll("rect")
     .data(registers)
-    .enter()
-    .append("rect")
-    .attr({
-      x: function (d, i) { return rLabelWidth + (cellWidth + rLabelWidth + cellPadding) * i },
-      y: 0,
-      rx: 3,
-      ry: 3,
-      width: cellWidth,
-      height: cellHeight,
-      fill: function(d) { return types[d.value[0]].fill }
-    });
-
-  svg.selectAll("text.label")
-    .data(registers)
-    .enter()
-    .append("text")
-    .attr({
-      class: "label",
-      x: function(d, i) { return (cellWidth + rLabelWidth + cellPadding) * i; },
-      y: 15,
-      fill: lgrey,
-      "font-family": "sans-serif",
-      "font-size": "13px",
-    })
-    .text(function (d) { return d.name });
+    .attr("fill", function(d) { return types[d.value[0]].fill } );
 
   svg.selectAll("text.value")
     .data(registers)
-    .enter()
-    .append("text")
-    .attr({
-      class: "value",
-      x: function (d, i) { return rLabelWidth + (cellWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i },
-      y: 15,
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-size": "13px",
-      "font-weight": "bold",
-      fill: function(d) { return types[d.value[0]].text }
-    })
+    .attr("fill", function(d) { return types[d.value[0]].text })
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
-
 }
 
 init();
 updateStack();
-registerDiagram();
+updateRegisters();
 
