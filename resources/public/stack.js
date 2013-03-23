@@ -157,7 +157,37 @@ function registerDiagram() {
       height: cellHeight,
       fill: function(d) { return types[d.value[0]].fill }
     });
-  ;
+
+  svg.selectAll("text.label")
+    .data(registers)
+    .enter()
+    .append("text")
+    .attr({
+      class: "label",
+      x: function(d, i) { return (cellWidth + rLabelWidth + cellPadding) * i; },
+      y: 15,
+      fill: lgrey,
+      "font-family": "sans-serif",
+      "font-size": "13px",
+    })
+    .text(function (d) { return d.name });
+
+  svg.selectAll("text.value")
+    .data(registers)
+    .enter()
+    .append("text")
+    .attr({
+      class: "value",
+      x: function (d, i) { return rLabelWidth + (cellWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i },
+      y: 15,
+      "text-anchor": "middle",
+      "font-family": "sans-serif",
+      "font-size": "13px",
+      "font-weight": "bold",
+      fill: function(d) { return types[d.value[0]].text }
+    })
+    .text(function(d) { return types[d.value[0]].render(d.value[1]) });
+
 }
 
 init();
