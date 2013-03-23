@@ -39,27 +39,27 @@ function typeRender(name, fill, text, render) {
   return {name: name, fill: fill, text: text, render: render}
 }
 
-function identity(val) { return val.toString() }
-function hex(val) { return "0x" + val.toString(16) }
+function prefixed(prefix) { return function(val) { return prefix + ":" + val.toString()} }
+function prefixedHex(prefix) { return function(val) { return prefix + ":0x" + val.toString(16)}} 
 
 var types = [null,
              typeRender("nil", red1, "white", function(val) { return "nil" }),
              typeRender("true", leaf1, "white", function(val) { return "true" }),
              typeRender("stack", leaf1, "white", function(val) { return "st:" + val }),
-             typeRender("codeptr", teal4, "white", hex ),
-             typeRender("obj", teal3, "white", hex),
-             typeRender("prop", red5, "white", function(val) { return "pid:" + val} ),
-             typeRender("int", teal1, "white", identity),
-             typeRender("sstring", leaf2, "white", hex),
-             typeRender("dstring", leaf3, "white", hex),
-             typeRender("list", red5, "white", identity),
-             typeRender("codeofs", red5, "white", identity),
-             typeRender("funcptr", teal2, "white", hex),
-             typeRender("empty", red5, "white", identity),
-             typeRender("native-code", red5, "white", identity),
-             typeRender("enum", red5, "white", identity),
-             typeRender("bifptr", red5, "white", identity),
-             typeRender("objx", red5, "white", identity)];
+             typeRender("codeptr", red2, "white", prefixedHex("c")),
+             typeRender("obj", teal3, "white", prefixed("o")),
+             typeRender("prop", red4, "white", function(val) { return "pid:" + val} ),
+             typeRender("int", teal1, "white", function(val) { return val }),
+             typeRender("sstring", leaf2, "white", prefixedHex("'")),
+             typeRender("dstring", leaf3, "white", prefixedHex("\"")),
+             typeRender("list", leaf2, "white", prefixedHex("[]")),
+             typeRender("codeofs", red5, "white", prefixed("off")),
+             typeRender("funcptr", red4, "white", prefixedHex("()")),
+             typeRender("empty", red1, "white", function(val) {return "empty"}),
+             typeRender("native-code", red4, "white", prefixedHex("n")),
+             typeRender("enum", teal1, "white", prefixed("e")),
+             typeRender("bifptr", red4, "white", prefixedHex("bif")),
+             typeRender("objx", teal3, "white", prefixed("ox"))];
 
 var cellHeight = 20;
 var cellWidth = 70;
@@ -160,6 +160,7 @@ function registerDiagram() {
   ;
 }
 
-init()
-updateStack()
-registerDiagram() 
+init();
+updateStack();
+registerDiagram();
+
