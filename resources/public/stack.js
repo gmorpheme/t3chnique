@@ -1,114 +1,165 @@
+var dgrey = "#202020";
+var lgrey = "#808080";
+var red1 = "#DE2740";
+var red2 = "#A4404E";
+var red3 = "#8D0C1E";
+var red4 = "#EE5A6E";
+var red5 = "#EE8190";
+var teal1 = "#1A957D";
+var teal2 = "#2B6E61";
+var teal3 = "#085E4E";
+var teal4 = "#4CC9B1";
+var teal5 = "#6DC9B7";
+var leaf1 = "#ACDC26";
+var leaf2 = "#88A33F";
+var leaf3 = "#6A8C0C";
+var leaf4 = "#C6ED5A";
+var leaf5 = "#D0ED80";
+
 /*
  * Test data.
  */
-var stack = [ 
-  [7, 9876],
-  [11, 0x1633],
-  [1, 0],
-  [2, 0],
-  [7, 1],
-  [12, 0x88],
-  [8, 0x788],
-  [9, 0x728],
-  [1, 0],
-  [1, 0] ];
-
-var registers = {
-  r0: [7, 23],
-  ip: 24
+function rnd(low, high) { return Math.floor(Math.random() * (high - low) + low); }
+var stack = [];
+var depth = rnd(10, 50);
+for (var i = 0; i < depth; ++i) {
+  stack.push([rnd(1, 18), rnd(0, 10000)]);
 }
+
+var registers =[ 
+  {name: "r0", value: [7, 23]},
+  {name: "ip", value: [3, 24]}
+]
 
 /*
  * Primitive type configuration.
  */
 
-function typeRender(name, fill, border, text, render) {
-  return {name: name, fill: fill, border: border, text: text, render: render}
+function typeRender(name, fill, text, render) {
+  return {name: name, fill: fill, text: text, render: render}
 }
 
 function identity(val) { return val.toString() }
 function hex(val) { return "0x" + val.toString(16) }
 
 var types = [null,
-             typeRender("nil", "white", "red", "red", function(val) { return "nil" }),
-             typeRender("true", "rgb(00,80,20)", "white", "white", function(val) { return "true" }),
-             typeRender("stack", "rgb(5,5,5)", "white", "white", function(val) { return "st:" + val }),
-             typeRender("codeptr", "rgb(5,5,5)", "white", "white", hex ),
-             typeRender("obj", "teal", "white", "white", hex),
-             typeRender("prop", "rgb(10,30,80)", "white", "white", function(val) { return "pid:" + val} ),
-             typeRender("int", "rgb(00,00,60)", "white", "white", identity),
-             typeRender("sstring", "teal", "white", "white", hex),
-             typeRender("dstring", "teal", "white", "white", hex),
-             typeRender("list", "maroon", "white", "white", identity),
-             typeRender("codeofs", "maroon", "white", "white", identity),
-             typeRender("funcptr", "white", "blue", "blue", hex),
-             typeRender("empty", "maroon", "white", "white", identity),
-             typeRender("native-code", "maroon", "white", "white", identity),
-             typeRender("enum", "maroon", "white", "white", identity),
-             typeRender("bifptr", "maroon", "white", "white", identity),
-             typeRender("objx", "maroon", "white", "white", identity)];
+             typeRender("nil", red1, "white", function(val) { return "nil" }),
+             typeRender("true", leaf1, "white", function(val) { return "true" }),
+             typeRender("stack", leaf1, "white", function(val) { return "st:" + val }),
+             typeRender("codeptr", teal4, "white", hex ),
+             typeRender("obj", teal3, "white", hex),
+             typeRender("prop", red5, "white", function(val) { return "pid:" + val} ),
+             typeRender("int", teal1, "white", identity),
+             typeRender("sstring", leaf2, "white", hex),
+             typeRender("dstring", leaf3, "white", hex),
+             typeRender("list", red5, "white", identity),
+             typeRender("codeofs", red5, "white", identity),
+             typeRender("funcptr", teal2, "white", hex),
+             typeRender("empty", red5, "white", identity),
+             typeRender("native-code", red5, "white", identity),
+             typeRender("enum", red5, "white", identity),
+             typeRender("bifptr", red5, "white", identity),
+             typeRender("objx", red5, "white", identity)];
 
+var cellHeight = 20;
+var cellWidth = 70;
+var cellPadding = 3;
+var rLabelWidth = 15;
+var w = 100;
 
-function stackDiagram() {
+function init() {
+  var stacksvg = 
+    d3.select("div.stack")
+    .append("svg")
+    .attr("class", "stack")
+    .attr("width", w)
+    .attr("height", (cellHeight + cellPadding) * stack.length)
+    .attr("fill", dgrey);
+}
 
-  w = 100;
-  h = 500;
-  cellHeight = 20;
-  cellWidth = 70;
-  cellPadding = 3;
+function updateStack() {
 
   var stacksvg = 
-    d3.select("body")
-    .append("svg")
-    .attr("id", "stack")
-    .attr("width", w)
-    .attr("height", h);
+    d3.select("svg.stack")
+      .attr("height", (cellHeight + cellPadding) * stack.length);
 
-  stacksvg.selectAll("rect")
-    .data(stack)
+  var cells =   stacksvg.selectAll("rect").data(stack);
+  cells
+    .attr({
+      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
+      fill: function(d) { return types[d[0]].fill }
+    })
     .enter()
     .append("rect")
     .attr({
       x: 0,
-      y: function(d, i) { return (cellHeight + cellPadding) * i},
+      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
       rx: 3,
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d[0]].fill },
-      "stroke-width": "1px",
-      stroke: function(d) { return types[d[0]].border }
+      fill: function(d) { return types[d[0]].fill }
     });
 
-  stacksvg.selectAll("text")
-    .data(stack)
+  cells.exit().remove();
+
+  var labels = stacksvg.selectAll("text").data(stack);
+
+  labels
+    .text(function(d) { return types[d[0]].render(d[1]) })
+    .attr({
+      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
+      fill: function (d, i) { return types[d[0]].text }
+    });
+  
+  labels
     .enter()
     .append("text")
     .text(function(d) { return types[d[0]].render(d[1]) })
     .attr({
       x: cellWidth / 2,
-      y: function (d, i) { return (cellHeight + cellPadding) * i + 15},
+      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
       fill: function (d, i) { return types[d[0]].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
-      "font-size": "13px"
+      "font-size": "13px",
+      "font-weight": "bold"
     });
 
-  return stacksvg;
+  labels
+    .exit().remove();
 }
 
+d3.select("#push").on("click", function() { 
+  stack.push([rnd(1, 18), rnd(0, 10000)]);
+  updateStack();
+})
+d3.select("#pop").on("click", function() { 
+  stack.pop();
+  updateStack();
+})
+
 function registerDiagram() {
-  svg = d3.selectAll("body")
+  svg = d3.select("div.register")
     .append("svg")
     .attr("id", "reg");
 
   svg.selectAll("rect")
     .data(registers)
-    .enter();
+    .enter()
+    .append("rect")
+    .attr({
+      x: function (d, i) { return rLabelWidth + (cellWidth + rLabelWidth + cellPadding) * i },
+      y: 0,
+      rx: 3,
+      ry: 3,
+      width: cellWidth,
+      height: cellHeight,
+      fill: function(d) { return types[d.value[0]].fill }
+    });
+  ;
 }
 
-function codePoolDiagram() {}
-
-stackDiagram()
+init()
+updateStack()
 registerDiagram() 
-codePoolDiagram()
