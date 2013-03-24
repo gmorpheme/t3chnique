@@ -1,5 +1,6 @@
 * { box-sizing: border-box; }
 div.stack { width: 20%; float: left; }
-div.register { width: 30%; float: left; }
+div.register { width: 80%; float: left; }
+div.code { width: 80%; float: left; }
 body { background-color: #222; color: white; padding: 2px;}
 div { padding: 2px; }

@@ -1,3 +1,12 @@
+_.mixin({
+  partition: function(coll, n) {
+    return _.chain(coll)
+      .groupBy(function(x, i) { return Math.floor(i/n); })
+      .map(function(val, key) { return val; })
+      .value();
+  }
+})
+
 var dgrey = "#202020";
 var lgrey = "#808080";
 var red1 = "#DE2740";
@@ -28,8 +37,18 @@ for (var i = 0; i < depth; ++i) {
 
 var registers = [ 
   {name: "r0", value: [7, 23]},
-  {name: "ip", value: [3, 24]}
+  {name: "ip", value: [4, 24]},
+  {name: "ep", value: [4, 14]},
+  {name: "sp", value: [3, 12]},
+  {name: "fp", value: [3, 14]},
 ]
+
+var bytes = [];
+var addr  = 16 * rnd(0, 1024);
+for (var i = 0; i < 512; ++i) {
+  bytes.push(rnd(0,255));
+}
+var codeSection = {address: addr, bytes: bytes};
 
 /*
  * Primitive type configuration.
@@ -68,6 +87,7 @@ var rLabelWidth = 15;
 var w = 100;
 
 function init() {
+  // initialise stack svg
   var stacksvg = 
     d3.select("div.stack")
     .append("svg")
@@ -76,6 +96,7 @@ function init() {
     .attr("height", (cellHeight + cellPadding) * stack.length)
     .attr("fill", dgrey);
 
+  // initialise registers svg
   svg = d3.select("div.register")
     .append("svg")
     .attr("class", "register");
@@ -123,6 +144,11 @@ function init() {
       fill: function(d) { return types[d.value[0]].text }
     })
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
+
+  // initialise code window
+  d3.select("div.code")
+    .append("table")
+    .attr("class", "code");
 }
 
 function updateStack() {
