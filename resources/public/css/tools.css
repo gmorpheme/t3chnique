@@ -1,6 +1,18 @@
-* { box-sizing: border-box; }
-div.stack { width: 20%; float: left; }
-div.register { width: 80%; float: left; }
-div.code { width: 80%; float: left; }
+* { box-sizing: border-box; font-family: sans-serif; }
+div.stack { width: 10%; float: left; }
+div.register { width: 90%; float: left; }
+
+div.code, div.constant, div.object{
+  width: 30%; 
+  float: left; 
+  color: white; 
+  font-size: 12px; 
+}
+
+th { font-weight: normal; text-align: right; font-family: "Lucida Console", Monaco, monospace; }
+.code th { color: #EE8190; }
+.constant th { color: #D0ED80; }
+.code td, .constant td { font-family: "Lucida Console", Monaco, monospace; }
+
 body { background-color: #222; color: white; padding: 2px;}
 div { padding: 2px; }

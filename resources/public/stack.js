@@ -43,12 +43,39 @@ var registers = [
   {name: "fp", value: [3, 14]},
 ]
 
-var bytes = [];
-var addr  = 16 * rnd(0, 1024);
-for (var i = 0; i < 512; ++i) {
-  bytes.push(rnd(0,255));
+function fakeSection() {
+  var bytes = [];
+  var addr  = 16 * rnd(0, 1024);
+  for (var i = 0; i < 512; ++i) {
+    bytes.push(rnd(0,255));
+  }
+  return {address: addr, bytes: bytes};
 }
-var codeSection = {address: addr, bytes: bytes};
+
+var codeSection = fakeSection()
+var constSection = fakeSection()
+
+/**
+ * Turn a codeSection object into a list of rows with address headers.
+ */
+function toTable(codeSection) {
+  return _.chain(codeSection.bytes)
+    .partition(16)
+    .map(function (bytes, i) { return {address: codeSection.address + i * 16, bytes: bytes } })
+    .value();
+}
+
+function fakeObjectPool() {
+  var objects = [];
+  var id = rnd(0, 20000);
+  for (var i = 0; i < 100; ++i) {
+    id += rnd(0, 24);
+    objects.push({oid: [5, id]});
+  }
+  return objects;
+}
+
+var objectSection = fakeObjectPool();
 
 /*
  * Primitive type configuration.
@@ -99,7 +126,8 @@ function init() {
   // initialise registers svg
   svg = d3.select("div.register")
     .append("svg")
-    .attr("class", "register");
+    .attr("class", "register")
+    .attr("height", cellHeight + 2 * cellPadding);
 
   svg.selectAll("rect")
     .data(registers)
@@ -145,10 +173,88 @@ function init() {
     })
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
 
-  // initialise code window
-  d3.select("div.code")
-    .append("table")
-    .attr("class", "code");
+  initPoolDiv(d3.select("div.code"), codeSection);
+  initPoolDiv(d3.select("div.constant"), constSection);
+  initObjectDiv(d3.select("div.object"), objectSection);
+}
+
+var byteFormat = d3.format("02x");
+var addrFormat = d3.format("#08x");
+
+function initObjectDiv(div) {
+  var svg = div.append("svg")
+    .attr("class", "object")
+    .attr("height", (cellHeight + cellPadding) * 100);
+
+  updateObjects();
+}
+
+function updateObjects() {
+  var svg = 
+    d3.select("svg.object");
+
+  var cells = svg.selectAll("rect").data(objectSection);
+
+  cells
+    .attr({
+      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
+      fill: function(d) { return types[d.oid[0]].fill }
+    })
+    .enter()
+    .append("rect")
+    .attr({
+      x: 0,
+      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
+      rx: 3,
+      ry: 3,
+      width: cellWidth,
+      height: cellHeight,
+      fill: function(d) { return types[d.oid[0]].fill }
+    });
+
+  cells.exit().remove();
+
+  var labels = svg.selectAll("text").data(objectSection);
+
+  labels
+    .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
+    .attr({
+      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
+      fill: function (d, i) { return types[d.oid[0]].text }
+    });
+  
+  labels
+    .enter()
+    .append("text")
+    .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
+    .attr({
+      x: cellWidth / 2,
+      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
+      fill: function (d, i) { return types[d.oid[0]].text },
+      "text-anchor": "middle",
+      "font-family": "sans-serif",
+      "font-size": "13px",
+      "font-weight": "bold"
+    });
+
+  labels
+    .exit().remove();
+}
+
+function initPoolDiv(div, section) {
+  var table = div.append("table");
+
+  table.selectAll("tr")
+    .data(toTable(section))
+    .enter()
+    .append("tr")
+    .html(function(d) { return "<th>" + addrFormat(d.address) + "</th>"; })
+    .selectAll("td.byte")
+    .data(function(d) { return d.bytes; })
+    .enter()
+    .append("td")
+    .attr("class", "byte")
+    .text(function (d) { return byteFormat(d); })
 }
 
 function updateStack() {
