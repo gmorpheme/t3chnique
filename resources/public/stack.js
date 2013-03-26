@@ -25,8 +25,6 @@ var leaf3 = "#6A8C0C";
 var leaf4 = "#C6ED5A";
 var leaf5 = "#D0ED80";
 
-
-
 function fakeSection() {
   var bytes = [];
   var addr  = 16 * _.random(0, 1024);
@@ -136,30 +134,84 @@ var cellPadding = 3;
 var rLabelWidth = 15;
 var w = 100;
 
-function init() {
-  // initialise stack svg
-  vm.refreshStack();
-  vm.refreshRegisters();
-  vm.refreshCodeSection();
-  vm.refreshConstSection();
-  vm.refreshObjectSection();
-
-  var stacksvg = 
-    d3.select("div.stack")
+//================================================================================
+// Stack Diagram
+//================================================================================
+function StackDiagram(div) {
+  this.div = div;
+  this.svg = 
+    this.div
     .append("svg")
     .attr("class", "stack")
     .attr("width", w)
-    .attr("height", (cellHeight + cellPadding) * vm.stack.length)
     .attr("fill", dgrey);
+};
 
-  // initialise registers svg
-  svg = d3.select("div.register")
+StackDiagram.prototype.update = function(stack) {
+  this.svg.attr("height", (cellHeight + cellPadding) * stack.length);
+
+  var cells = this.svg.selectAll("rect").data(stack);
+
+  cells
+    .attr({
+      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
+      fill: function(d) { return types[d[0]].fill }
+    })
+    .enter()
+    .append("rect")
+    .attr({
+      x: 0,
+      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
+      rx: 3,
+      ry: 3,
+      width: cellWidth,
+      height: cellHeight,
+      fill: function(d) { return types[d[0]].fill }
+    });
+
+  cells.exit().remove();
+
+  var labels = this.svg.selectAll("text").data(stack);
+
+  labels
+    .text(function(d) { return types[d[0]].render(d[1]) })
+    .attr({
+      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
+      fill: function (d, i) { return types[d[0]].text }
+    });
+  
+  labels
+    .enter()
+    .append("text")
+    .text(function(d) { return types[d[0]].render(d[1]) })
+    .attr({
+      x: cellWidth / 2,
+      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
+      fill: function (d, i) { return types[d[0]].text },
+      "text-anchor": "middle",
+      "font-family": "sans-serif",
+      "font-size": "13px",
+      "font-weight": "bold"
+    });
+
+  labels
+    .exit().remove();
+}
+
+//================================================================================
+// Register Diagram
+//================================================================================
+function RegisterDiagram(div) {
+  this.div = div;
+  this.svg = this.div
     .append("svg")
     .attr("class", "register")
     .attr("height", cellHeight + 2 * cellPadding);
+}
 
-  svg.selectAll("rect")
-    .data(vm.registers)
+RegisterDiagram.prototype.update = function(registers) {
+  this.svg.selectAll("rect")
+    .data(registers)
     .enter()
     .append("rect")
     .attr({
@@ -172,8 +224,8 @@ function init() {
       fill: function(d) { return types[d.value[0]].fill }
     });
 
-  svg.selectAll("text.label")
-    .data(vm.registers)
+  this.svg.selectAll("text.label")
+    .data(registers)
     .enter()
     .append("text")
     .attr({
@@ -186,8 +238,8 @@ function init() {
     })
     .text(function (d) { return d.name });
 
-  svg.selectAll("text.value")
-    .data(vm.registers)
+  this.svg.selectAll("text.value")
+    .data(registers)
     .enter()
     .append("text")
     .attr({
@@ -201,39 +253,32 @@ function init() {
       fill: function(d) { return types[d.value[0]].text }
     })
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
-
-  initPoolDiv(d3.select("div.code"), vm.codeSection);
-  initPoolDiv(d3.select("div.constant"), vm.constSection);
-  initObjectDiv(d3.select("div.object"), vm.objectSection);
 }
 
-var byteFormat = d3.format("02x");
-var addrFormat = d3.format("#08x");
-
-function initObjectDiv(div) {
-  var svg = div.append("svg")
+//================================================================================
+// Object Diagram
+//================================================================================
+function ObjectDiagram(div) {
+  this.div = div;
+  this.svg = this.div
+    .append("svg")
     .attr("class", "object")
     .attr("height", (cellHeight + cellPadding) * 100);
-
-  updateObjects();
 }
 
-function updateObjects() {
-  var svg = 
-    d3.select("svg.object");
-
-  var cells = svg.selectAll("rect").data(vm.objectSection);
+ObjectDiagram.prototype.update = function(objectSection) {
+  var cells = this.svg.selectAll("rect").data(objectSection);
 
   cells
     .attr({
-      y: function(d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1)},
+      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
       fill: function(d) { return types[d.oid[0]].fill }
     })
     .enter()
     .append("rect")
     .attr({
       x: 0,
-      y: function(d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1)},
+      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
       rx: 3,
       ry: 3,
       width: cellWidth,
@@ -243,12 +288,12 @@ function updateObjects() {
 
   cells.exit().remove();
 
-  var labels = svg.selectAll("text").data(vm.objectSection);
+  var labels = this.svg.selectAll("text").data(objectSection);
 
   labels
     .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
     .attr({
-      y: function (d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1) + 15},
+      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
       fill: function (d, i) { return types[d.oid[0]].text }
     });
   
@@ -258,7 +303,7 @@ function updateObjects() {
     .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
     .attr({
       x: cellWidth / 2,
-      y: function (d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1) + 15},
+      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
       fill: function (d, i) { return types[d.oid[0]].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
@@ -269,6 +314,33 @@ function updateObjects() {
   labels
     .exit().remove();
 }
+
+var stackDiagram;
+var registerDiagram;
+var objectDiagram;
+
+function init() {
+
+  stackDiagram = new StackDiagram(d3.select("div.stack"));
+  registerDiagram = new RegisterDiagram(d3.select("div.register"));
+  objectDiagram = new ObjectDiagram(d3.select("div.object"));
+
+  vm.refreshStack();
+  vm.refreshRegisters();
+  vm.refreshCodeSection();
+  vm.refreshConstSection();
+  vm.refreshObjectSection();
+
+  stackDiagram.update(vm.stack);
+  registerDiagram.update(vm.registers);
+  objectDiagram.update(vm.objectSection);
+
+  initPoolDiv(d3.select("div.code"), vm.codeSection);
+  initPoolDiv(d3.select("div.constant"), vm.constSection);
+}
+
+var byteFormat = d3.format("02x");
+var addrFormat = d3.format("#08x");
 
 function initPoolDiv(div, section) {
   var table = div.append("table");
@@ -286,73 +358,6 @@ function initPoolDiv(div, section) {
     .text(function (d) { return byteFormat(d); })
 }
 
-function updateStack() {
-
-  var stacksvg = 
-    d3.select("svg.stack")
-      .attr("height", (cellHeight + cellPadding) * vm.stack.length);
-
-  var cells =   stacksvg.selectAll("rect").data(vm.stack);
-  cells
-    .attr({
-      y: function(d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1)},
-      fill: function(d) { return types[d[0]].fill }
-    })
-    .enter()
-    .append("rect")
-    .attr({
-      x: 0,
-      y: function(d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1)},
-      rx: 3,
-      ry: 3,
-      width: cellWidth,
-      height: cellHeight,
-      fill: function(d) { return types[d[0]].fill }
-    });
-
-  cells.exit().remove();
-
-  var labels = stacksvg.selectAll("text").data(vm.stack);
-
-  labels
-    .text(function(d) { return types[d[0]].render(d[1]) })
-    .attr({
-      y: function (d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d[0]].text }
-    });
-  
-  labels
-    .enter()
-    .append("text")
-    .text(function(d) { return types[d[0]].render(d[1]) })
-    .attr({
-      x: cellWidth / 2,
-      y: function (d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d[0]].text },
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-size": "13px",
-      "font-weight": "bold"
-    });
-
-  labels
-    .exit().remove();
-}
-
-d3.select("#push").on("click", function() { 
-  vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
-  updateStack();
-})
-d3.select("#pop").on("click", function() { 
-  vm.stack.pop();
-  updateStack();
-})
-d3.select("#ret").on("click", function() {
-  vm.refreshRegisters();
-  updateRegisters();
-})
-
-
 function updateRegisters() {
   var svg = d3.select("svg.register");
 
@@ -366,7 +371,42 @@ function updateRegisters() {
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
 }
 
+function updateCodeSection() {
+}
+
+function updateConstSection() {
+}
+
+function updateObjectSection() {
+}
+
+// bind actions to buttons
+
+d3.select("#push").on("click", function() { 
+  vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
+  stackDiagram.update(vm.stack);
+});
+d3.select("#pop").on("click", function() { 
+  vm.stack.pop();
+  stackDiagram.update(vm.stack);
+});
+d3.select("#ret").on("click", function() {
+  vm.refreshRegisters();
+  updateRegisters();
+});
+d3.select("#codeseek").on("click", function() {
+  vm.refreshCodeSection();
+  updateCodeSection();
+});
+d3.select("#constseek").on("click", function() {
+  vm.refreshConstSection();
+  updateConstSection();
+});
+d3.select("#objseek").on("click", function() {
+  vm.refreshObjectSection();
+  updateObjectSection();
+});
+
 init();
 updateStack();
 updateRegisters();
-
