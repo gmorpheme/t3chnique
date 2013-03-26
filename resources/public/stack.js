@@ -315,37 +315,17 @@ ObjectDiagram.prototype.update = function(objectSection) {
     .exit().remove();
 }
 
-var stackDiagram;
-var registerDiagram;
-var objectDiagram;
 
-function init() {
-
-  stackDiagram = new StackDiagram(d3.select("div.stack"));
-  registerDiagram = new RegisterDiagram(d3.select("div.register"));
-  objectDiagram = new ObjectDiagram(d3.select("div.object"));
-
-  vm.refreshStack();
-  vm.refreshRegisters();
-  vm.refreshCodeSection();
-  vm.refreshConstSection();
-  vm.refreshObjectSection();
-
-  stackDiagram.update(vm.stack);
-  registerDiagram.update(vm.registers);
-  objectDiagram.update(vm.objectSection);
-
-  initPoolDiv(d3.select("div.code"), vm.codeSection);
-  initPoolDiv(d3.select("div.constant"), vm.constSection);
+//================================================================================
+// Pool Diagram (code or const)
+//================================================================================
+function PoolDiagram(div) {
+  this.div = div;
+  this.table = this.div.append("table");
 }
 
-var byteFormat = d3.format("02x");
-var addrFormat = d3.format("#08x");
-
-function initPoolDiv(div, section) {
-  var table = div.append("table");
-
-  table.selectAll("tr")
+PoolDiagram.prototype.update = function(section) {
+  this.table.selectAll("tr")
     .data(toTable(section))
     .enter()
     .append("tr")
@@ -358,6 +338,36 @@ function initPoolDiv(div, section) {
     .text(function (d) { return byteFormat(d); })
 }
 
+var stackDiagram;
+var registerDiagram;
+var objectDiagram;
+var codeDiagram;
+var constDiagram;
+
+function init() {
+
+  stackDiagram = new StackDiagram(d3.select("div.stack"));
+  registerDiagram = new RegisterDiagram(d3.select("div.register"));
+  objectDiagram = new ObjectDiagram(d3.select("div.object"));
+  codeDiagram = new PoolDiagram(d3.select("div.code"));
+  constDiagram = new PoolDiagram(d3.select("div.constant"));
+
+  vm.refreshStack();
+  vm.refreshRegisters();
+  vm.refreshCodeSection();
+  vm.refreshConstSection();
+  vm.refreshObjectSection();
+
+  stackDiagram.update(vm.stack);
+  registerDiagram.update(vm.registers);
+  objectDiagram.update(vm.objectSection);
+  codeDiagram.update(vm.codeSection);
+  constDiagram.update(vm.constSection);
+}
+
+var byteFormat = d3.format("02x");
+var addrFormat = d3.format("#08x");
+
 function updateRegisters() {
   var svg = d3.select("svg.register");
 
@@ -369,15 +379,6 @@ function updateRegisters() {
     .data(vm.registers)
     .attr("fill", function(d) { return types[d.value[0]].text })
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
-}
-
-function updateCodeSection() {
-}
-
-function updateConstSection() {
-}
-
-function updateObjectSection() {
 }
 
 // bind actions to buttons
@@ -408,5 +409,3 @@ d3.select("#objseek").on("click", function() {
 });
 
 init();
-updateStack();
-updateRegisters();
