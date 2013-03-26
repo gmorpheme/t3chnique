@@ -28,11 +28,10 @@ var leaf5 = "#D0ED80";
 /*
  * Test data.
  */
-function rnd(low, high) { return Math.floor(Math.random() * (high - low) + low); }
 var stack = [];
-var depth = rnd(10, 50);
+var depth = _.random(10, 50);
 for (var i = 0; i < depth; ++i) {
-  stack.push([rnd(1, 18), rnd(0, 10000)]);
+  stack.push([_.random(1, 17), _.random(0, 10000)]);
 }
 
 var registers = [ 
@@ -45,9 +44,9 @@ var registers = [
 
 function fakeSection() {
   var bytes = [];
-  var addr  = 16 * rnd(0, 1024);
+  var addr  = 16 * _.random(0, 1024);
   for (var i = 0; i < 512; ++i) {
-    bytes.push(rnd(0,255));
+    bytes.push(_.random(0,255));
   }
   return {address: addr, bytes: bytes};
 }
@@ -67,9 +66,9 @@ function toTable(codeSection) {
 
 function fakeObjectPool() {
   var objects = [];
-  var id = rnd(0, 20000);
+  var id = _.random(0, 20000);
   for (var i = 0; i < 100; ++i) {
-    id += rnd(0, 24);
+    id += _.random(0, 24);
     objects.push({oid: [5, id]});
   }
   return objects;
@@ -311,7 +310,7 @@ function updateStack() {
 }
 
 d3.select("#push").on("click", function() { 
-  stack.push([rnd(1, 18), rnd(0, 10000)]);
+  stack.push([_.random(1, 17), _.random(0, 10000)]);
   updateStack();
 })
 d3.select("#pop").on("click", function() { 
@@ -320,8 +319,8 @@ d3.select("#pop").on("click", function() {
 })
 d3.select("#ret").on("click", function() {
   registers = [
-    {name: "r0", value: [rnd(1, 18), rnd(0, 10000)]},
-    {name: "ip", value: [4, rnd(0, 10000)]}
+    {name: "r0", value: [_.random(1, 17), _.random(0, 10000)]},
+    {name: "ip", value: [4, _.random(0, 10000)]}
   ];
   updateRegisters();
 })
