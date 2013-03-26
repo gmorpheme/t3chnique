@@ -25,22 +25,7 @@ var leaf3 = "#6A8C0C";
 var leaf4 = "#C6ED5A";
 var leaf5 = "#D0ED80";
 
-/*
- * Test data.
- */
-var stack = [];
-var depth = _.random(10, 50);
-for (var i = 0; i < depth; ++i) {
-  stack.push([_.random(1, 17), _.random(0, 10000)]);
-}
 
-var registers = [ 
-  {name: "r0", value: [7, 23]},
-  {name: "ip", value: [4, 24]},
-  {name: "ep", value: [4, 14]},
-  {name: "sp", value: [3, 12]},
-  {name: "fp", value: [3, 14]},
-]
 
 function fakeSection() {
   var bytes = [];
@@ -49,19 +34,6 @@ function fakeSection() {
     bytes.push(_.random(0,255));
   }
   return {address: addr, bytes: bytes};
-}
-
-var codeSection = fakeSection()
-var constSection = fakeSection()
-
-/**
- * Turn a codeSection object into a list of rows with address headers.
- */
-function toTable(codeSection) {
-  return _.chain(codeSection.bytes)
-    .partition(16)
-    .map(function (bytes, i) { return {address: codeSection.address + i * 16, bytes: bytes } })
-    .value();
 }
 
 function fakeObjectPool() {
@@ -74,7 +46,59 @@ function fakeObjectPool() {
   return objects;
 }
 
-var objectSection = fakeObjectPool();
+
+/*
+ * Test data.
+ */
+var vm = {
+  stack: [],
+  registers: [],
+  codeSection: {},
+  constSection: {},
+  objectSection: {},
+
+  /**
+   * Refresh stack from server.
+   */
+  refreshStack: function() {
+    var depth = _.random(10, 50);
+    for (var i = 0; i < depth; ++i) {
+      vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
+    }
+  },
+
+  refreshRegisters: function() {
+    vm.registers = [
+      {name: "r0", value: [_.random(1, 17), _.random(0, 10000)]},
+      {name: "ip", value: [4, _.random(0, 10000)]},
+      {name: "ep", value: [4, _.random(0, 10000)]},
+      {name: "sp", value: [3, _.random(0, vm.stack.length)]},
+      {name: "fp", value: [3, _.random(0, vm.stack.length)]},
+    ];
+  },
+
+  refreshCodeSection: function() {
+    vm.codeSection = fakeSection();
+  },
+
+  refreshConstSection: function() {
+    vm.constSection = fakeSection();
+  },
+
+  refreshObjectSection: function() {
+    vm.objectSection = fakeObjectPool();
+  }
+}
+
+/**
+ * Turn a code or const section into a list of rows with address headers.
+ */
+function toTable(section) {
+  return _.chain(section.bytes)
+    .partition(16)
+    .map(function (bytes, i) { return {address: section.address + i * 16, bytes: bytes } })
+    .value();
+}
 
 /*
  * Primitive type configuration.
@@ -114,12 +138,18 @@ var w = 100;
 
 function init() {
   // initialise stack svg
+  vm.refreshStack();
+  vm.refreshRegisters();
+  vm.refreshCodeSection();
+  vm.refreshConstSection();
+  vm.refreshObjectSection();
+
   var stacksvg = 
     d3.select("div.stack")
     .append("svg")
     .attr("class", "stack")
     .attr("width", w)
-    .attr("height", (cellHeight + cellPadding) * stack.length)
+    .attr("height", (cellHeight + cellPadding) * vm.stack.length)
     .attr("fill", dgrey);
 
   // initialise registers svg
@@ -129,7 +159,7 @@ function init() {
     .attr("height", cellHeight + 2 * cellPadding);
 
   svg.selectAll("rect")
-    .data(registers)
+    .data(vm.registers)
     .enter()
     .append("rect")
     .attr({
@@ -143,7 +173,7 @@ function init() {
     });
 
   svg.selectAll("text.label")
-    .data(registers)
+    .data(vm.registers)
     .enter()
     .append("text")
     .attr({
@@ -157,7 +187,7 @@ function init() {
     .text(function (d) { return d.name });
 
   svg.selectAll("text.value")
-    .data(registers)
+    .data(vm.registers)
     .enter()
     .append("text")
     .attr({
@@ -172,9 +202,9 @@ function init() {
     })
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
 
-  initPoolDiv(d3.select("div.code"), codeSection);
-  initPoolDiv(d3.select("div.constant"), constSection);
-  initObjectDiv(d3.select("div.object"), objectSection);
+  initPoolDiv(d3.select("div.code"), vm.codeSection);
+  initPoolDiv(d3.select("div.constant"), vm.constSection);
+  initObjectDiv(d3.select("div.object"), vm.objectSection);
 }
 
 var byteFormat = d3.format("02x");
@@ -192,18 +222,18 @@ function updateObjects() {
   var svg = 
     d3.select("svg.object");
 
-  var cells = svg.selectAll("rect").data(objectSection);
+  var cells = svg.selectAll("rect").data(vm.objectSection);
 
   cells
     .attr({
-      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
+      y: function(d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1)},
       fill: function(d) { return types[d.oid[0]].fill }
     })
     .enter()
     .append("rect")
     .attr({
       x: 0,
-      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
+      y: function(d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1)},
       rx: 3,
       ry: 3,
       width: cellWidth,
@@ -213,12 +243,12 @@ function updateObjects() {
 
   cells.exit().remove();
 
-  var labels = svg.selectAll("text").data(objectSection);
+  var labels = svg.selectAll("text").data(vm.objectSection);
 
   labels
     .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
     .attr({
-      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
+      y: function (d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1) + 15},
       fill: function (d, i) { return types[d.oid[0]].text }
     });
   
@@ -228,7 +258,7 @@ function updateObjects() {
     .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
     .attr({
       x: cellWidth / 2,
-      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
+      y: function (d, i) { return (cellHeight + cellPadding) * (vm.objectSection.length - i - 1) + 15},
       fill: function (d, i) { return types[d.oid[0]].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
@@ -260,19 +290,19 @@ function updateStack() {
 
   var stacksvg = 
     d3.select("svg.stack")
-      .attr("height", (cellHeight + cellPadding) * stack.length);
+      .attr("height", (cellHeight + cellPadding) * vm.stack.length);
 
-  var cells =   stacksvg.selectAll("rect").data(stack);
+  var cells =   stacksvg.selectAll("rect").data(vm.stack);
   cells
     .attr({
-      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
+      y: function(d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1)},
       fill: function(d) { return types[d[0]].fill }
     })
     .enter()
     .append("rect")
     .attr({
       x: 0,
-      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
+      y: function(d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1)},
       rx: 3,
       ry: 3,
       width: cellWidth,
@@ -282,12 +312,12 @@ function updateStack() {
 
   cells.exit().remove();
 
-  var labels = stacksvg.selectAll("text").data(stack);
+  var labels = stacksvg.selectAll("text").data(vm.stack);
 
   labels
     .text(function(d) { return types[d[0]].render(d[1]) })
     .attr({
-      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
+      y: function (d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1) + 15},
       fill: function (d, i) { return types[d[0]].text }
     });
   
@@ -297,7 +327,7 @@ function updateStack() {
     .text(function(d) { return types[d[0]].render(d[1]) })
     .attr({
       x: cellWidth / 2,
-      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
+      y: function (d, i) { return (cellHeight + cellPadding) * (vm.stack.length - i - 1) + 15},
       fill: function (d, i) { return types[d[0]].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
@@ -310,18 +340,15 @@ function updateStack() {
 }
 
 d3.select("#push").on("click", function() { 
-  stack.push([_.random(1, 17), _.random(0, 10000)]);
+  vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
   updateStack();
 })
 d3.select("#pop").on("click", function() { 
-  stack.pop();
+  vm.stack.pop();
   updateStack();
 })
 d3.select("#ret").on("click", function() {
-  registers = [
-    {name: "r0", value: [_.random(1, 17), _.random(0, 10000)]},
-    {name: "ip", value: [4, _.random(0, 10000)]}
-  ];
+  vm.refreshRegisters();
   updateRegisters();
 })
 
@@ -330,11 +357,11 @@ function updateRegisters() {
   var svg = d3.select("svg.register");
 
   svg.selectAll("rect")
-    .data(registers)
+    .data(vm.registers)
     .attr("fill", function(d) { return types[d.value[0]].fill } );
 
   svg.selectAll("text.value")
-    .data(registers)
+    .data(vm.registers)
     .attr("fill", function(d) { return types[d.value[0]].text })
     .text(function(d) { return types[d.value[0]].render(d.value[1]) });
 }
