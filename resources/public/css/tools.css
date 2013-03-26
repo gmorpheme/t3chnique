@@ -1,4 +1,5 @@
 * { box-sizing: border-box; font-family: sans-serif; }
+h1 { font-size: 20px; }
 div.stack { width: 10%; float: left; }
 div.register { width: 90%; float: left; }
 
