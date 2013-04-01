@@ -38,7 +38,7 @@
 ;; state and operations
 
 (def game-catalogue [{:id 1 :name "Elysium.t3"}
-                     {:id 2 :name "ditch.t3"}])
+                     {:id 2 :name "ditch3.t3"}])
 
 (defn game-list [] game-catalogue)
 (defn game-get [id] (first (filter #(= (:id %) id) game-catalogue)))
@@ -46,13 +46,13 @@
 (def vms (atom {}))
 
 (defn vm-list [] @vms)
-(defn vm-get [id] (first (filter #(= (:id %) (int id)) @vms)))
+(defn vm-get [id] (get @vms (int id)))
 (defn vm-new [game]
   (let [name  (:name (game-get game))
         vm (t3vm/vm-from-image (parse-resource name))
         id (inc (count @vms)) ;; concurrency
         vm (assoc vm :id id)]
-    (swap! vms conj vm)
+    (swap! vms assoc id vm)
     (vm-get id)))
 
 (defn respond
@@ -63,15 +63,17 @@
 
 (defroutes vm-routes
   (GET "/games" []
-       (respond "t3chnique.server/games-page" (game-list)))
+    (respond "t3chnique.server/games-page" (game-list)))
   (GET "/games/:id" [id]
-       (respond "t3chnique.server/game-page" (game-get (Integer/parseInt id))))
+    (respond "t3chnique.server/game-page" (game-get (Integer/parseInt id))))
   (GET "/vms" []
-       (respond "t3chnique.server/vms-page" (vm-list)))
+    (respond "t3chnique.server/vms-page" (vm-list)))
   (GET "/vms/:id" [id]
-       (respond (vm-get id)))
+    (respond (vm-get (Integer/parseInt id))))
+  (GET "/vms/:id/stack" [id]
+    (respond (vm-get (:stack (Integer/parseInt id)))))
   (POST "/vms" [game]
-        (respond (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
+    (respond (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
   (route/resources "/"))
 
 (def app
@@ -85,7 +87,7 @@
 
 ;; tooling site - static html access to the restful data
 
-(defn tooling-chrome [body]
+(defn tooling-chrome [nav-name body]
   (hp/html5
    [:html
     [:head
@@ -93,30 +95,30 @@
      [:link {:href "/css/tools.css" :rel "stylesheet"}]]
     [:body
      [:ul.nav.nav-tabs
-      [:li.active [:a {:href "/games"} "Games"]]
-      [:li [:a {:href "/vms"} "VMs"]]]
+      [:li {:class (if (= nav-name "games") "active" "inactive")} [:a {:href "/games"} "Games"]]
+      [:li {:class (if (= nav-name "vms") "active" "inactive")} [:a {:href "/vms"} "VMs"]]]
      [:div.tab-content
       body]
      [:script {:src "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"}]]]))
 
 (defn games-page [games]
-  (tooling-chrome [:div#games.row
-                   [:div.span4
-                    [:ul.nav.nav-list
-                     (for [game games]
-                       [:li [:a {:href (str "/games/" (:id game)) } (:name game)]])]]]))
+  (tooling-chrome "games" [:div#games.row
+                           [:div.span4
+                            [:ul.nav.nav-list
+                             (for [game games]
+                               [:li [:a {:href (str "/games/" (:id game)) } (:name game)]])]]]))
 
 (defn game-page [game]
-  (tooling-chrome [:div#game
-                   [:div.span4
-                    [:h2 (:name game)]
-                    [:form {:method "post" :action "/vms"}
-                     [:input {:type "hidden" :name "game" :value (:id game)}]
-                     [:button.btn {:type "submit"} "Launch"]]]] ))
+  (tooling-chrome "games" [:div#game
+                           [:div.span4
+                            [:h2 (:name game)]
+                            [:form {:method "post" :action "/vms"}
+                             [:input {:type "hidden" :name "game" :value (:id game)}]
+                             [:button.btn {:type "submit"} "Launch"]]]] ))
 
 (defn vms-page [vms]
-  (tooling-chrome [:div#vms.row
-                   [:dev.span4
-                    [:ul.nav.nav-list
-                     (for [vm vms]
-                       (:li [:a {:href (str "/vms" (:id vm))} (:id vm)]))]]]))
+  (tooling-chrome "vms" [:div#vms.row
+                         [:dev.span4
+                          [:ul.nav.nav-list
+                           (for [id (keys vms)]
+                             [:li [:a {:href (str "/vms/" id)} id]])]]]))
