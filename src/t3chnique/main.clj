@@ -1,14 +1,15 @@
 (ns t3chnique.main
   (:gen-class)
   (:use [clojure.tools.cli :only [cli]]
-        [clojure.algo.monads :only [domonad fetch-state]])
+        [clojure.algo.monads :only [domonad fetch-state]]
+        [clojure.main :only [repl]])
   (:require [t3chnique.vm :as vm]
             [t3chnique.parse :as parse]
             [clojure.java.io :as io]
             [clojure.pprint :as pp])
   (:import [java.nio Buffer]))
 
-(declare entp dis object constant-string constant-list output)
+(declare entp dis object constant-string constant-list output vm-repl)
 
 (defn -main [& args]
   (time
@@ -32,7 +33,8 @@
       (:disassemble opts) (dis (:disassemble opts) state)
       (:object opts) (object (:object opts) state)
       (:constant-string opts) (constant-string (:constant-string opts) state)
-      (:constant-list opts) (constant-list (:constant-list opts) state)))))
+      (:constant-list opts) (constant-list (:constant-list opts) state)
+      :else (vm-repl state)))))
 
 (defn output [title m]
   (println "=======================================")
@@ -97,3 +99,17 @@
   (let [[b o] (vm/const-offset state addr)]
     (println (format "List @ %d\n" addr))
     (println (first ((parse/lst) [b o])))))
+
+(defn vm-repl 
+  "Run a REPL which applies the read fn to the state s."
+  [s]
+  (let [state (atom s)]
+    (repl
+     :init (fn []
+             (use 't3chnique.vm)
+             (use 'clojure.algo.monads))
+     :eval (fn [form]
+             (let [f (eval form)
+                   [r s] (f @state)]
+               (reset! state s)
+               r)))))
