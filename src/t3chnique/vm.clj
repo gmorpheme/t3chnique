@@ -231,25 +231,6 @@
     (let [[b o] (offset s ptr)]
       [(first ((parse/exception-table) [b o])) s])))
 
-(defn enter 
-  "Set up vm at initial entry point."
-  []
-  (domonad vm-m
-    [entp (fetch-val :entry-point-offset)
-     hdr (get-method-header entp)
-     _ (set-val :ip (+ entp (:code-offset hdr)))]
-    nil))
-
-(defn step []
-  (domonad vm-m
-    [ip (fetch-val :ip)
-     [b i] (m-offset ip)
-     :let [[[op args] [_ i']] ((parse-op) [b i])
-           f (:run-fn op)]
-     _ (set-val :ip i')
-     r (apply f (vals args))]
-    nil))
-
 (defn runop
   "Sets up program counter for a single operations implementation and handles
    exceptions, rollback etc."
@@ -523,14 +504,15 @@
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
   (domonad vm-m
-           [_ (m-seq (repeat 4 (stack-push (vm-nil))))
+           [_ (stack-push (vm-prop 0))
+            _ (m-seq (repeat 3 (stack-push (vm-nil))))
             ep (reg-get :ep)
             p (pc)
             fp (reg-get :fp)
             _ (stack-push (vm-codeofs (- p ep)))
             _ (stack-push (vm-codeofs ep))
             _ (stack-push (vm-int arg_count))
-            _ (stack-push (vm-int fp))
+            _ (stack-push (vm-stack fp))
             sp (reg-get :sp)
             _ (reg-set :fp sp)
             _ (reg-set :ep func_offset)
@@ -956,3 +938,25 @@
   (t3GetNamedArg [_ argc])
   ;; TODO named args
   (t3GetNamedArgList [_ argc]))
+
+;; control
+
+(defn enter 
+  "Set up vm at initial entry point."
+  []
+  (domonad vm-m
+    [entp (fetch-val :entry-point-offset)
+     _ (op-pushlst 0)
+     _ (op-call 1 entp)]
+    nil))
+
+(defn step []
+  (domonad vm-m
+    [ip (fetch-val :ip)
+     [b i] (m-offset ip)
+     :let [[[op args] [_ i']] ((parse-op) [b i])
+           f (:run-fn op)]
+     _ (set-val :ip i')
+     r (apply f (vals args))]
+    nil))
+
