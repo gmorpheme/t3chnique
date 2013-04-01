@@ -1,0 +1,13 @@
+* t3chnique
+
+T3chnique is an experimental, work in progress, attempt to implement a
+TADS 3 virtual machine in clojure.
+
+It uses a monadic approach to the virtual machine state and exception
+semantics.
+
+If it were ever finished, it would doubtless perform extremely poorly.
+
+
+
+
