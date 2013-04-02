@@ -72,8 +72,7 @@
   (defn vsuspend []
     (fn [s]
       (fn [k]
-        (fn [x]
-          (k [x s])))))
+        [(fn [x] (k [x s])) s])))
 
 ;; examples
   
@@ -112,3 +111,10 @@
         [op  (code-read)
          ret op]
         ret) s))))
+
+(comment
+
+  ;; to try
+  (run-cont ((vnormal) (state)))
+
+  )
