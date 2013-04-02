@@ -71,7 +71,7 @@
   (GET "/vms/:id" [id]
     (respond (vm-get (Integer/parseInt id))))
   (GET "/vms/:id/stack" [id]
-    (respond (vm-get (:stack (Integer/parseInt id)))))
+    (respond (:stack (vm-get (Integer/parseInt id)))))
   (POST "/vms" [game]
     (respond (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
   (route/resources "/"))
