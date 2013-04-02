@@ -45,7 +45,7 @@
 
 (def vms (atom {}))
 
-(defn vm-list [] @vms)
+(defn vm-map [] @vms)
 (defn vm-get [id] (get @vms (int id)))
 (defn vm-new [game]
   (let [name  (:name (game-get game))
@@ -55,6 +55,30 @@
     (swap! vms assoc id vm)
     (vm-get id)))
 
+;; represent functions add hyperlinks using HAL to support HATEOAS
+;; style interaction
+
+(defn represent-game [game]
+  (assoc game :_links {:self {:href (str "/games/" (:id game))}}))
+
+(defn represent-game-list [gs]
+  (map represent-game gs))
+
+(defn add-vm-links [id vm]
+  (assoc vm :_links {:self {:href (str "/vms/" id)}
+                     :stack {:href (str "/vms/" id "/stack")}
+                     :registers {:href (str "/vms" id "/stack")}}))
+
+(defn represent-vm-stack [id vm]
+  (add-vm-links id (:stack vm)))
+
+(defn represent-vm-registers [id vm]
+  (add-vm-links id (select-keys [:r0 :ip :ep :sp :fp :say-function :say-method] vm)))
+
+(defn represent-vm-map [vms]
+  (for [[id vm] vms]
+    (add-vm-links {:id id})))
+
 (defn respond
   ([data]
      {:body data})
@@ -63,15 +87,17 @@
 
 (defroutes vm-routes
   (GET "/games" []
-    (respond "t3chnique.server/games-page" (game-list)))
+    (respond "t3chnique.server/games-page" (represent-game-list (game-list))))
   (GET "/games/:id" [id]
-    (respond "t3chnique.server/game-page" (game-get (Integer/parseInt id))))
+    (respond "t3chnique.server/game-page" (represent-game (game-get (Integer/parseInt id)))))
   (GET "/vms" []
-    (respond "t3chnique.server/vms-page" (vm-list)))
+    (respond "t3chnique.server/vms-page" (vm-map)))
   (GET "/vms/:id" [id]
     (respond (vm-get (Integer/parseInt id))))
   (GET "/vms/:id/stack" [id]
-    (respond (:stack (vm-get (Integer/parseInt id)))))
+    (respond (represent-vm-stack id (vm-get (Integer/parseInt id)))))
+  (GET "/vms/:id/registers" [id]
+    (respond (represent-vm-registers id (vm-get (Integer/parseInt id)))))
   (POST "/vms" [game]
     (respond (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
   (route/resources "/"))
@@ -120,5 +146,8 @@
   (tooling-chrome "vms" [:div#vms.row
                          [:dev.span4
                           [:ul.nav.nav-list
-                           (for [id (keys vms)]
-                             [:li [:a {:href (str "/vms/" id)} id]])]]]))
+                           (for [{:keys [id links]} vms]
+                             [:li id
+                              (for [[rel attrs] links]
+                                [:a (assoc attrs :rel rel) rel])])]]]))
+
