@@ -91,18 +91,23 @@
 (defroutes vm-routes
   (GET "/games" []
     (respond "t3chnique.server/games-page" (represent-game-list (game-list))))
-  (GET "/games/:id" [id]
-    (respond "t3chnique.server/game-page" (represent-game (game-get (Integer/parseInt id)))))
+  (GET ["/games/:id" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (respond "t3chnique.server/game-page" (represent-game (game-get id)))))
   (GET "/vms" []
     (respond "t3chnique.server/vms-page" (vm-map)))
-  (GET "/vms/:id" [id]
-    (respond (represent-vm id (vm-get (Integer/parseInt id)))))
-  (GET "/vms/:id/stack" [id]
-    (respond (represent-vm-stack id (vm-get (Integer/parseInt id)))))
-  (GET "/vms/:id/registers" [id]
-    (respond (represent-vm-registers id (vm-get (Integer/parseInt id)))))
-  (POST "/vms" [game]
-    (response/redirect-after-post (str "/vms/" (:id (vm-new (Integer/parseInt game))))))
+  (GET ["/vms/:id" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (respond "t3chnique.server/vm-page" (represent-vm id (vm-get id)))))
+  (GET ["/vms/:id/stack" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (respond (represent-vm-stack id (vm-get id)))))
+  (GET ["/vms/:id/registers" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (respond (represent-vm-registers id (vm-get id)))))
+  (POST ["/vms" :id #"[0-9]+"] [game]
+    (let [game (Integer/parseInt game)]
+      (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
   (route/resources "/"))
 
 (def app
@@ -153,4 +158,11 @@
                              [:li id
                               (for [[rel attrs] links]
                                 [:a (assoc attrs :rel rel) rel])])]]]))
+
+(defn vm-page [{:keys [id _links]}]
+  (tooling-chrome "vms" [:div#vms.row
+                         [:dev.span4
+                          [:ul.nav.nav-list
+                           (for [[rel attrs] _links]
+                             [:a (assoc attrs :rel rel) rel])]]]))
 
