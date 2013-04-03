@@ -67,7 +67,10 @@
 (defn add-vm-links [id vm]
   (assoc vm :_links {:self {:href (str "/vms/" id)}
                      :stack {:href (str "/vms/" id "/stack")}
-                     :registers {:href (str "/vms" id "/stack")}}))
+                     :registers {:href (str "/vms/" id "/stack")}}))
+
+(defn represent-vm [id vm]
+  (add-vm-links id {:id id}))
 
 (defn represent-vm-stack [id vm]
   (add-vm-links id (:stack vm)))
@@ -93,13 +96,13 @@
   (GET "/vms" []
     (respond "t3chnique.server/vms-page" (vm-map)))
   (GET "/vms/:id" [id]
-    (respond (vm-get (Integer/parseInt id))))
+    (respond (represent-vm id (vm-get (Integer/parseInt id)))))
   (GET "/vms/:id/stack" [id]
     (respond (represent-vm-stack id (vm-get (Integer/parseInt id)))))
   (GET "/vms/:id/registers" [id]
     (respond (represent-vm-registers id (vm-get (Integer/parseInt id)))))
   (POST "/vms" [game]
-    (respond (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
+    (response/redirect-after-post (str "/vms/" (:id (vm-new (Integer/parseInt game))))))
   (route/resources "/"))
 
 (def app
