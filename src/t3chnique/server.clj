@@ -96,29 +96,32 @@
     (let [id (Integer/parseInt id)]
       (if-let [game (game-get id)]
         (respond "t3chnique.server/game-page" (represent-game game))
-        (response/not-found {}))))
+        (response/not-found "Nonesuch"))))
   (GET "/vms" []
     (respond "t3chnique.server/vms-page" (represent-vm-map (vm-map))))
   (GET ["/vms/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
       (if-let [vm (vm-get id)]
         (respond "t3chnique.server/vm-page" (represent-vm id vm))
-        (response/not-found {}))))
+        (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/stack" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
       (if-let [vm (vm-get id)]
         (respond (represent-vm-stack id vm))
-        (response/not-found {}))))
+        (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/registers" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
       (if-let [vm (vm-get id)]
         (respond (represent-vm-registers id (vm-get id)))
-        (response/not-found {}))))
+        (response/not-found "Nonesuch"))))
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]
       (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
   (GET ["/exec/:id" :id #"[0-9]+"] [id]
-      (respond "t3chnique.server/exec-page" [id]))
+    (let [id (Integer/parseInt id)]
+      (if-let [vm (vm-get id)]
+        (respond "t3chnique.server/exec-page" (represent-vm id vm))
+        (response/not-found "Nonesuch"))))
   (route/resources "/")
   (route/not-found "No such resource"))
 
@@ -185,8 +188,9 @@
                            (for [[rel attrs] _links]
                              [:a (assoc attrs :rel rel) rel])]]]))
 
-(defn exec-page [id]
+(defn exec-page [{:keys [id]}]
   (chrome
+   [:script (str "vm_url = '/exec/" id  "';")]
    [:div {:id "header"}]
    [:div {:id "controls" :clear "left" :width "100%"}]
    [:div
