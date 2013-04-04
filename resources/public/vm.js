@@ -352,6 +352,23 @@ function init() {
   codeDiagram = new PoolDiagram(d3.select("div.code"));
   constDiagram = new PoolDiagram(d3.select("div.constant"));
 
+  // if we've been seeded with a URL for JSON vm data, let's get some
+  if (vm_url) {
+    d3.json(vm_url, function (o) { 
+      vm._links = o._links;
+
+      // fetch stack
+      d3.json(vm._links.stack.href, function(s) {
+        console.log(s);
+      });
+
+      // fetch registers
+      d3.json(vm._links.registers.href, function(r) {
+        console.log(r);
+      });
+    });
+  }
+
   vm.refreshStack();
   vm.refreshRegisters();
   vm.refreshCodeSection();
