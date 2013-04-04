@@ -67,20 +67,21 @@
 (defn add-vm-links [id vm]
   (assoc vm :_links {:self {:href (str "/vms/" id)}
                      :stack {:href (str "/vms/" id "/stack")}
-                     :registers {:href (str "/vms/" id "/stack")}}))
+                     :registers {:href (str "/vms/" id "/registers")}
+                     :exec {:href (str "/exec/" id)}}))
 
 (defn represent-vm [id vm]
   (add-vm-links id {:id id}))
 
 (defn represent-vm-stack [id vm]
-  (add-vm-links id (:stack vm)))
+  (add-vm-links id (select-keys vm [:stack])))
 
 (defn represent-vm-registers [id vm]
-  (add-vm-links id (select-keys [:r0 :ip :ep :sp :fp :say-function :say-method] vm)))
+  (add-vm-links id (select-keys vm [:r0 :ip :ep :sp :fp :say-function :say-method])))
 
 (defn represent-vm-map [vms]
   (for [[id vm] vms]
-    (add-vm-links {:id id})))
+    (add-vm-links id {:id id})))
 
 (defn respond
   ([data]
@@ -93,22 +94,33 @@
     (respond "t3chnique.server/games-page" (represent-game-list (game-list))))
   (GET ["/games/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (respond "t3chnique.server/game-page" (represent-game (game-get id)))))
+      (if-let [game (game-get id)]
+        (respond "t3chnique.server/game-page" (represent-game game))
+        (response/not-found {}))))
   (GET "/vms" []
-    (respond "t3chnique.server/vms-page" (vm-map)))
+    (respond "t3chnique.server/vms-page" (represent-vm-map (vm-map))))
   (GET ["/vms/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (respond "t3chnique.server/vm-page" (represent-vm id (vm-get id)))))
+      (if-let [vm (vm-get id)]
+        (respond "t3chnique.server/vm-page" (represent-vm id vm))
+        (response/not-found {}))))
   (GET ["/vms/:id/stack" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (respond (represent-vm-stack id (vm-get id)))))
+      (if-let [vm (vm-get id)]
+        (respond (represent-vm-stack id vm))
+        (response/not-found {}))))
   (GET ["/vms/:id/registers" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (respond (represent-vm-registers id (vm-get id)))))
+      (if-let [vm (vm-get id)]
+        (respond (represent-vm-registers id (vm-get id)))
+        (response/not-found {}))))
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]
       (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
-  (route/resources "/"))
+  (GET ["/exec/:id" :id #"[0-9]+"] [id]
+      (respond "t3chnique.server/exec-page" [id]))
+  (route/resources "/")
+  (route/not-found "No such resource"))
 
 (def app
   (-> (handler/api vm-routes)
@@ -121,29 +133,35 @@
 
 ;; tooling site - static html access to the restful data
 
-(defn tooling-chrome [nav-name body]
+(defn chrome [& body]
   (hp/html5
    [:html
     [:head
      [:link {:href "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" :rel "stylesheet"}]
      [:link {:href "/css/tools.css" :rel "stylesheet"}]]
     [:body
-     [:ul.nav.nav-tabs
-      [:li {:class (if (= nav-name "games") "active" "inactive")} [:a {:href "/games"} "Games"]]
-      [:li {:class (if (= nav-name "vms") "active" "inactive")} [:a {:href "/vms"} "VMs"]]]
-     [:div.tab-content
-      body]
-     [:script {:src "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"}]]]))
+     [:script {:src "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"}]
+     [:script {:src "http://d3js.org/d3.v3.min.js"}]
+     [:script {:src "http://underscorejs.org/underscore-min.js"}]
+     body]]))
+
+(defn rest-chrome [nav-name body]
+  (chrome
+   [:ul.nav.nav-tabs
+    [:li {:class (if (= nav-name "games") "active" "inactive")} [:a {:href "/games"} "Games"]]
+    [:li {:class (if (= nav-name "vms") "active" "inactive")} [:a {:href "/vms"} "VMs"]]]
+   [:div.tab-content
+    body]))
 
 (defn games-page [games]
-  (tooling-chrome "games" [:div#games.row
+  (rest-chrome "games" [:div#games.row
                            [:div.span4
                             [:ul.nav.nav-list
                              (for [game games]
                                [:li [:a {:href (str "/games/" (:id game)) } (:name game)]])]]]))
 
 (defn game-page [game]
-  (tooling-chrome "games" [:div#game
+  (rest-chrome "games" [:div#game
                            [:div.span4
                             [:h2 (:name game)]
                             [:form {:method "post" :action "/vms"}
@@ -151,18 +169,30 @@
                              [:button.btn {:type "submit"} "Launch"]]]] ))
 
 (defn vms-page [vms]
-  (tooling-chrome "vms" [:div#vms.row
+  (rest-chrome "vms" [:div#vms.row
                          [:dev.span4
                           [:ul.nav.nav-list
-                           (for [{:keys [id links]} vms]
+                           (for [{:keys [id _links]} vms]
                              [:li id
-                              (for [[rel attrs] links]
+                              (for [[rel attrs] _links]
                                 [:a (assoc attrs :rel rel) rel])])]]]))
 
 (defn vm-page [{:keys [id _links]}]
-  (tooling-chrome "vms" [:div#vms.row
+  (rest-chrome "vms" [:div#vms.row
                          [:dev.span4
                           [:ul.nav.nav-list
+                           [:span id]
                            (for [[rel attrs] _links]
                              [:a (assoc attrs :rel rel) rel])]]]))
 
+(defn exec-page [id]
+  (chrome
+   [:div {:id "header"}]
+   [:div {:id "controls" :clear "left" :width "100%"}]
+   [:div
+    [:div {:class "stack"}]
+    [:div {:class "register"}]
+    [:div {:class "code"}]
+    [:div {:class "constant"}]
+    [:div {:class "object"}]]
+   [:script {:type "text/javascript" :src "/vm.js"}]))
