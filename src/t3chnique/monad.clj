@@ -12,6 +12,14 @@
     (reduce >> mvs))
   
   ;; primitives for working in the vm monad
+
+  (defn call-cc [f]
+    (fn [s]
+      (fn [k]
+        (let [cc (fn [x]
+                   (fn [_s] (fn [_k] (k [x s]))))
+              rc (f cc)]
+          ((rc s) k))))) ; ?
   
   (defn fetch-val [key]
     (fn [s]
@@ -63,42 +71,39 @@
 
   (defn vabort [e]
     (fn [s]
-      (fn [k] e)))
-
-  (defn vprotect [f]
-    
-    )
+      ; don't all continuation just return e and state as is
+      (fn [k] [e s])))
 
   (defn vsuspend []
     (fn [s]
       (fn [k]
         [(fn [x] (k [x s])) s])))
 
-;; examples
+  ;; examples
   
   (defn vinput []
     (domonad 
-             [_ (stack-push 5)
-              x (vsuspend)
-              _ (stack-pop)
-              _ (stack-push x)]
-             nil))
+        [_ (stack-push 5)
+         x (vsuspend)
+         _ (stack-pop)
+         _ (stack-push x)]
+      nil))
 
   (defn vthrows []
     (domonad 
-             [_ (stack-push 999)
-              _ (vabort "error")
-              _ (stack-push 7)
-              x (stack-pop)
-              y (stack-pop)]
-             x))
+        [_ (stack-push 999)
+         _ (vabort "error")
+         _ (stack-push 7)
+         x (stack-pop)
+         y (stack-pop)]
+      x))
 
   (defn vnormal []
     (domonad 
-             [_ (stack-push 5)
-              _ (stack-push 7)
-              x (stack-pop)]
-             x))
+        [_ (stack-push 5)
+         _ (stack-push 7)
+         x (stack-pop)]
+      x))
 
   (defn state []
     {:stack []
@@ -108,13 +113,20 @@
   (defn vstep [s]
     (run-cont
      ((domonad
-        [op  (code-read)
-         ret op]
+          [op  (code-read)
+           ret op]
         ret) s))))
 
 (comment
 
   ;; to try
-  (run-cont ((vnormal) (state)))
+  (run-cont ((vnormal) (state))) ; => [7 ...]
+
+  (def five (domonad vm-m
+              [_ (call-cc
+                  (fn [exit]
+                    (exit 5)))] 12)) ; ?
+
+  (run-cont ((five) (state)))
 
   )
