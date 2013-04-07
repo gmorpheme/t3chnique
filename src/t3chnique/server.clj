@@ -14,7 +14,8 @@
             [hiccup.page :as hp]
             [clojure.tools.trace :as t])
   (:require [compojure.route :as route]
-            [t3chnique.vm :as t3vm]))
+            [t3chnique.vm :as t3vm]
+            [t3chnique.primitive :as p]))
 
 (defn render-html [data]
   (if-let [page (:page (meta data))]
@@ -58,6 +59,15 @@
 ;; represent functions add hyperlinks using HAL to support HATEOAS
 ;; style interaction
 
+(defn promote-types
+  "Where the VM uses plain ints, promote to typed values for representation"
+  [vm]
+  (-> vm
+      (update-in [:ep] p/vm-codeptr)
+      (update-in [:sp] p/vm-stack)
+      (update-in [:ip] p/vm-codeptr)
+      (update-in [:fp] p/vm-stack)))
+
 (defn represent-game [game]
   (assoc game :_links {:self {:href (str "/games/" (:id game))}}))
 
@@ -77,7 +87,8 @@
   (add-vm-links id (select-keys vm [:stack])))
 
 (defn represent-vm-registers [id vm]
-  (add-vm-links id (select-keys vm [:r0 :ip :ep :sp :fp :say-function :say-method])))
+  (add-vm-links id
+                (promote-types (select-keys vm [:r0 :ip :ep :sp :fp :say-function :say-method]))))
 
 (defn represent-vm-map [vms]
   (for [[id vm] vms]
