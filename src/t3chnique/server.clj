@@ -1,5 +1,5 @@
 (ns t3chnique.server
-  (:use [t3chnique.parse :only [load-image-file parse-resource]]
+  (:use [t3chnique.parse :only [load-image-file parse-resource read-bytes]]
         [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
@@ -78,7 +78,9 @@
   (assoc vm :_links {:self {:href (str "/vms/" id)}
                      :stack {:href (str "/vms/" id "/stack")}
                      :registers {:href (str "/vms/" id "/registers")}
-                     :exec {:href (str "/exec/" id)}}))
+                     :exec {:href (str "/exec/" id)}
+                     :code {:href (str "/vms/" id "/code")}
+                     :const {:href (str "/vms/" id "/const")}}))
 
 (defn represent-vm [id vm]
   (add-vm-links id {:id id}))
@@ -93,6 +95,21 @@
 (defn represent-vm-map [vms]
   (for [[id vm] vms]
     (add-vm-links id {:id id})))
+
+(defn ubytes [page offset len]
+  (map #(bit-and 0xff %) (read-bytes page offset len)))
+
+(defn represent-vm-code [id vm addr len]
+  (let [[p off] (t3vm/offset vm addr)]
+    (add-vm-links
+     id
+     {:id id :code-section {:address addr :bytes (ubytes p off len)}})))
+
+(defn represent-vm-const [id vm addr len]
+  (let [[p off] (t3vm/const-offset vm addr)]
+    (add-vm-links
+     id
+     {:id id :const-section {:address addr :bytes (ubytes p off len)}})))
 
 (defn respond
   ([data]
@@ -123,7 +140,21 @@
   (GET ["/vms/:id/registers" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
       (if-let [vm (vm-get id)]
-        (respond (represent-vm-registers id (vm-get id)))
+        (respond (represent-vm-registers id vm))
+        (response/not-found "Nonesuch"))))
+  (GET ["/vms/:id/code" :id #"[0-9]+"] [id address length]
+    (let [id (Integer/parseInt id)
+          addr (Integer/parseInt address)
+          len (Integer/parseInt length)]
+      (if-let [vm (vm-get id)]
+        (respond (represent-vm-code id vm addr len))
+        (response/not-found "Nonesuch"))))
+  (GET ["/vms/:id/const" :id #"[0-9]+"] [id address length]
+        (let [id (Integer/parseInt id)
+          addr (Integer/parseInt address)
+          len (Integer/parseInt length)]
+      (if-let [vm (vm-get id)]
+        (respond (represent-vm-const id vm addr len))
         (response/not-found "Nonesuch"))))
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]

@@ -1,3 +1,5 @@
+// utilities
+
 _.mixin({
   partition: function(coll, n) {
     return _.chain(coll)
@@ -44,10 +46,6 @@ function fakeObjectPool() {
   return objects;
 }
 
-
-/*
- * Test data.
- */
 var vm = {
   stack: [],
   registers: [],
@@ -58,14 +56,14 @@ var vm = {
   /**
    * Refresh stack from server.
    */
-  refreshStack: function() {
+  randomiseStack: function() {
     var depth = _.random(10, 50);
     for (var i = 0; i < depth; ++i) {
       vm.stack.push({type: _.random(1, 17), value: _.random(0, 10000)})
     }
   },
 
-  refreshRegisters: function() {
+  randomiseRegisters: function() {
     vm.registers = [
       {name: "r0", value: {type: _.random(1, 17), value: _.random(0, 10000)}},
       {name: "ip", value: {type: 4, value: _.random(0, 10000)}},
@@ -75,15 +73,15 @@ var vm = {
     ];
   },
 
-  refreshCodeSection: function() {
+  randomiseCodeSection: function() {
     vm.codeSection = fakeSection();
   },
 
-  refreshConstSection: function() {
+  randomiseConstSection: function() {
     vm.constSection = fakeSection();
   },
 
-  refreshObjectSection: function() {
+  randomiseObjectSection: function() {
     vm.objectSection = fakeObjectPool();
   }
 }
@@ -131,12 +129,10 @@ var types = [null,
 var cellHeight = 20;
 var cellWidth = 70;
 var cellPadding = 3;
-var rLabelWidth = 15;
+var rLabelWidth = 25;
 var w = 100;
 
-//================================================================================
 // Stack Diagram
-//================================================================================
 function StackDiagram(div) {
   this.div = div;
   this.svg = 
@@ -148,7 +144,9 @@ function StackDiagram(div) {
 };
 
 StackDiagram.prototype.update = function(stack) {
-  this.svg.attr("height", (cellHeight + cellPadding) * stack.length);
+  this.svg
+    .attr("height", (cellHeight + cellPadding) * _.max([10, stack.length]))
+    .attr("width", w);
 
   var cells = this.svg.selectAll("rect").data(stack);
 
@@ -198,9 +196,7 @@ StackDiagram.prototype.update = function(stack) {
     .exit().remove();
 }
 
-//================================================================================
 // Register Diagram
-//================================================================================
 function RegisterDiagram(div) {
   this.div = div;
   this.svg = this.div
@@ -230,9 +226,10 @@ RegisterDiagram.prototype.update = function(registers) {
     .append("text")
     .attr({
       class: "label",
-      x: function(d, i) { return (cellWidth + rLabelWidth + cellPadding) * i; },
+      x: function(d, i) { return (rLabelWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i; },
       y: 15,
       fill: lgrey,
+      "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
     })
@@ -344,6 +341,10 @@ var objectDiagram;
 var codeDiagram;
 var constDiagram;
 
+function abbreviateRegisterName(name) {
+  return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
+}
+
 function init() {
 
   stackDiagram = new StackDiagram(d3.select("div.stack"));
@@ -359,46 +360,46 @@ function init() {
 
       // fetch stack
       d3.json(vm._links.stack.href, function(s) {
-        console.log(s);
+        vm._links = s._links;
+        stackDiagram.update(vm.stack);
       });
 
       // fetch registers
       d3.json(vm._links.registers.href, function(r) {
-        console.log(r);
+        vm._links = r._links;
+        vm.registers = 
+          _.chain(r)
+          .map(function(v, k) { return {name: abbreviateRegisterName(k), value: v}})
+          .filter(function(o) { return o.name[0] !== '_'; })
+          .value();
+        registerDiagram.update(vm.registers);
       });
+
+      // fetch code
+      d3.json(vm._links.code.href + '?address=10&length=512', function(cs) {
+        vm._links = cs._links;
+        vm.codeSection = cs['code-section'];
+        codeDiagram.update(vm.codeSection);
+      });
+
+      // fetch const
+      d3.json(vm._links.const.href + '?address=0&length=512', function(cs) {
+        vm._links = cs._links;
+        vm.constSection = cs['const-section'];
+        constDiagram.update(vm.constSection);
+      });
+
     });
   }
 
-  vm.refreshStack();
-  vm.refreshRegisters();
-  vm.refreshCodeSection();
-  vm.refreshConstSection();
-  vm.refreshObjectSection();
-
-  stackDiagram.update(vm.stack);
-  registerDiagram.update(vm.registers);
+  vm.randomiseObjectSection();
   objectDiagram.update(vm.objectSection);
-  codeDiagram.update(vm.codeSection);
-  constDiagram.update(vm.constSection);
 }
 
 var byteFormat = d3.format("02x");
 var addrFormat = d3.format("#08x");
 
-function updateRegisters() {
-  var svg = d3.select("svg.register");
-
-  svg.selectAll("rect")
-    .data(vm.registers)
-    .attr("fill", function(d) { return types[d.value.type].fill } );
-
-  svg.selectAll("text.value")
-    .data(vm.registers)
-    .attr("fill", function(d) { return types[d.value.type].text })
-    .text(function(d) { return types[d.value.type].render(d.value.value) });
-}
-
-// bind actions to buttons
+// bind fake actions to buttons for testing
 
 d3.select("#push").on("click", function() { 
   vm.stack.push({type: _.random(1, 17), value: _.random(0, 10000)});
@@ -409,19 +410,19 @@ d3.select("#pop").on("click", function() {
   stackDiagram.update(vm.stack);
 });
 d3.select("#ret").on("click", function() {
-  vm.refreshRegisters();
+  vm.randomiseRegisters();
   updateRegisters();
 });
 d3.select("#codeseek").on("click", function() {
-  vm.refreshCodeSection();
+  vm.randomiseCodeSection();
   updateCodeSection();
 });
 d3.select("#constseek").on("click", function() {
-  vm.refreshConstSection();
+  vm.randomiseConstSection();
   updateConstSection();
 });
 d3.select("#objseek").on("click", function() {
-  vm.refreshObjectSection();
+  vm.randomiseObjectSection();
   updateObjectSection();
 });
 
