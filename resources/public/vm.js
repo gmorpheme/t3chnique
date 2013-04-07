@@ -361,6 +361,7 @@ function init() {
       // fetch stack
       d3.json(vm._links.stack.href, function(s) {
         vm._links = s._links;
+        vm.stack = s.stack;
         stackDiagram.update(vm.stack);
       });
 
