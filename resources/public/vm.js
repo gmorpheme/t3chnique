@@ -39,7 +39,7 @@ function fakeObjectPool() {
   var id = _.random(0, 20000);
   for (var i = 0; i < 100; ++i) {
     id += _.random(0, 24);
-    objects.push({oid: [5, id]});
+    objects.push({oid: {type:5, value: id}});
   }
   return objects;
 }
@@ -61,17 +61,17 @@ var vm = {
   refreshStack: function() {
     var depth = _.random(10, 50);
     for (var i = 0; i < depth; ++i) {
-      vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
+      vm.stack.push({type: _.random(1, 17), value: _.random(0, 10000)})
     }
   },
 
   refreshRegisters: function() {
     vm.registers = [
-      {name: "r0", value: [_.random(1, 17), _.random(0, 10000)]},
-      {name: "ip", value: [4, _.random(0, 10000)]},
-      {name: "ep", value: [4, _.random(0, 10000)]},
-      {name: "sp", value: [3, _.random(0, vm.stack.length)]},
-      {name: "fp", value: [3, _.random(0, vm.stack.length)]},
+      {name: "r0", value: {type: _.random(1, 17), value: _.random(0, 10000)}},
+      {name: "ip", value: {type: 4, value: _.random(0, 10000)}},
+      {name: "ep", value: {type: 4, value: _.random(0, 10000)}},
+      {name: "sp", value: {type: 3, value: _.random(0, vm.stack.length)}},
+      {name: "fp", value: {type: 3, value: _.random(0, vm.stack.length)}},
     ];
   },
 
@@ -155,7 +155,7 @@ StackDiagram.prototype.update = function(stack) {
   cells
     .attr({
       y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
-      fill: function(d) { return types[d[0]].fill }
+      fill: function(d) { return types[d.type].fill }
     })
     .enter()
     .append("rect")
@@ -166,7 +166,7 @@ StackDiagram.prototype.update = function(stack) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d[0]].fill }
+      fill: function(d) { return types[d.type].fill }
     });
 
   cells.exit().remove();
@@ -174,20 +174,20 @@ StackDiagram.prototype.update = function(stack) {
   var labels = this.svg.selectAll("text").data(stack);
 
   labels
-    .text(function(d) { return types[d[0]].render(d[1]) })
+    .text(function(d) { return types[d.type].render(d.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d[0]].text }
+      fill: function (d, i) { return types[d.type].text }
     });
   
   labels
     .enter()
     .append("text")
-    .text(function(d) { return types[d[0]].render(d[1]) })
+    .text(function(d) { return types[d.type].render(d.value) })
     .attr({
       x: cellWidth / 2,
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d[0]].text },
+      fill: function (d, i) { return types[d.type].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -221,7 +221,7 @@ RegisterDiagram.prototype.update = function(registers) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.value[0]].fill }
+      fill: function(d) { return types[d.value.type].fill }
     });
 
   this.svg.selectAll("text.label")
@@ -250,9 +250,9 @@ RegisterDiagram.prototype.update = function(registers) {
       "font-family": "sans-serif",
       "font-size": "13px",
       "font-weight": "bold",
-      fill: function(d) { return types[d.value[0]].text }
+      fill: function(d) { return types[d.value.type].text }
     })
-    .text(function(d) { return types[d.value[0]].render(d.value[1]) });
+    .text(function(d) { return types[d.value.type].render(d.value.value) });
 }
 
 //================================================================================
@@ -272,7 +272,7 @@ ObjectDiagram.prototype.update = function(objectSection) {
   cells
     .attr({
       y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
-      fill: function(d) { return types[d.oid[0]].fill }
+      fill: function(d) { return types[d.oid.type].fill }
     })
     .enter()
     .append("rect")
@@ -283,7 +283,7 @@ ObjectDiagram.prototype.update = function(objectSection) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.oid[0]].fill }
+      fill: function(d) { return types[d.oid.type].fill }
     });
 
   cells.exit().remove();
@@ -291,20 +291,20 @@ ObjectDiagram.prototype.update = function(objectSection) {
   var labels = this.svg.selectAll("text").data(objectSection);
 
   labels
-    .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
+    .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.oid[0]].text }
+      fill: function (d, i) { return types[d.oid.type].text }
     });
   
   labels
     .enter()
     .append("text")
-    .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
+    .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
       x: cellWidth / 2,
       y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.oid[0]].text },
+      fill: function (d, i) { return types[d.oid.type].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -390,18 +390,18 @@ function updateRegisters() {
 
   svg.selectAll("rect")
     .data(vm.registers)
-    .attr("fill", function(d) { return types[d.value[0]].fill } );
+    .attr("fill", function(d) { return types[d.value.type].fill } );
 
   svg.selectAll("text.value")
     .data(vm.registers)
-    .attr("fill", function(d) { return types[d.value[0]].text })
-    .text(function(d) { return types[d.value[0]].render(d.value[1]) });
+    .attr("fill", function(d) { return types[d.value.type].text })
+    .text(function(d) { return types[d.value.type].render(d.value.value) });
 }
 
 // bind actions to buttons
 
 d3.select("#push").on("click", function() { 
-  vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
+  vm.stack.push({type: _.random(1, 17), value: _.random(0, 10000)});
   stackDiagram.update(vm.stack);
 });
 d3.select("#pop").on("click", function() { 
