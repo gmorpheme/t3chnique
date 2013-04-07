@@ -46,45 +46,13 @@ function fakeObjectPool() {
   return objects;
 }
 
-var vm = {
-  stack: [],
-  registers: [],
-  codeSection: {},
-  constSection: {},
-  objectSection: {},
 
-  /**
-   * Refresh stack from server.
-   */
-  randomiseStack: function() {
-    var depth = _.random(10, 50);
-    for (var i = 0; i < depth; ++i) {
-      vm.stack.push({type: _.random(1, 17), value: _.random(0, 10000)})
-    }
-  },
-
-  randomiseRegisters: function() {
-    vm.registers = [
-      {name: "r0", value: {type: _.random(1, 17), value: _.random(0, 10000)}},
-      {name: "ip", value: {type: 4, value: _.random(0, 10000)}},
-      {name: "ep", value: {type: 4, value: _.random(0, 10000)}},
-      {name: "sp", value: {type: 3, value: _.random(0, vm.stack.length)}},
-      {name: "fp", value: {type: 3, value: _.random(0, vm.stack.length)}},
-    ];
-  },
-
-  randomiseCodeSection: function() {
-    vm.codeSection = fakeSection();
-  },
-
-  randomiseConstSection: function() {
-    vm.constSection = fakeSection();
-  },
-
-  randomiseObjectSection: function() {
-    vm.objectSection = fakeObjectPool();
-  }
+function abbreviateRegisterName(name) {
+  return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
 }
+
+var byteFormat = d3.format("02x");
+var addrFormat = d3.format("#08x");
 
 /**
  * Turn a code or const section into a list of rows with address headers.
@@ -252,9 +220,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .text(function(d) { return types[d.value.type].render(d.value.value) });
 }
 
-//================================================================================
 // Object Diagram
-//================================================================================
 function ObjectDiagram(div) {
   this.div = div;
   this.svg = this.div
@@ -312,10 +278,7 @@ ObjectDiagram.prototype.update = function(objectSection) {
     .exit().remove();
 }
 
-
-//================================================================================
 // Pool Diagram (code or const)
-//================================================================================
 function PoolDiagram(div) {
   this.div = div;
   this.table = this.div.append("table");
@@ -341,8 +304,99 @@ var objectDiagram;
 var codeDiagram;
 var constDiagram;
 
-function abbreviateRegisterName(name) {
-  return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
+/*
+ * The main VM representation object.
+ */
+var vm = {
+  _links: null,
+
+  stack: [],
+  registers: [],
+  codeSection: {},
+  constSection: {},
+  objectSection: {},
+
+  update: function() {
+    var vm = this;
+    if (vm_url) {
+      d3.json(vm_url, function(o) {
+        vm._links = o._links;
+        vm.updateStack();
+        vm.updateRegisters();
+        vm.updateConst(0, 512);
+      });
+    }
+  },
+
+  updateStack: function() {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.stack.href, function(s) {
+        vm._links = s._links;
+        vm.stack = s.stack;
+        stackDiagram.update(vm.stack);
+      });
+    }
+  },
+
+  updateRegisters: function() {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.registers.href, function(r) {
+        vm._links = r._links;
+        vm.registers = 
+          _.chain(r)
+          .map(function(v, k) { return {name: abbreviateRegisterName(k), value: v}})
+          .filter(function(o) { return o.name[0] !== '_'; })
+          .value();
+        registerDiagram.update(vm.registers);
+
+        vm.updateCodeToContext();
+      });
+    }
+  },
+
+  updateCode: function(address, length) {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.code.href + '?address=' + address + '&length=' + length, function(cs) {
+        vm._links = cs._links;
+        vm.codeSection = cs['code-section'];
+        codeDiagram.update(vm.codeSection);
+      });
+    }
+  },
+
+  updateConst: function(address, length) {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.const.href + '?address=' + address + '&length=' + length, function(cs) {
+        vm._links = cs._links;
+        vm.constSection = cs['const-section'];
+        constDiagram.update(vm.constSection);
+      });
+    }
+  },
+
+  updateObjects: function (oid, count) {
+    
+  },
+
+  getInstructionPointer: function() {
+    return _.find(this.registers, function(r) { return r.name === 'ip'; }).value.value;
+  },
+  
+  getEntryPoint: function() {
+    return _.find(this.registers, function(r) { return r.name === 'ep'; }).value.value;
+  },
+
+  updateCodeToContext: function() {
+    var addr = Math.floor(this.getInstructionPointer() / 16);
+    var len = 512;
+    this.updateCode(addr, len);
+  },
+
+  randomiseObjectSection: function() { vm.objectSection = fakeObjectPool(); }
 }
 
 function init() {
@@ -353,52 +407,12 @@ function init() {
   codeDiagram = new PoolDiagram(d3.select("div.code"));
   constDiagram = new PoolDiagram(d3.select("div.constant"));
 
-  // if we've been seeded with a URL for JSON vm data, let's get some
-  if (vm_url) {
-    d3.json(vm_url, function (o) { 
-      vm._links = o._links;
-
-      // fetch stack
-      d3.json(vm._links.stack.href, function(s) {
-        vm._links = s._links;
-        vm.stack = s.stack;
-        stackDiagram.update(vm.stack);
-      });
-
-      // fetch registers
-      d3.json(vm._links.registers.href, function(r) {
-        vm._links = r._links;
-        vm.registers = 
-          _.chain(r)
-          .map(function(v, k) { return {name: abbreviateRegisterName(k), value: v}})
-          .filter(function(o) { return o.name[0] !== '_'; })
-          .value();
-        registerDiagram.update(vm.registers);
-      });
-
-      // fetch code
-      d3.json(vm._links.code.href + '?address=10&length=512', function(cs) {
-        vm._links = cs._links;
-        vm.codeSection = cs['code-section'];
-        codeDiagram.update(vm.codeSection);
-      });
-
-      // fetch const
-      d3.json(vm._links.const.href + '?address=0&length=512', function(cs) {
-        vm._links = cs._links;
-        vm.constSection = cs['const-section'];
-        constDiagram.update(vm.constSection);
-      });
-
-    });
-  }
+  vm.update();
 
   vm.randomiseObjectSection();
   objectDiagram.update(vm.objectSection);
 }
 
-var byteFormat = d3.format("02x");
-var addrFormat = d3.format("#08x");
 
 // bind fake actions to buttons for testing
 

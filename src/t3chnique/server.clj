@@ -75,12 +75,14 @@
   (map represent-game gs))
 
 (defn add-vm-links [id vm]
-  (assoc vm :_links {:self {:href (str "/vms/" id)}
-                     :stack {:href (str "/vms/" id "/stack")}
-                     :registers {:href (str "/vms/" id "/registers")}
-                     :exec {:href (str "/exec/" id)}
-                     :code {:href (str "/vms/" id "/code")}
-                     :const {:href (str "/vms/" id "/const")}}))
+  (assoc vm
+    :_links
+    {:self {:href (str "/vms/" id)}
+     :stack {:href (str "/vms/" id "/stack")}
+     :registers {:href (str "/vms/" id "/registers")}
+     :exec {:href (str "/exec/" id)}
+     :code {:href (str "/vms/" id "/code{?address,length}") :template true}
+     :const {:href (str "/vms/" id "/const{?address,length") :template true}}))
 
 (defn represent-vm [id vm]
   (add-vm-links id {:id id}))
