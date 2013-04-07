@@ -27,26 +27,6 @@ var leaf3 = "#6A8C0C";
 var leaf4 = "#C6ED5A";
 var leaf5 = "#D0ED80";
 
-function fakeSection() {
-  var bytes = [];
-  var addr  = 16 * _.random(0, 1024);
-  for (var i = 0; i < 512; ++i) {
-    bytes.push(_.random(0,255));
-  }
-  return {address: addr, bytes: bytes};
-}
-
-function fakeObjectPool() {
-  var objects = [];
-  var id = _.random(0, 20000);
-  for (var i = 0; i < 100; ++i) {
-    id += _.random(0, 24);
-    objects.push({oid: {type:5, value: id}});
-  }
-  return objects;
-}
-
-
 function abbreviateRegisterName(name) {
   return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
 }
