@@ -82,7 +82,8 @@
      :registers {:href (str "/vms/" id "/registers")}
      :exec {:href (str "/exec/" id)}
      :code {:href (str "/vms/" id "/code{?address,length}") :template true}
-     :const {:href (str "/vms/" id "/const{?address,length") :template true}}))
+     :const {:href (str "/vms/" id "/const{?address,length") :template true}
+     :objects {:href (str "/vms/" id "/objects{?oid,count}") :template true}}))
 
 (defn represent-vm [id vm]
   (add-vm-links id {:id id}))
@@ -112,6 +113,14 @@
     (add-vm-links
      id
      {:id id :const-section {:address addr :bytes (ubytes p off len)}})))
+
+(defn represent-vm-objects [id vm oid count]
+  (add-vm-links
+   id
+   {:id id
+    :objs (map
+           (fn [[k v]] {:oid (p/vm-obj k) :value v})
+           (take count (subseq (:objs vm) >= oid)))}))
 
 (defn respond
   ([data]
@@ -152,11 +161,18 @@
         (respond (represent-vm-code id vm addr len))
         (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/const" :id #"[0-9]+"] [id address length]
-        (let [id (Integer/parseInt id)
+    (let [id (Integer/parseInt id)
           addr (Integer/parseInt address)
           len (Integer/parseInt length)]
       (if-let [vm (vm-get id)]
         (respond (represent-vm-const id vm addr len))
+        (response/not-found "Nonesuch"))))
+  (GET ["/vms/:id/objects" :id #"[0-9]+"] [id oid count]
+    (let [id (Integer/parseInt id)
+          o (Integer/parseInt oid)
+          n (Integer/parseInt count)]
+      (if-let [vm (vm-get id)]
+        (respond (represent-vm-objects id vm o n))
         (response/not-found "Nonesuch"))))
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]

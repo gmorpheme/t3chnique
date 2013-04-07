@@ -304,6 +304,10 @@ var objectDiagram;
 var codeDiagram;
 var constDiagram;
 
+function detemplatiseUrl(u) {
+  return u.substr(0, u.indexOf('{'));
+}
+
 /*
  * The main VM representation object.
  */
@@ -324,6 +328,7 @@ var vm = {
         vm.updateStack();
         vm.updateRegisters();
         vm.updateConst(0, 512);
+        vm.updateObjects(0, 30);
       });
     }
   },
@@ -359,7 +364,7 @@ var vm = {
   updateCode: function(address, length) {
     var vm = this;
     if (vm._links) {
-      d3.json(vm._links.code.href + '?address=' + address + '&length=' + length, function(cs) {
+      d3.json(detemplatiseUrl(vm._links.code.href) + '?address=' + address + '&length=' + length, function(cs) {
         vm._links = cs._links;
         vm.codeSection = cs['code-section'];
         codeDiagram.update(vm.codeSection);
@@ -370,7 +375,7 @@ var vm = {
   updateConst: function(address, length) {
     var vm = this;
     if (vm._links) {
-      d3.json(vm._links.const.href + '?address=' + address + '&length=' + length, function(cs) {
+      d3.json(detemplatiseUrl(vm._links.const.href) + '?address=' + address + '&length=' + length, function(cs) {
         vm._links = cs._links;
         vm.constSection = cs['const-section'];
         constDiagram.update(vm.constSection);
@@ -379,7 +384,14 @@ var vm = {
   },
 
   updateObjects: function (oid, count) {
-    
+    var vm = this;
+    if (vm._links) {
+      d3.json(detemplatiseUrl(vm._links.objects.href) + '?oid=' + oid + '&count=' + count, function(os) {
+        vm._links = os._links;
+        vm.objectSection = os['objs'];
+        objectDiagram.update(vm.objectSection);
+      });
+    }
   },
 
   getInstructionPointer: function() {
@@ -395,8 +407,6 @@ var vm = {
     var len = 512;
     this.updateCode(addr, len);
   },
-
-  randomiseObjectSection: function() { vm.objectSection = fakeObjectPool(); }
 }
 
 function init() {
@@ -408,9 +418,6 @@ function init() {
   constDiagram = new PoolDiagram(d3.select("div.constant"));
 
   vm.update();
-
-  vm.randomiseObjectSection();
-  objectDiagram.update(vm.objectSection);
 }
 
 

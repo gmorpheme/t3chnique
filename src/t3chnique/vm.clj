@@ -30,7 +30,7 @@
    :code-page-size 0
    :const-pages []
    :const-page-size 0
-   :objs {}
+   :objs (sorted-map)
    :next-oid 0
    :mcld []
    :fnsd []})
