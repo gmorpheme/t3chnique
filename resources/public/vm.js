@@ -128,7 +128,8 @@ StackDiagram.prototype.update = function(stack) {
   cells
     .attr({
       y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
-      fill: function(d) { return types[d.type].fill }
+      fill: function(d) { return types[d.type].fill },
+      class: function(d) { return "vm-" + types[d.type].name; }
     })
     .enter()
     .append("rect")
@@ -139,7 +140,8 @@ StackDiagram.prototype.update = function(stack) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.type].fill }
+      fill: function(d) { return types[d.type].fill },
+      class: function(d) { return "vm-" + types[d.type].name; }
     });
 
   cells.exit().remove();
@@ -150,7 +152,8 @@ StackDiagram.prototype.update = function(stack) {
     .text(function(d) { return types[d.type].render(d.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.type].text }
+      fill: function (d, i) { return types[d.type].text },
+      class: function(d) { return "vm-" + types[d.type].name; }
     });
   
   labels
@@ -161,6 +164,7 @@ StackDiagram.prototype.update = function(stack) {
       x: cellWidth / 2,
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
       fill: function (d, i) { return types[d.type].text },
+      class: function(d) { return "vm-" + types[d.type].name; },
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -192,7 +196,8 @@ RegisterDiagram.prototype.update = function(registers) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.value.type].fill }
+      fill: function(d) { return types[d.value.type].fill },
+      class: function(d) { return "vm-" + types[d.value.type].name; }
     });
 
   this.svg.selectAll("text.label")
@@ -201,6 +206,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .append("text")
     .attr({
       class: "label",
+      class: function(d) { return "vm-" + types[d.value.type].name; },
       x: function(d, i) { return (rLabelWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i; },
       y: 15,
       fill: lgrey,
@@ -216,6 +222,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .append("text")
     .attr({
       class: "value",
+      class: function(d) { return "vm-" + types[d.value.type].name; },
       x: function (d, i) { return rLabelWidth + (cellWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i },
       y: 15,
       "text-anchor": "middle",
@@ -253,7 +260,8 @@ ObjectDiagram.prototype.update = function(objectSection) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.oid.type].fill }
+      fill: function(d) { return types[d.oid.type].fill },
+      class: function(d) { return "vm-" + types[d.oid.type].name; }
     });
 
   cells.exit().remove();
@@ -264,7 +272,8 @@ ObjectDiagram.prototype.update = function(objectSection) {
     .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.oid.type].text }
+      fill: function (d, i) { return types[d.oid.type].text },
+      class: function(d) { return "vm-" + types[d.oid.type].name; }
     });
   
   labels
