@@ -11,21 +11,6 @@ _.mixin({
 
 var dgrey = "#202020";
 var lgrey = "#808080";
-var red1 = "#DE2740";
-var red2 = "#A4404E";
-var red3 = "#8D0C1E";
-var red4 = "#EE5A6E";
-var red5 = "#EE8190";
-var teal1 = "#1A957D";
-var teal2 = "#2B6E61";
-var teal3 = "#085E4E";
-var teal4 = "#4CC9B1";
-var teal5 = "#6DC9B7";
-var leaf1 = "#ACDC26";
-var leaf2 = "#88A33F";
-var leaf3 = "#6A8C0C";
-var leaf4 = "#C6ED5A";
-var leaf5 = "#D0ED80";
 
 function abbreviateRegisterName(name) {
   return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
