@@ -44,35 +44,54 @@ function toTable(section) {
     .value();
 }
 
-/*
- * Primitive type configuration.
- */
+function prefixed(prefix) { return function(val) { return prefix + ":" + val} }
+function prefixedHex(prefix) { return function(val) { return prefix + ":" + addrFormat(val); }} 
 
-function typeRender(name, fill, text, render) {
-  return {name: name, fill: fill, text: text, render: render}
+function PrimitiveType(name, render) {
+  this.name = name;
+  this.render = render;
 }
 
-function prefixed(prefix) { return function(val) { return prefix + ":" + val.toString()} }
-function prefixedHex(prefix) { return function(val) { return prefix + ":0x" + val.toString(16)}} 
+PrimitiveType.prototype.onClick = function(data) {
+  return null;
+}
+
+vm_nil = new PrimitiveType("nil", function(_) { return "nil"; });
+vm_true = new PrimitiveType("true",  function(_) { return "true"; })
+vm_stack = new PrimitiveType("stack", prefixed("st"))
+vm_codeptr = new PrimitiveType("codeptr", prefixedHex("c"))
+vm_obj = new PrimitiveType("obj", prefixed("o"))
+vm_prop = new PrimitiveType("prop", prefixed("pid"))
+vm_int = new PrimitiveType("int", function(v) { return v; })
+vm_sstring = new PrimitiveType("sstring", prefixedHex("'"))
+vm_dstring = new PrimitiveType("dstring", prefixedHex("\""))
+vm_list = new PrimitiveType("list", prefixedHex("[]"))
+vm_codeofs = new PrimitiveType("codeofs", prefixed("of"))
+vm_funcptr = new PrimitiveType("funcptr", prefixedHex("()"))
+vm_empty = new PrimitiveType("empty", function(_) { return "empty"; })
+vm_native = new PrimitiveType("native-code", prefixedHex("n"))
+vm_enum = new PrimitiveType("enum", prefixed("e"))
+vm_bifptr = new PrimitiveType("bifptr", prefixedHex("bf"))
+vm_objx = new PrimitiveType("objx", prefixed("ox"))
 
 var types = [null,
-             typeRender("nil", red1, "white", function(val) { return "nil" }),
-             typeRender("true", leaf1, "white", function(val) { return "true" }),
-             typeRender("stack", leaf1, "white", function(val) { return "st:" + val }),
-             typeRender("codeptr", red2, "white", prefixedHex("c")),
-             typeRender("obj", teal3, "white", prefixed("o")),
-             typeRender("prop", red4, "white", function(val) { return "pid:" + val} ),
-             typeRender("int", teal1, "white", function(val) { return val }),
-             typeRender("sstring", leaf2, "white", prefixedHex("'")),
-             typeRender("dstring", leaf3, "white", prefixedHex("\"")),
-             typeRender("list", leaf2, "white", prefixedHex("[]")),
-             typeRender("codeofs", red5, "white", prefixed("off")),
-             typeRender("funcptr", red4, "white", prefixedHex("()")),
-             typeRender("empty", red1, "white", function(val) {return "empty"}),
-             typeRender("native-code", red4, "white", prefixedHex("n")),
-             typeRender("enum", teal1, "white", prefixed("e")),
-             typeRender("bifptr", red4, "white", prefixedHex("bif")),
-             typeRender("objx", teal3, "white", prefixed("ox"))];
+             vm_nil,
+             vm_true,
+             vm_stack,
+             vm_codeptr,
+             vm_obj,
+             vm_prop,
+             vm_int,
+             vm_sstring,
+             vm_dstring,
+             vm_list,
+             vm_codeofs,
+             vm_funcptr,
+             vm_empty,
+             vm_native,
+             vm_enum,
+             vm_bifptr,
+             vm_objx];
 
 var cellHeight = 20;
 var cellWidth = 70;
@@ -128,7 +147,6 @@ StackDiagram.prototype.update = function(stack) {
   cells
     .attr({
       y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
-      fill: function(d) { return types[d.type].fill },
       class: function(d) { return "vm-" + types[d.type].name; }
     })
     .enter()
@@ -140,7 +158,6 @@ StackDiagram.prototype.update = function(stack) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.type].fill },
       class: function(d) { return "vm-" + types[d.type].name; }
     });
 
@@ -152,7 +169,6 @@ StackDiagram.prototype.update = function(stack) {
     .text(function(d) { return types[d.type].render(d.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.type].text },
       class: function(d) { return "vm-" + types[d.type].name; }
     });
   
@@ -163,7 +179,6 @@ StackDiagram.prototype.update = function(stack) {
     .attr({
       x: cellWidth / 2,
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.type].text },
       class: function(d) { return "vm-" + types[d.type].name; },
       "text-anchor": "middle",
       "font-family": "sans-serif",
@@ -196,7 +211,6 @@ RegisterDiagram.prototype.update = function(registers) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.value.type].fill },
       class: function(d) { return "vm-" + types[d.value.type].name; }
     });
 
@@ -229,7 +243,6 @@ RegisterDiagram.prototype.update = function(registers) {
       "font-family": "sans-serif",
       "font-size": "13px",
       "font-weight": "bold",
-      fill: function(d) { return types[d.value.type].text }
     })
     .text(function(d) { return types[d.value.type].render(d.value.value) });
 }
@@ -249,7 +262,6 @@ ObjectDiagram.prototype.update = function(objectSection) {
   cells
     .attr({
       y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
-      fill: function(d) { return types[d.oid.type].fill }
     })
     .enter()
     .append("rect")
@@ -260,7 +272,6 @@ ObjectDiagram.prototype.update = function(objectSection) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.oid.type].fill },
       class: function(d) { return "vm-" + types[d.oid.type].name; }
     });
 
@@ -272,7 +283,6 @@ ObjectDiagram.prototype.update = function(objectSection) {
     .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.oid.type].text },
       class: function(d) { return "vm-" + types[d.oid.type].name; }
     });
   
@@ -283,7 +293,6 @@ ObjectDiagram.prototype.update = function(objectSection) {
     .attr({
       x: cellWidth / 2,
       y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.oid.type].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -425,7 +434,7 @@ var vm = {
   },
 
   updateCodeToContext: function() {
-    var addr = Math.floor(this.getInstructionPointer() / 16);
+    var addr = Math.floor(this.getInstructionPointer() / 16) * 16;
     var len = 512;
     this.updateCode(addr, len);
   },
