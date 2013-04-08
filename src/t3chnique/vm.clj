@@ -15,7 +15,7 @@
 ;; vm state:
 (defn vm-state []
   {:stack []
-   :r0 0 ; ret val
+   :r0 (vm-nil) ; ret val
    :ip 0 ; instruction pointer
    :ep 0 ; entry point
    :sp 0 ; stack pointer
@@ -30,7 +30,7 @@
    :code-page-size 0
    :const-pages []
    :const-page-size 0
-   :objs {}
+   :objs (sorted-map)
    :next-oid 0
    :mcld []
    :fnsd []})

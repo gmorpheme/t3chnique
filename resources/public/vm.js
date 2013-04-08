@@ -1,3 +1,5 @@
+// utilities
+
 _.mixin({
   partition: function(coll, n) {
     return _.chain(coll)
@@ -25,68 +27,12 @@ var leaf3 = "#6A8C0C";
 var leaf4 = "#C6ED5A";
 var leaf5 = "#D0ED80";
 
-function fakeSection() {
-  var bytes = [];
-  var addr  = 16 * _.random(0, 1024);
-  for (var i = 0; i < 512; ++i) {
-    bytes.push(_.random(0,255));
-  }
-  return {address: addr, bytes: bytes};
+function abbreviateRegisterName(name) {
+  return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
 }
 
-function fakeObjectPool() {
-  var objects = [];
-  var id = _.random(0, 20000);
-  for (var i = 0; i < 100; ++i) {
-    id += _.random(0, 24);
-    objects.push({oid: [5, id]});
-  }
-  return objects;
-}
-
-
-/*
- * Test data.
- */
-var vm = {
-  stack: [],
-  registers: [],
-  codeSection: {},
-  constSection: {},
-  objectSection: {},
-
-  /**
-   * Refresh stack from server.
-   */
-  refreshStack: function() {
-    var depth = _.random(10, 50);
-    for (var i = 0; i < depth; ++i) {
-      vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
-    }
-  },
-
-  refreshRegisters: function() {
-    vm.registers = [
-      {name: "r0", value: [_.random(1, 17), _.random(0, 10000)]},
-      {name: "ip", value: [4, _.random(0, 10000)]},
-      {name: "ep", value: [4, _.random(0, 10000)]},
-      {name: "sp", value: [3, _.random(0, vm.stack.length)]},
-      {name: "fp", value: [3, _.random(0, vm.stack.length)]},
-    ];
-  },
-
-  refreshCodeSection: function() {
-    vm.codeSection = fakeSection();
-  },
-
-  refreshConstSection: function() {
-    vm.constSection = fakeSection();
-  },
-
-  refreshObjectSection: function() {
-    vm.objectSection = fakeObjectPool();
-  }
-}
+var byteFormat = d3.format("02x");
+var addrFormat = d3.format("#08x");
 
 /**
  * Turn a code or const section into a list of rows with address headers.
@@ -131,12 +77,10 @@ var types = [null,
 var cellHeight = 20;
 var cellWidth = 70;
 var cellPadding = 3;
-var rLabelWidth = 15;
+var rLabelWidth = 25;
 var w = 100;
 
-//================================================================================
 // Stack Diagram
-//================================================================================
 function StackDiagram(div) {
   this.div = div;
   this.svg = 
@@ -148,14 +92,16 @@ function StackDiagram(div) {
 };
 
 StackDiagram.prototype.update = function(stack) {
-  this.svg.attr("height", (cellHeight + cellPadding) * stack.length);
+  this.svg
+    .attr("height", (cellHeight + cellPadding) * _.max([10, stack.length]))
+    .attr("width", w);
 
   var cells = this.svg.selectAll("rect").data(stack);
 
   cells
     .attr({
       y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
-      fill: function(d) { return types[d[0]].fill }
+      fill: function(d) { return types[d.type].fill }
     })
     .enter()
     .append("rect")
@@ -166,7 +112,7 @@ StackDiagram.prototype.update = function(stack) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d[0]].fill }
+      fill: function(d) { return types[d.type].fill }
     });
 
   cells.exit().remove();
@@ -174,20 +120,20 @@ StackDiagram.prototype.update = function(stack) {
   var labels = this.svg.selectAll("text").data(stack);
 
   labels
-    .text(function(d) { return types[d[0]].render(d[1]) })
+    .text(function(d) { return types[d.type].render(d.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d[0]].text }
+      fill: function (d, i) { return types[d.type].text }
     });
   
   labels
     .enter()
     .append("text")
-    .text(function(d) { return types[d[0]].render(d[1]) })
+    .text(function(d) { return types[d.type].render(d.value) })
     .attr({
       x: cellWidth / 2,
       y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
-      fill: function (d, i) { return types[d[0]].text },
+      fill: function (d, i) { return types[d.type].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -198,9 +144,7 @@ StackDiagram.prototype.update = function(stack) {
     .exit().remove();
 }
 
-//================================================================================
 // Register Diagram
-//================================================================================
 function RegisterDiagram(div) {
   this.div = div;
   this.svg = this.div
@@ -221,7 +165,7 @@ RegisterDiagram.prototype.update = function(registers) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.value[0]].fill }
+      fill: function(d) { return types[d.value.type].fill }
     });
 
   this.svg.selectAll("text.label")
@@ -230,9 +174,10 @@ RegisterDiagram.prototype.update = function(registers) {
     .append("text")
     .attr({
       class: "label",
-      x: function(d, i) { return (cellWidth + rLabelWidth + cellPadding) * i; },
+      x: function(d, i) { return (rLabelWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i; },
       y: 15,
       fill: lgrey,
+      "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
     })
@@ -250,14 +195,12 @@ RegisterDiagram.prototype.update = function(registers) {
       "font-family": "sans-serif",
       "font-size": "13px",
       "font-weight": "bold",
-      fill: function(d) { return types[d.value[0]].text }
+      fill: function(d) { return types[d.value.type].text }
     })
-    .text(function(d) { return types[d.value[0]].render(d.value[1]) });
+    .text(function(d) { return types[d.value.type].render(d.value.value) });
 }
 
-//================================================================================
 // Object Diagram
-//================================================================================
 function ObjectDiagram(div) {
   this.div = div;
   this.svg = this.div
@@ -272,7 +215,7 @@ ObjectDiagram.prototype.update = function(objectSection) {
   cells
     .attr({
       y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
-      fill: function(d) { return types[d.oid[0]].fill }
+      fill: function(d) { return types[d.oid.type].fill }
     })
     .enter()
     .append("rect")
@@ -283,7 +226,7 @@ ObjectDiagram.prototype.update = function(objectSection) {
       ry: 3,
       width: cellWidth,
       height: cellHeight,
-      fill: function(d) { return types[d.oid[0]].fill }
+      fill: function(d) { return types[d.oid.type].fill }
     });
 
   cells.exit().remove();
@@ -291,20 +234,20 @@ ObjectDiagram.prototype.update = function(objectSection) {
   var labels = this.svg.selectAll("text").data(objectSection);
 
   labels
-    .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
+    .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
       y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.oid[0]].text }
+      fill: function (d, i) { return types[d.oid.type].text }
     });
   
   labels
     .enter()
     .append("text")
-    .text(function(d) { return types[d.oid[0]].render(d.oid[1]) })
+    .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
       x: cellWidth / 2,
       y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      fill: function (d, i) { return types[d.oid[0]].text },
+      fill: function (d, i) { return types[d.oid.type].text },
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -315,10 +258,7 @@ ObjectDiagram.prototype.update = function(objectSection) {
     .exit().remove();
 }
 
-
-//================================================================================
 // Pool Diagram (code or const)
-//================================================================================
 function PoolDiagram(div) {
   this.div = div;
   this.table = this.div.append("table");
@@ -344,6 +284,111 @@ var objectDiagram;
 var codeDiagram;
 var constDiagram;
 
+function detemplatiseUrl(u) {
+  return u.substr(0, u.indexOf('{'));
+}
+
+/*
+ * The main VM representation object.
+ */
+var vm = {
+  _links: null,
+
+  stack: [],
+  registers: [],
+  codeSection: {},
+  constSection: {},
+  objectSection: {},
+
+  update: function() {
+    var vm = this;
+    if (vm_url) {
+      d3.json(vm_url, function(o) {
+        vm._links = o._links;
+        vm.updateStack();
+        vm.updateRegisters();
+        vm.updateConst(0, 512);
+        vm.updateObjects(0, 30);
+      });
+    }
+  },
+
+  updateStack: function() {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.stack.href, function(s) {
+        vm._links = s._links;
+        vm.stack = s.stack;
+        stackDiagram.update(vm.stack);
+      });
+    }
+  },
+
+  updateRegisters: function() {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.registers.href, function(r) {
+        vm._links = r._links;
+        vm.registers = 
+          _.chain(r)
+          .map(function(v, k) { return {name: abbreviateRegisterName(k), value: v}})
+          .filter(function(o) { return o.name[0] !== '_'; })
+          .value();
+        registerDiagram.update(vm.registers);
+
+        vm.updateCodeToContext();
+      });
+    }
+  },
+
+  updateCode: function(address, length) {
+    var vm = this;
+    if (vm._links) {
+      d3.json(detemplatiseUrl(vm._links.code.href) + '?address=' + address + '&length=' + length, function(cs) {
+        vm._links = cs._links;
+        vm.codeSection = cs['code-section'];
+        codeDiagram.update(vm.codeSection);
+      });
+    }
+  },
+
+  updateConst: function(address, length) {
+    var vm = this;
+    if (vm._links) {
+      d3.json(detemplatiseUrl(vm._links.const.href) + '?address=' + address + '&length=' + length, function(cs) {
+        vm._links = cs._links;
+        vm.constSection = cs['const-section'];
+        constDiagram.update(vm.constSection);
+      });
+    }
+  },
+
+  updateObjects: function (oid, count) {
+    var vm = this;
+    if (vm._links) {
+      d3.json(detemplatiseUrl(vm._links.objects.href) + '?oid=' + oid + '&count=' + count, function(os) {
+        vm._links = os._links;
+        vm.objectSection = os['objs'];
+        objectDiagram.update(vm.objectSection);
+      });
+    }
+  },
+
+  getInstructionPointer: function() {
+    return _.find(this.registers, function(r) { return r.name === 'ip'; }).value.value;
+  },
+  
+  getEntryPoint: function() {
+    return _.find(this.registers, function(r) { return r.name === 'ep'; }).value.value;
+  },
+
+  updateCodeToContext: function() {
+    var addr = Math.floor(this.getInstructionPointer() / 16);
+    var len = 512;
+    this.updateCode(addr, len);
+  },
+}
+
 function init() {
 
   stackDiagram = new StackDiagram(d3.select("div.stack"));
@@ -352,39 +397,14 @@ function init() {
   codeDiagram = new PoolDiagram(d3.select("div.code"));
   constDiagram = new PoolDiagram(d3.select("div.constant"));
 
-  vm.refreshStack();
-  vm.refreshRegisters();
-  vm.refreshCodeSection();
-  vm.refreshConstSection();
-  vm.refreshObjectSection();
-
-  stackDiagram.update(vm.stack);
-  registerDiagram.update(vm.registers);
-  objectDiagram.update(vm.objectSection);
-  codeDiagram.update(vm.codeSection);
-  constDiagram.update(vm.constSection);
+  vm.update();
 }
 
-var byteFormat = d3.format("02x");
-var addrFormat = d3.format("#08x");
 
-function updateRegisters() {
-  var svg = d3.select("svg.register");
-
-  svg.selectAll("rect")
-    .data(vm.registers)
-    .attr("fill", function(d) { return types[d.value[0]].fill } );
-
-  svg.selectAll("text.value")
-    .data(vm.registers)
-    .attr("fill", function(d) { return types[d.value[0]].text })
-    .text(function(d) { return types[d.value[0]].render(d.value[1]) });
-}
-
-// bind actions to buttons
+// bind fake actions to buttons for testing
 
 d3.select("#push").on("click", function() { 
-  vm.stack.push([_.random(1, 17), _.random(0, 10000)]);
+  vm.stack.push({type: _.random(1, 17), value: _.random(0, 10000)});
   stackDiagram.update(vm.stack);
 });
 d3.select("#pop").on("click", function() { 
@@ -392,19 +412,19 @@ d3.select("#pop").on("click", function() {
   stackDiagram.update(vm.stack);
 });
 d3.select("#ret").on("click", function() {
-  vm.refreshRegisters();
+  vm.randomiseRegisters();
   updateRegisters();
 });
 d3.select("#codeseek").on("click", function() {
-  vm.refreshCodeSection();
+  vm.randomiseCodeSection();
   updateCodeSection();
 });
 d3.select("#constseek").on("click", function() {
-  vm.refreshConstSection();
+  vm.randomiseConstSection();
   updateConstSection();
 });
 d3.select("#objseek").on("click", function() {
-  vm.refreshObjectSection();
+  vm.randomiseObjectSection();
   updateObjectSection();
 });
 
