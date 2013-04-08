@@ -80,6 +80,33 @@ var cellPadding = 3;
 var rLabelWidth = 25;
 var w = 100;
 
+// Actions
+function ActionPanel(div) {
+  this.div = div;
+}
+
+/**
+ * Expect each link to be a {href, name} object.
+ */
+ActionPanel.prototype.update = function(links) {
+
+  var actions = this.div
+    .selectAll("a")
+    .data(links, function(d) { return d.href; });
+  
+  actions
+    .enter()
+    .append("a")
+    .attr("class", "action")
+    .attr("href", "")
+    .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { console.log('load'); vm.update();}) })
+    .text(function (d) { return d.name; });
+
+  actions
+    .exit()
+    .remove();
+}
+
 // Stack Diagram
 function StackDiagram(div) {
   this.div = div;
@@ -278,6 +305,7 @@ PoolDiagram.prototype.update = function(section) {
     .text(function (d) { return byteFormat(d); })
 }
 
+var actionPanel;
 var stackDiagram;
 var registerDiagram;
 var objectDiagram;
@@ -309,8 +337,13 @@ var vm = {
         vm.updateRegisters();
         vm.updateConst(0, 512);
         vm.updateObjects(0, 30);
+        vm.updateActions();
       });
     }
+  },
+
+  updateActions: function() {
+    actionPanel.update(_.filter(vm._links, function(lk, k) { return k.indexOf("action/") >= 0;}))
   },
 
   updateStack: function() {
@@ -391,6 +424,7 @@ var vm = {
 
 function init() {
 
+  actionPanel = new ActionPanel(d3.select("div#controls"));
   stackDiagram = new StackDiagram(d3.select("div.stack"));
   registerDiagram = new RegisterDiagram(d3.select("div.register"));
   objectDiagram = new ObjectDiagram(d3.select("div.object"));
@@ -400,32 +434,5 @@ function init() {
   vm.update();
 }
 
-
-// bind fake actions to buttons for testing
-
-d3.select("#push").on("click", function() { 
-  vm.stack.push({type: _.random(1, 17), value: _.random(0, 10000)});
-  stackDiagram.update(vm.stack);
-});
-d3.select("#pop").on("click", function() { 
-  vm.stack.pop();
-  stackDiagram.update(vm.stack);
-});
-d3.select("#ret").on("click", function() {
-  vm.randomiseRegisters();
-  updateRegisters();
-});
-d3.select("#codeseek").on("click", function() {
-  vm.randomiseCodeSection();
-  updateCodeSection();
-});
-d3.select("#constseek").on("click", function() {
-  vm.randomiseConstSection();
-  updateConstSection();
-});
-d3.select("#objseek").on("click", function() {
-  vm.randomiseObjectSection();
-  updateObjectSection();
-});
-
 init();
+

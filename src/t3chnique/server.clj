@@ -81,9 +81,10 @@
      :stack {:href (str "/vms/" id "/stack")}
      :registers {:href (str "/vms/" id "/registers")}
      :exec {:href (str "/exec/" id)}
-     :code {:href (str "/vms/" id "/code{?address,length}") :template true}
-     :const {:href (str "/vms/" id "/const{?address,length") :template true}
-     :objects {:href (str "/vms/" id "/objects{?oid,count}") :template true}}))
+     :code {:href (str "/vms/" id "/code{?address,length}") :templated true}
+     :const {:href (str "/vms/" id "/const{?address,length") :templated true}
+     :objects {:href (str "/vms/" id "/objects{?oid,count}") :templated true}
+     :action/step {:href (str "/vms/" id "/step") :name "Step"}}))
 
 (defn represent-vm [id vm]
   (add-vm-links id {:id id}))
@@ -177,6 +178,10 @@
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]
       (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
+  (POST ["/vms/:id/step" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (swap! vms update-in [id] #(second ((t3vm/step) %)))
+      (response/redirect-after-post (str "/vms/" id))))
   (GET ["/exec/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
       (if-let [vm (vm-get id)]

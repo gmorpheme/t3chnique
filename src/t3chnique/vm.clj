@@ -953,6 +953,7 @@
 (defn step []
   (domonad vm-m
     [ip (fetch-val :ip)
+     _ (m-when (zero? ip) (enter))
      [b i] (m-offset ip)
      :let [[[op args] [_ i']] ((parse-op) [b i])
            f (:run-fn op)]
