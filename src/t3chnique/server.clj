@@ -1,5 +1,5 @@
 (ns t3chnique.server
-  (:use [t3chnique.parse :only [load-image-file parse-resource read-bytes]]
+  (:use [t3chnique.parse :only [load-image-file read-bytes]]
         [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
@@ -15,7 +15,8 @@
             [clojure.tools.trace :as t])
   (:require [compojure.route :as route]
             [t3chnique.vm :as t3vm]
-            [t3chnique.primitive :as p]))
+            [t3chnique.primitive :as p]
+            [t3chnique.control :as ct]))
 
 (defn render-html [data]
   (if-let [page (:page (meta data))]
@@ -35,26 +36,6 @@
                                    (make-encoder yaml/generate-string "application/x-yaml")
                                    (make-encoder render-html "text/html")]
                         :charset "utf-8"))
-
-;; state and operations
-
-(def game-catalogue [{:id 1 :name "Elysium.t3"}
-                     {:id 2 :name "ditch3.t3"}])
-
-(defn game-list [] game-catalogue)
-(defn game-get [id] (first (filter #(= (:id %) id) game-catalogue)))
-
-(def vms (atom {}))
-
-(defn vm-map [] @vms)
-(defn vm-get [id] (get @vms (int id)))
-(defn vm-new [game]
-  (let [name  (:name (game-get game))
-        vm (t3vm/vm-from-image (parse-resource name))
-        id (inc (count @vms)) ;; concurrency
-        vm (assoc vm :id id)]
-    (swap! vms assoc id vm)
-    (vm-get id)))
 
 ;; represent functions add hyperlinks using HAL to support HATEOAS
 ;; style interaction
@@ -131,60 +112,63 @@
 
 (defroutes vm-routes
   (GET "/games" []
-    (respond "t3chnique.server/games-page" (represent-game-list (game-list))))
+    (respond "t3chnique.server/games-page" (represent-game-list (ct/game-list))))
   (GET ["/games/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (if-let [game (game-get id)]
+      (if-let [game (ct/game-get id)]
         (respond "t3chnique.server/game-page" (represent-game game))
         (response/not-found "Nonesuch"))))
   (GET "/vms" []
-    (respond "t3chnique.server/vms-page" (represent-vm-map (vm-map))))
+    (respond "t3chnique.server/vms-page" (represent-vm-map (ct/vm-map))))
   (GET ["/vms/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (if-let [vm (vm-get id)]
+      (if-let [vm (ct/vm-get id)]
         (respond "t3chnique.server/vm-page" (represent-vm id vm))
         (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/stack" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (if-let [vm (vm-get id)]
+      (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-stack id vm))
         (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/registers" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (if-let [vm (vm-get id)]
+      (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-registers id vm))
         (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/code" :id #"[0-9]+"] [id address length]
     (let [id (Integer/parseInt id)
           addr (Integer/parseInt address)
           len (Integer/parseInt length)]
-      (if-let [vm (vm-get id)]
+      (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-code id vm addr len))
         (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/const" :id #"[0-9]+"] [id address length]
     (let [id (Integer/parseInt id)
           addr (Integer/parseInt address)
           len (Integer/parseInt length)]
-      (if-let [vm (vm-get id)]
+      (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-const id vm addr len))
         (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/objects" :id #"[0-9]+"] [id oid count]
     (let [id (Integer/parseInt id)
           o (Integer/parseInt oid)
           n (Integer/parseInt count)]
-      (if-let [vm (vm-get id)]
+      (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-objects id vm o n))
         (response/not-found "Nonesuch"))))
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]
-      (response/redirect-after-post (str "/vms/" (:id (vm-new game))))))
+      (response/redirect-after-post (str "/vms/" (:id (ct/vm-new game))))))
   (POST ["/vms/:id/step" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (swap! vms update-in [id] #(second ((t3vm/step) %)))
+      (ct/vm-step id)
       (response/redirect-after-post (str "/vms/" id))))
+  (GET ["/vms/:id/dis1" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (respond (ct/dis1 id (:ip (ct/vm-get id))))))
   (GET ["/exec/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
-      (if-let [vm (vm-get id)]
+      (if-let [vm (ct/vm-get id)]
         (respond "t3chnique.server/exec-page" (represent-vm id vm))
         (response/not-found "Nonesuch"))))
   (route/resources "/")
