@@ -360,7 +360,7 @@
   (stack-push (vm-prop propid)))
 
 (defop pushfnptr 0x0B [:uint4 code_offset]
-  (stack-push (vm-funcptr-id code_offset)))
+  (stack-push (vm-funcptr code_offset)))
 
 ; TODO
 (defop pushstri 0x0C [:pref-utf8 string_bytes])

@@ -18,7 +18,8 @@ th { font-weight: normal; text-align: right; font-family: "Lucida Console", Mona
 body { background-color: #222; color: white; padding: 2px;}
 div { padding: 2px; }
 
-#action-step a:hover { text-decoration: none; }
+#action-step a:hover { text-decoration: none; background-color: #333; }
+a span.prompt { color: #808080; padding: 4px; }
 a span.mnemonic { color: #EE5A6E; padding: 4px; }
 a span.op-arg { color: #D0ED80; padding: 4px; }
 a.additional { color: #808080; padding: 4px; }

@@ -119,8 +119,13 @@ function formatOpCode(selector, assembly) {
   var op = d3.select(selector);
   var a = op.select('a');
 
-  a.text('')
-    .append('span')
+  a.text('');
+
+  a.append('span')
+    .attr('class', 'prompt')
+    .text('>');
+
+  a.append('span')
     .attr('class', 'mnemonic')
     .text(assembly.op.mnemonic);
 
@@ -138,7 +143,7 @@ function formatOpCode(selector, assembly) {
     .attr('class', 'additional')
     .attr('target', '_blank')
     .attr('href', function(d) { return d[1].href; })
-    .text(function(d) { return d[0]; });
+    .text(function(d) { return '(' + d[0] + ')'; });
 }
 
 function enrichActions() {
@@ -341,8 +346,13 @@ function PoolDiagram(div) {
 }
 
 PoolDiagram.prototype.update = function(section) {
-  this.table.selectAll("tr")
-    .data(toTable(section))
+  var table = toTable(section);
+
+  var rows = 
+    this.table.selectAll("tr")
+    .data(table, function (d) { return d.address; });
+
+  rows
     .enter()
     .append("tr")
     .html(function(d) { return "<th>" + addrFormat(d.address) + "</th>"; })
@@ -351,7 +361,12 @@ PoolDiagram.prototype.update = function(section) {
     .enter()
     .append("td")
     .attr("class", "byte")
-    .text(function (d) { return byteFormat(d); })
+    .text(function (d) { return byteFormat(d); });
+
+  rows
+    .exit()
+    .remove();
+
 }
 
 var actionPanel;
