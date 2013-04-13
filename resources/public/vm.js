@@ -100,15 +100,61 @@ ActionPanel.prototype.update = function(links) {
   
   actions
     .enter()
-    .append("a")
+    .append("span")
+    .attr("id", function(d) { return d.rel.replace('/', '-'); })
     .attr("class", "action")
+    .append("a")
     .attr("href", "")
-    .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { console.log('load'); vm.update();}) })
+    .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { vm.update(); }) })
     .text(function (d) { return d.name; });
 
   actions
     .exit()
     .remove();
+  
+  enrichActions(); 
+}
+
+function formatOpCode(selector, assembly) {
+  var op = d3.select(selector);
+  var a = op.select('a');
+
+  a.text('')
+    .append('span')
+    .attr('class', 'mnemonic')
+    .text(assembly.op.mnemonic);
+
+  a.selectAll('span.op-arg')
+    .data(_.pairs(assembly.args))
+    .enter()
+    .append('span')
+    .attr('class', 'op-arg')
+    .text(function(d) { return d[0] + ':' + d[1]; });
+
+  op.selectAll('a.additional')
+    .data(_.pairs(assembly._links))
+    .enter()
+    .append('a')
+    .attr('class', 'additional')
+    .attr('target', '_blank')
+    .attr('href', function(d) { return d[1].href; })
+    .text(function(d) { return d[0]; });
+}
+
+function enrichActions() {
+
+  if (vm.registers) {
+    // use disassembly as link for step
+    var dis1link = vm._links.dis1.href;
+    dis1link = dis1link.substr(0, dis1link.indexOf('{'));
+
+    var ip = _.find(vm.registers, function(r) { return r.name === 'ip'; });
+    if (ip) {
+      dis1link = dis1link + ip.value.value;
+
+      d3.json(dis1link, function(o) { vm.assembly = o.assembly; formatOpCode('#action-step', vm.assembly)})
+    }
+  }
 }
 
 // Stack Diagram
@@ -346,7 +392,7 @@ var vm = {
   },
 
   updateActions: function() {
-    actionPanel.update(_.filter(vm._links, function(lk, k) { return k.indexOf("action/") >= 0;}))
+    actionPanel.update(_.filter(vm._links, function(lk, k) { lk.rel = k; return k.indexOf("action/") >= 0; }));
   },
 
   updateStack: function() {
@@ -373,6 +419,7 @@ var vm = {
         registerDiagram.update(vm.registers);
 
         vm.updateCodeToContext();
+        enrichActions();
       });
     }
   },

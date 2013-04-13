@@ -1,4 +1,5 @@
-(ns t3chnique.server
+(ns ^{:doc "REST server"}
+    t3chnique.server
   (:use [t3chnique.parse :only [load-image-file read-bytes]]
         [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
@@ -65,6 +66,7 @@
      :code {:href (str "/vms/" id "/code{?address,length}") :templated true}
      :const {:href (str "/vms/" id "/const{?address,length") :templated true}
      :objects {:href (str "/vms/" id "/objects{?oid,count}") :templated true}
+     :dis1 {:href (str "/vms/" id "/dis1/{address}") :templated true}
      :action/step {:href (str "/vms/" id "/step") :name "Step"}}))
 
 (defn represent-vm [id vm]
@@ -89,6 +91,17 @@
     (add-vm-links
      id
      {:id id :code-section {:address addr :bytes (ubytes p off len)}})))
+
+(defn represent-vm-assembly [id addr]
+  (let [{:keys [op args]} (ct/dis1 id addr)
+        doc-url (str "http://www.tads.org/t3doc/doc/techman/t3spec/opcode.htm#opc_" (.toLowerCase (name (:mnemonic op))))
+        op (dissoc op :run-fn)]
+    (add-vm-links id
+                  {:id id
+                   :assembly {:op op
+                              :args args
+                              :address addr
+                              :_links {:doc {:href doc-url}}}})))
 
 (defn represent-vm-const [id vm addr len]
   (let [[p off] (t3vm/const-offset vm addr)]
@@ -163,9 +176,12 @@
     (let [id (Integer/parseInt id)]
       (ct/vm-step id)
       (response/redirect-after-post (str "/vms/" id))))
-  (GET ["/vms/:id/dis1" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (respond (ct/dis1 id (:ip (ct/vm-get id))))))
+  (GET ["/vms/:id/dis1/:addr" :id #"[0-9]+"] [id addr]
+    (let [id (Integer/parseInt id)
+          addr (Integer/parseInt addr)]
+      (if-let [vm (ct/vm-get id)]
+        (respond (represent-vm-assembly id addr))
+        (response/not-found "Nonesuch"))))
   (GET ["/exec/:id" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
       (if-let [vm (ct/vm-get id)]

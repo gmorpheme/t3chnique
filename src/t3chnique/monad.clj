@@ -3,6 +3,11 @@
 
 (def vm-m (state-t cont-m))
 
+;; experimenting with a state & continuation monad
+  
+;; continuation required to provide yield capability and potentially
+;; early exist / revert
+
 (with-monad vm-m
 
   (defn >> [mva mvb]
