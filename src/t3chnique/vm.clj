@@ -9,6 +9,8 @@
 
 (set! *warn-on-reflection* true)
 
+(declare ^:dynamic *host*)
+
 ;; vm-m implementation
 ;;
 ;; vm state:
@@ -143,9 +145,9 @@
 (defn- bump-pc [s count]
   (update-in s [:pc] (partial + count)))
 
-(def get-say-method (fetch-val :say-method))
+(defn get-say-method [] (fetch-val :say-method))
 (def set-say-method (partial set-val :say-method))
-(def get-say-function (fetch-val :say-function))
+(defn get-say-function [] (fetch-val :say-function))
 (def set-say-function (partial set-val :say-function))
 
 (defn resolve-bif [set func]
@@ -740,37 +742,43 @@
 ;; TODO
 (defop say 0xB0 [:uint4 offset])
 
-;; TODO bifs
-(defop builtin_a 0xB1 [:ubyte argc :ubyte func_index])
+(defn- bif [set index argc]
+  (domonad vm-m
+    [fnsd (fetch-val :fnsd)
+     _ (bif/invoke-by-index *host* (fnsd set) index argc)]
+    nil))
 
-;; TODO bifs
-(defop builtin_b 0xB2 [:ubyte argc :ubyte func_index])
+(defop builtin_a 0xB1 [:ubyte argc :ubyte func_index]
+  (bif 0 func_index argc))
 
-;; TODO bifs
-(defop builtin_c 0xB3 [:ubyte argc :ubyte func_index])
+(defop builtin_b 0xB2 [:ubyte argc :ubyte func_index]
+  (bif 1 func_index argc))
 
-;; TODO bifs
-(defop builtin_d 0xB4 [:ubyte argc :ubyte func_index])
+(defop builtin_c 0xB3 [:ubyte argc :ubyte func_index]
+  (bif 2 func_index argc))
 
-;; TODO bifs
-(defop builtin1 0xB5 [:ubyte argc :ubyte func_index :ubyte set_index])
+(defop builtin_d 0xB4 [:ubyte argc :ubyte func_index]
+  (bif 3 func_index argc))
 
-;; TODO bifs
-(defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index])
+(defop builtin1 0xB5 [:ubyte argc :ubyte func_index :ubyte set_index]
+  (bif set_index func_index argc))
+
+(defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index]
+  (bif set_index func_index argc))
 
 (defop callext 0xB7 [] (abort "callext not implemented"))
 
 ; TODO implement
 (defop throw 0xB8 []
   (domonad vm-m
-           [ep (reg-get :ep)
-            ip (reg-get :ip)
-            mh (get-method-header ep)
-            et (:etable-offset mh)
-            ex (get-exception-table et)
-;            _ (filter #(<= (:first-offset %) (dec ip) (:last-offset)) ex)
-            ]
-           nil))
+    [ep (reg-get :ep)
+     ip (reg-get :ip)
+     mh (get-method-header ep)
+     et (:etable-offset mh)
+     ex (get-exception-table et)
+                                        ;            _ (filter #(<= (:first-offset %) (dec ip) (:last-offset)) ex)
+     ]
+    nil))
 
 ;; TODO
 (defop sayval 0xB9 [])
@@ -901,23 +909,18 @@
   (t3RunGC [_ argc]
     (with-monad vm-m (m-result nil)))
   (t3SetSay [_ n]
-    (let [no-method 2
-          no-func   1
-          in (fn [v] (if (vm-int? v)
-                      (condp = (value v)
-                        no-func (vm-nil)
-                        no-method (vm-prop)
-                        :else (abort "VMERR_BAD_TYPE_BIF"))))
-          out (fn [v] (condp = v
-                       (vm-nil) (vm-int no-func)
-                       (vm-prop) (vm-int no-method)
-                      :else v))]
+    (let [in (fn [v] (if (vm-int? v)
+                      (case (value v)
+                        2 (vm-nil)
+                        1 (vm-prop 0)
+                        (abort "VMERR_BAD_TYPE_BIF"))
+                      v))]
       (domonad vm-m
                [val (stack-pop)
-                val' (in val)
+                :let [val' (in val)]
                 current (if (vm-prop? val') (get-say-method) (get-say-function))
                 _ (if (vm-prop? val') (set-say-method val') (set-say-function val'))
-                _ (reg-set :r0 (out current))]
+                _ (reg-set :r0 current)]
                nil)))
   (t3GetVMVsn [_ argc]
     (domonad vm-m [_ (reg-set :r0 (vm-int 0x00000001))] nil))
@@ -939,6 +942,8 @@
   (t3GetNamedArg [_ argc])
   ;; TODO named args
   (t3GetNamedArgList [_ argc]))
+
+(def ^:dynamic *host* (Host.))
 
 ;; control
 

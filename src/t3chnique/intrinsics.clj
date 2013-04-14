@@ -139,7 +139,7 @@ set identified by provided."
   "Assuming host implements the required function sets, invoke the
 method in the function set identified by fsid at index n, passing
 specified args."
-  [fsid host n & args]
+  [host fsid n & args]
   (let [prot (find-protocol fsid)
         f (get (:fns (meta prot)) n)]
     (apply f host args)))

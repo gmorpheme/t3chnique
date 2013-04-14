@@ -2,7 +2,8 @@
   (:use [clojure.algo.monads]
         [t3chnique.vm]
         [t3chnique.primitive]
-        [midje.sweet]))
+        [midje.sweet])
+  (:require [t3chnique.intrinsics :as bif]))
 
 ;; helpers
 
@@ -127,10 +128,10 @@
       :ip 0x123e
       :fp 10
       :sp 14
-      :stack (st 1 2 nil nil nil nil
+      :stack (st 1 2 (vm-prop 0) nil nil nil
                  (vm-codeofs 0x20)
                  (vm-codeofs 0x10)
-                 2 0 nil nil nil nil))
+                 2 (vm-stack 0) nil nil nil nil))
     (provided
       (get-method-header 0x1234) =>
       (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))))
@@ -227,3 +228,41 @@
                                      2 0 nil nil nil nil 999))]
     (fact (apply-ops vm [(op-setarg1 0)]) => (contains {:stack (has-prefix (st 1 999))}))
     (fact (apply-ops vm [(op-setarg1 1)]) => (contains {:stack (has-prefix (st 999 2))}))))
+
+(fact "t3SetSay sets method"
+  (:say-method (apply-ops
+                (vm-state-with :stack [(vm-prop 0x10)])
+                [(bif/t3SetSay *host* 1)]))
+  => (vm-prop 0x10))
+
+(fact "t3SetSay sets function"
+  (:say-function (apply-ops
+                  (vm-state-with :stack [(vm-funcptr 0x20)])
+                  [(bif/t3SetSay *host* 1)]))
+  => (vm-funcptr 0x20))
+
+(fact "t3SetSay returns existing method"
+  (:r0 (apply-ops
+        (vm-state-with :say-method (vm-prop 0x30) :stack [(vm-prop 0x50)])
+        [(bif/t3SetSay *host* 1)]))
+
+  => (vm-prop 0x30))
+
+(fact "t3SetSay returns existing function"
+  (:r0 (apply-ops
+        (vm-state-with :say-function (vm-funcptr 0x30) :stack [(vm-funcptr 0x50)])
+        [(bif/t3SetSay *host* 1)]))
+
+  => (vm-funcptr 0x30))
+
+(fact "t3SetSay can blank method"
+  (:say-method (apply-ops
+                (vm-state-with :say-method (vm-prop 0x30) :stack [(vm-int 1)])
+                [(bif/t3SetSay *host* 1)]))
+  => (vm-prop 0))
+
+(fact "t3SetSay can blank function"
+  (:say-function (apply-ops
+                  (vm-state-with :say-function (vm-funcptr 0x30) :stack [(vm-int 2)])
+                  [(bif/t3SetSay *host* 1)]))
+  => (vm-nil))
