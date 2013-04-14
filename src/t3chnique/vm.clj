@@ -5,7 +5,6 @@
             [t3chnique.metaclass :as mc])
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when]])
   (:import [t3chnique.metaclass TadsObject]
-           [t3chnique.intrinsics t3vm]
            [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
@@ -894,9 +893,11 @@
 
 ;;;;;;;; intrinsic impls
 
+(deftype Host [])
+
 ;; TODO check argc - exceptions
-(deftype TadsT3 []
-  t3vm
+(extend-type Host
+  bif/t3vm
   (t3RunGC [_ argc]
     (with-monad vm-m (m-result nil)))
   (t3SetSay [_ n]
@@ -938,6 +939,8 @@
   (t3GetNamedArg [_ argc])
   ;; TODO named args
   (t3GetNamedArgList [_ argc]))
+
+(def registered-function-sets [(TadsT3.)])
 
 ;; control
 

@@ -1,7 +1,8 @@
 (ns t3chnique.intrinsics
-  (:refer-clojure :exclude [min max rand concat]))
+  (:refer-clojure :exclude [min max rand concat])
+  (:require [clojure.string :as string]))
 
-(defprotocol ^{:id "t3vm/010006"} t3vm
+(defprotocol t3vm
   "Internal VM operations"
   (t3RunGC [_ argc])
   (t3SetSay [_ argc])
@@ -16,7 +17,9 @@
   (t3GetNamedArg [_ argc])
   (t3GetNamedArgList [_ argc]))
 
-(defprotocol ^{:id "tads-gen/030008"} tads-gen
+(def t3vm (with-meta t3vm {:id "t3vm/010006"}))
+
+(defprotocol tads-gen
   "General utility and data manipulation functions"
   (abs [_ argc])
   (concat [_ argc])
@@ -48,7 +51,9 @@
   (toString [_ argc])
   (undo [_ argc]))
 
-(defprotocol ^{:id "tads-io/030007"} tads-io
+(def tads-gen (with-meta tads-gen {:id "tads-gen/030008"}))
+
+(defprotocol tads-io
   "Interactive / Real Time IO"
   (bannerClear [_ argc])
   (bannerCreate [_ argc])
@@ -84,7 +89,9 @@
   (tadsSay [_ argc])
   (timeDelay [_ argc]))
 
-(defprotocol ^{:id "tads-net/030001"} tads-net
+(def tads-io (with-meta tads-io {:id "tads-io/030007"}))
+
+(defprotocol tads-net
   "Access to network features."
   (connectWebUI [_ argc])
   (getHostName [_ argc])
@@ -93,3 +100,27 @@
   (getNetEvent [_ argc])
   (getNetStorageURL [_ argc])
   (sendNetRequest [_ argc]))
+
+(def tads-net (with-meta tads-net {:id "tads-net/030001"}))
+
+(defn- parse-id
+  "Parse a function set id into name and version."
+  [fsid]
+  (update-in (string/split fsid #"/") [1] #(Integer/parseInt %)))
+
+(defn- match
+  "True if the function set identified by required can be satisfied by the function
+set identified by provided."
+  [required provided]
+  (let [[required-name required-version] (parse-id required)
+        [provided-name provided-version] (parse-id provided)]
+    (and (= required-name provided-name)
+         (< required-version provided-version ))))
+
+(defn find-impl
+  "Find a function set implementation for the specified function set id. "
+  [fsid]
+  (let [protocols [t3vm tads-gen tads-io tads-net]
+        match  (first (filter #(match fsid (:id (meta %))) protocols))
+        impls (extenders match)]
+    (first impls)))
