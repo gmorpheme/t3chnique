@@ -17,7 +17,19 @@
   (t3GetNamedArg [_ argc])
   (t3GetNamedArgList [_ argc]))
 
-(def t3vm (with-meta t3vm {:id "t3vm/010006"}))
+(def t3vm (with-meta t3vm {:id "t3vm/010006"
+                           :fns [t3RunGC
+                                 t3SetSay
+                                 t3GetVMVsn
+                                 t3GetVMID
+                                 t3GetVMBanner
+                                 t3GetVMPreinitMode
+                                 t3DebugTrace
+                                 t3GetGlobalSymbols
+                                 t3AllocProp
+                                 t3GetStackTrace
+                                 t3GetNamedArg
+                                 t3GetNamedArgList]}))
 
 (defprotocol tads-gen
   "General utility and data manipulation functions"
@@ -117,10 +129,17 @@ set identified by provided."
     (and (= required-name provided-name)
          (< required-version provided-version ))))
 
-(defn find-impl
-  "Find a function set implementation for the specified function set id. "
+(defn find-protocol
+  "Find protocol for the specified function set id."
   [fsid]
-  (let [protocols [t3vm tads-gen tads-io tads-net]
-        match  (first (filter #(match fsid (:id (meta %))) protocols))
-        impls (extenders match)]
-    (first impls)))
+  (let [protocols [t3vm tads-gen tads-io tads-net]]
+    (first (filter #(match fsid (:id (meta %))) protocols))))
+
+(defn invoke-by-index 
+  "Assuming host implements the required function sets, invoke the
+method in the function set identified by fsid at index n, passing
+specified args."
+  [fsid host n & args]
+  (let [prot (find-protocol fsid)
+        f (get (:fns (meta prot)) n)]
+    (apply f host args)))

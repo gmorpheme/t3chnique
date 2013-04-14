@@ -940,8 +940,6 @@
   ;; TODO named args
   (t3GetNamedArgList [_ argc]))
 
-(def registered-function-sets [(TadsT3.)])
-
 ;; control
 
 (defn enter 
