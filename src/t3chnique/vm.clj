@@ -911,8 +911,8 @@
   (t3SetSay [_ n]
     (let [in (fn [v] (if (vm-int? v)
                       (case (value v)
-                        2 (vm-nil)
-                        1 (vm-prop 0)
+                        1 (vm-nil)
+                        2 (vm-prop 0)
                         (abort "VMERR_BAD_TYPE_BIF"))
                       v))]
       (domonad vm-m

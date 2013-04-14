@@ -257,12 +257,12 @@
 
 (fact "t3SetSay can blank method"
   (:say-method (apply-ops
-                (vm-state-with :say-method (vm-prop 0x30) :stack [(vm-int 1)])
+                (vm-state-with :say-method (vm-prop 0x30) :stack [(vm-int 2)])
                 [(bif/t3SetSay *host* 1)]))
   => (vm-prop 0))
 
 (fact "t3SetSay can blank function"
   (:say-function (apply-ops
-                  (vm-state-with :say-function (vm-funcptr 0x30) :stack [(vm-int 2)])
+                  (vm-state-with :say-function (vm-funcptr 0x30) :stack [(vm-int 1)])
                   [(bif/t3SetSay *host* 1)]))
   => (vm-nil))
