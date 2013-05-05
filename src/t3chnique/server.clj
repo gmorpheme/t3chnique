@@ -10,7 +10,7 @@
             [ring.util.response :as response]
             [compojure.handler :as handler]
             [cheshire.custom :as json]
-            [clj-yaml.core :as yaml]        
+            [clj-yaml.core :as yaml]
             [hiccup.core :as h]
             [hiccup.page :as hp]
             [clojure.tools.trace :as t])
@@ -205,10 +205,9 @@
   (hp/html5
    [:html
     [:head
-     [:link {:href "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" :rel "stylesheet"}]
+     [:link {:href "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" :rel "stylesheet"}]
      [:link {:href "/css/tools.css" :rel "stylesheet"}]]
     [:body
-     [:script {:src "http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"}]
      [:script {:src "http://d3js.org/d3.v3.min.js"}]
      [:script {:src "http://underscorejs.org/underscore-min.js"}]
      body]]))
