@@ -9,15 +9,17 @@ _.mixin({
   }
 })
 
-var dgrey = "#202020";
-var lgrey = "#808080";
-
+/**
+ * Abbreviate a register name to two characters.
+ */
 function abbreviateRegisterName(name) {
   return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
 }
 
 var byteFormat = d3.format("02x");
 var addrFormat = d3.format("#08x");
+function prefixed(prefix) { return function(val) { return prefix + ":" + val} }
+function prefixedHex(prefix) { return function(val) { return prefix + ":" + addrFormat(val); }} 
 
 /**
  * Turn a code or const section into a list of rows with address headers.
@@ -28,9 +30,6 @@ function toTable(section) {
     .map(function (bytes, i) { return {address: section.address + i * 16, bytes: bytes } })
     .value();
 }
-
-function prefixed(prefix) { return function(val) { return prefix + ":" + val} }
-function prefixedHex(prefix) { return function(val) { return prefix + ":" + addrFormat(val); }} 
 
 function PrimitiveType(name, render) {
   this.name = name;
@@ -169,8 +168,7 @@ function StackDiagram(div) {
     this.div
     .append("svg")
     .attr("class", "stack")
-    .attr("width", w)
-    .attr("fill", dgrey);
+    .attr("width", w);
 };
 
 StackDiagram.prototype.update = function(stack) {
@@ -259,7 +257,6 @@ RegisterDiagram.prototype.update = function(registers) {
       class: function(d) { return "vm-" + types[d.value.type].name; },
       x: function(d, i) { return (rLabelWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i; },
       y: 15,
-      fill: lgrey,
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -388,9 +385,22 @@ var vm = {
 
   stack: [],
   registers: [],
+  mcld: [],
+  fnsd: [],
   codeSection: {},
   constSection: {},
   objectSection: {},
+
+  init: function() {
+    var vm = this;
+    if (vm_url) {
+      d3.json(vm_url, function(o) {
+        vm._links = o._links;
+        vm.updateMetaclassList();
+        vm.updateFunctionList();
+      });
+    }
+  },
 
   update: function() {
     var vm = this;
@@ -402,6 +412,28 @@ var vm = {
         vm.updateConst(0, 512);
         vm.updateObjects(0, 30);
         vm.updateActions();
+      });
+    }
+  },
+
+  updateMetaclassList: function() {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.mcld.href, function(m) {
+        console.log("mcld:", m);
+        vm._links = m._links;
+        vm.mcld = m.mcld;
+      });
+    }
+  },
+
+  updateFunctionList: function() {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.fnsd.href, function(f) {
+        console.log("fnsd:", f);
+        vm._links = f._links;
+        vm.fnsd = f.fnsd;
       });
     }
   },
@@ -496,6 +528,7 @@ function init() {
   codeDiagram = new PoolDiagram(d3.select("div.code"));
   constDiagram = new PoolDiagram(d3.select("div.constant"));
 
+  vm.init();
   vm.update();
 }
 

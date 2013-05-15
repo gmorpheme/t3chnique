@@ -66,6 +66,8 @@
      :code {:href (str "/vms/" id "/code{?address,length}") :templated true}
      :const {:href (str "/vms/" id "/const{?address,length") :templated true}
      :objects {:href (str "/vms/" id "/objects{?oid,count}") :templated true}
+     :mcld {:href (str "/vms/" id "/mcld")}
+     :fnsd {:href (str "/vms/" id "/fnsd")}
      :dis1 {:href (str "/vms/" id "/dis1/{address}") :templated true}
      :action/step {:href (str "/vms/" id "/step") :name "Step"}}))
 
@@ -116,6 +118,18 @@
     :objs (map
            (fn [[k v]] {:oid (p/vm-obj k) :value v})
            (take count (subseq (:objs vm) >= oid)))}))
+
+(defn represent-vm-mcld [id vm]
+  (add-vm-links
+   id
+   {:id id
+    :mcld (map #(dissoc % :metaclass) (:mcld vm))}))
+
+(defn represent-vm-fnsd [id vm]
+  (add-vm-links
+   id
+   {:id id
+    :fnsd (:fnsd vm)}))
 
 (defn respond
   ([data]
@@ -168,6 +182,16 @@
           n (Integer/parseInt count)]
       (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-objects id vm o n))
+        (response/not-found "Nonesuch"))))
+  (GET ["/vms/:id/mcld" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (if-let [vm (ct/vm-get id)]
+        (respond (represent-vm-mcld id vm))
+        (response/not-found "Nonesuch"))))
+  (GET ["/vms/:id/fnsd" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (if-let [vm (ct/vm-get id)]
+        (respond (represent-vm-fnsd id vm))
         (response/not-found "Nonesuch"))))
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]
