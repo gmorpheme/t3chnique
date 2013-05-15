@@ -63,4 +63,6 @@ svg rect.vm-native-code { fill: #ee5a6e; }
 svg rect.vm-enum { fill: #1a957d; }
 svg rect.vm-bifptr { fill: #ee5a6e; }
 svg rect.vm-objx { fill: #085e4e; }
-svg text { fill: white;  }
+svg text { fill: white; font-size: "13px"; }
+svg rect.metaclass { fill: #6dc9b7; }
+svg text.metaclass { fill: black; } /* #808080; } */

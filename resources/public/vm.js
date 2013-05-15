@@ -16,6 +16,10 @@ function abbreviateRegisterName(name) {
   return name.length > 2 ? "".concat.apply("", _.map(name.split('-'), _.first)) : name;
 }
 
+function truncateMetaclassName(name) {
+  return "".concat.apply("",_.map(name.split('-'), _.first));
+}
+
 var byteFormat = d3.format("02x");
 var addrFormat = d3.format("#08x");
 function prefixed(prefix) { return function(val) { return prefix + ":" + val} }
@@ -77,9 +81,9 @@ var types = [null,
              vm_bifptr,
              vm_objx];
 
-var cellHeight = 20;
-var cellWidth = 70;
-var cellPadding = 3;
+var cH = 20; // cell height
+var cW = 70; // cell width
+var cP = 3;  // cell padding
 var rLabelWidth = 25;
 var w = 100;
 
@@ -173,25 +177,25 @@ function StackDiagram(div) {
 
 StackDiagram.prototype.update = function(stack) {
   this.svg
-    .attr("height", (cellHeight + cellPadding) * _.max([10, stack.length]))
+    .attr("height", (cH + cP) * _.max([10, stack.length]))
     .attr("width", w);
 
   var cells = this.svg.selectAll("rect").data(stack);
 
   cells
     .attr({
-      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
+      y: function(d, i) { return (cH + cP) * (stack.length - i - 1)},
       class: function(d) { return "vm-" + types[d.type].name; }
     })
     .enter()
     .append("rect")
     .attr({
       x: 0,
-      y: function(d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1)},
+      y: function(d, i) { return (cH + cP) * (stack.length - i - 1)},
       rx: 3,
       ry: 3,
-      width: cellWidth,
-      height: cellHeight,
+      width: cW,
+      height: cH,
       class: function(d) { return "vm-" + types[d.type].name; }
     });
 
@@ -202,7 +206,7 @@ StackDiagram.prototype.update = function(stack) {
   labels
     .text(function(d) { return types[d.type].render(d.value) })
     .attr({
-      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
+      y: function (d, i) { return (cH + cP) * (stack.length - i - 1) + 15},
       class: function(d) { return "vm-" + types[d.type].name; }
     });
   
@@ -211,8 +215,8 @@ StackDiagram.prototype.update = function(stack) {
     .append("text")
     .text(function(d) { return types[d.type].render(d.value) })
     .attr({
-      x: cellWidth / 2,
-      y: function (d, i) { return (cellHeight + cellPadding) * (stack.length - i - 1) + 15},
+      x: cW / 2,
+      y: function (d, i) { return (cH + cP) * (stack.length - i - 1) + 15},
       class: function(d) { return "vm-" + types[d.type].name; },
       "text-anchor": "middle",
       "font-family": "sans-serif",
@@ -230,7 +234,7 @@ function RegisterDiagram(div) {
   this.svg = this.div
     .append("svg")
     .attr("class", "register")
-    .attr("height", cellHeight + 2 * cellPadding);
+    .attr("height", cH + 2 * cP);
 }
 
 RegisterDiagram.prototype.update = function(registers) {
@@ -239,12 +243,12 @@ RegisterDiagram.prototype.update = function(registers) {
     .enter()
     .append("rect")
     .attr({
-      x: function (d, i) { return rLabelWidth + (cellWidth + rLabelWidth + cellPadding) * i },
+      x: function (d, i) { return rLabelWidth + (cW + rLabelWidth + cP) * i },
       y: 0,
       rx: 3,
       ry: 3,
-      width: cellWidth,
-      height: cellHeight,
+      width: cW,
+      height: cH,
       class: function(d) { return "vm-" + types[d.value.type].name; }
     });
 
@@ -255,7 +259,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .attr({
       class: "label",
       class: function(d) { return "vm-" + types[d.value.type].name; },
-      x: function(d, i) { return (rLabelWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i; },
+      x: function(d, i) { return (rLabelWidth / 2) + (cW + rLabelWidth + cP) * i; },
       y: 15,
       "text-anchor": "middle",
       "font-family": "sans-serif",
@@ -270,7 +274,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .attr({
       class: "value",
       class: function(d) { return "vm-" + types[d.value.type].name; },
-      x: function (d, i) { return rLabelWidth + (cellWidth / 2) + (cellWidth + rLabelWidth + cellPadding) * i },
+      x: function (d, i) { return rLabelWidth + (cW / 2) + (cW + rLabelWidth + cP) * i },
       y: 15,
       "text-anchor": "middle",
       "font-family": "sans-serif",
@@ -286,37 +290,50 @@ function ObjectDiagram(div) {
   this.svg = this.div
     .append("svg")
     .attr("class", "object")
-    .attr("height", (cellHeight + cellPadding) * 100);
+    .attr("height", (cH + cP) * 100);
 }
 
-ObjectDiagram.prototype.update = function(objectSection) {
-  var cells = this.svg.selectAll("rect").data(objectSection);
+/**
+ * Update display to show the specified section of the object pool, 
+ * using the metaclass lookup list provided.
+ */
+ObjectDiagram.prototype.update = function(objectSection, mcld) {
+
+  var key = function(d) { return d.oid.value; }
+  var index = function(k) { return k - objectSection[0].oid.value + 1; };
+
+  // -- first the oid cells
+
+  var cells = 
+    this.svg
+      .selectAll("rect.oid")
+      .data(objectSection, key);
 
   cells
-    .attr({
-      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
-    })
     .enter()
     .append("rect")
     .attr({
       x: 0,
-      y: function(d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1)},
+      y: function(d, k) { return (cH + cP) * (objectSection.length - index(k) - 1)},
       rx: 3,
       ry: 3,
-      width: cellWidth,
-      height: cellHeight,
-      class: function(d) { return "vm-" + types[d.oid.type].name; }
+      width: cW,
+      height: cH,
+      class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
     });
 
   cells.exit().remove();
 
-  var labels = this.svg.selectAll("text").data(objectSection);
+  var labels = 
+    this.svg
+      .selectAll("text.oid")
+      .data(objectSection, key);
 
   labels
     .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
-      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
-      class: function(d) { return "vm-" + types[d.oid.type].name; }
+      y: function (d, k) { return (cH + cP) * (objectSection.length - index(k) - 1) + 15},
+      class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
     });
   
   labels
@@ -324,8 +341,8 @@ ObjectDiagram.prototype.update = function(objectSection) {
     .append("text")
     .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
-      x: cellWidth / 2,
-      y: function (d, i) { return (cellHeight + cellPadding) * (objectSection.length - i - 1) + 15},
+      x: cW / 2,
+      y: function (d, k) { return (cH + cP) * (objectSection.length - index(k) - 1) + 15},
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -334,6 +351,47 @@ ObjectDiagram.prototype.update = function(objectSection) {
 
   labels
     .exit().remove();
+
+  // -- then the mc cells
+  var mcs = 
+    this.svg
+      .selectAll("rect.mc")
+      .data(objectSection, key);
+
+  mcs.enter()
+    .append("rect")
+    .attr({
+      y: function(d, k) { return (cH + cP) * (objectSection.length - index(k) - 1)},
+      x: cW + cP,
+      width: cW,
+      height: cH,
+      rx: 3,
+      ry: 3,
+      class: "metaclass"
+    });
+
+  mcs.exit()
+    .remove();
+
+  var mclabels = 
+    this.svg
+      .selectAll("text.mc")
+      .data(objectSection, key);
+
+  mclabels.enter()
+    .append("text")
+    .text(function(d) { return truncateMetaclassName(mcld[d.value.metaclass]['metaclass-id']); })
+    .attr({
+      x: cW + cP + cW / 2,
+      y: function (d, k) { return (cH + cP) * (objectSection.length - index(k) - 1) + 15},
+      "text-anchor": "middle",
+      "font-family": "sans-serif",
+      "font-weight": "bold",
+      class: "metaclass"
+    });
+
+  mclabels.exit()
+    .remove();
 }
 
 // Pool Diagram (code or const)
@@ -420,7 +478,6 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.mcld.href, function(m) {
-        console.log("mcld:", m);
         vm._links = m._links;
         vm.mcld = m.mcld;
       });
@@ -431,7 +488,6 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.fnsd.href, function(f) {
-        console.log("fnsd:", f);
         vm._links = f._links;
         vm.fnsd = f.fnsd;
       });
@@ -499,7 +555,7 @@ var vm = {
       d3.json(detemplatiseUrl(vm._links.objects.href) + '?oid=' + oid + '&count=' + count, function(os) {
         vm._links = os._links;
         vm.objectSection = os['objs'];
-        objectDiagram.update(vm.objectSection);
+        objectDiagram.update(vm.objectSection, vm.mcld);
       });
     }
   },
