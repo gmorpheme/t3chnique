@@ -9,7 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-(declare ^:dynamic *host*)
+(declare host)
 
 ;; vm-m implementation
 ;;
@@ -745,7 +745,7 @@
 (defn- bif [set index argc]
   (domonad vm-m
     [fnsd (fetch-val :fnsd)
-     _ (bif/invoke-by-index *host* (fnsd set) index argc)]
+     _ (bif/invoke-by-index (host) (nth fnsd set) index argc)]
     nil))
 
 (defop builtin_a 0xB1 [:ubyte argc :ubyte func_index]
@@ -908,7 +908,7 @@
   bif/t3vm
   (t3RunGC [_ argc]
     (with-monad vm-m (m-result nil)))
-  (t3SetSay [_ n]
+  (t3SetSay [_ argc]
     (let [in (fn [v] (if (vm-int? v)
                       (case (value v)
                         1 (vm-nil)
@@ -943,7 +943,10 @@
   ;; TODO named args
   (t3GetNamedArgList [_ argc]))
 
-(def ^:dynamic *host* (Host.))
+(defn host
+  "Allow the VM access to a host - this may become dynamic or be associated
+with the vm map."
+  [] (Host.))
 
 ;; control
 
