@@ -18,18 +18,18 @@
   (t3GetNamedArgList [_ argc]))
 
 (def t3vm (with-meta t3vm {:id "t3vm/010006"
-                           :fns [t3RunGC
-                                 t3SetSay
-                                 t3GetVMVsn
-                                 t3GetVMID
-                                 t3GetVMBanner
-                                 t3GetVMPreinitMode
-                                 t3DebugTrace
-                                 t3GetGlobalSymbols
-                                 t3AllocProp
-                                 t3GetStackTrace
-                                 t3GetNamedArg
-                                 t3GetNamedArgList]}))
+                           :fns [#'t3RunGC
+                                 #'t3SetSay
+                                 #'t3GetVMVsn
+                                 #'t3GetVMID
+                                 #'t3GetVMBanner
+                                 #'t3GetVMPreinitMode
+                                 #'t3DebugTrace
+                                 #'t3GetGlobalSymbols
+                                 #'t3AllocProp
+                                 #'t3GetStackTrace
+                                 #'t3GetNamedArg
+                                 #'t3GetNamedArgList]}))
 
 (defprotocol tads-gen
   "General utility and data manipulation functions"
