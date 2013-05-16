@@ -13,7 +13,8 @@
             [clj-yaml.core :as yaml]
             [hiccup.core :as h]
             [hiccup.page :as hp]
-            [clojure.tools.trace :as t])
+            [clojure.tools.trace :as t]
+            [clojure.string :as string])
   (:require [compojure.route :as route]
             [t3chnique.vm :as t3vm]
             [t3chnique.primitive :as p]
@@ -56,34 +57,38 @@
 (defn represent-game-list [gs]
   (map represent-game gs))
 
-(defn add-vm-links [id vm]
-  (assoc vm
-    :_links
-    {:self {:href (str "/vms/" id)}
-     :stack {:href (str "/vms/" id "/stack")}
-     :registers {:href (str "/vms/" id "/registers")}
-     :exec {:href (str "/exec/" id)}
-     :code {:href (str "/vms/" id "/code{?address,length}") :templated true}
-     :const {:href (str "/vms/" id "/const{?address,length") :templated true}
-     :objects {:href (str "/vms/" id "/objects{?oid,count}") :templated true}
-     :mcld {:href (str "/vms/" id "/mcld")}
-     :fnsd {:href (str "/vms/" id "/fnsd")}
-     :dis1 {:href (str "/vms/" id "/dis1/{address}") :templated true}
-     :action/step {:href (str "/vms/" id "/step") :name "Step"}}))
+(defn add-vm-links
+  [id actions repn]
+  (let [basic {:self {:href (str "/vms/" id)}
+               :stack {:href (str "/vms/" id "/stack")}
+               :registers {:href (str "/vms/" id "/registers")}
+               :exec {:href (str "/exec/" id)}
+               :code {:href (str "/vms/" id "/code{?address,length}") :templated true}
+               :const {:href (str "/vms/" id "/const{?address,length") :templated true}
+               :objects {:href (str "/vms/" id "/objects{?oid,count}") :templated true}
+               :mcld {:href (str "/vms/" id "/mcld")}
+               :fnsd {:href (str "/vms/" id "/fnsd")}
+               :dis1 {:href (str "/vms/" id "/dis1/{address}") :templated true}}
+        action-links (map (fn [x] {x {:href (str "/vms/" id "/" (name x))
+                                     :name (string/capitalize (name x))}})
+                          actions)
+        links (reduce merge basic action-links)]
+    (assoc repn :_links links)))
 
 (defn represent-vm [id vm]
-  (add-vm-links id {:id id}))
+  (add-vm-links id (ct/vm-actions vm) {:id id}))
 
 (defn represent-vm-stack [id vm]
-  (add-vm-links id (select-keys vm [:stack])))
+  (add-vm-links id (ct/vm-actions vm) (select-keys vm [:stack])))
 
 (defn represent-vm-registers [id vm]
   (add-vm-links id
+                (ct/vm-actions vm)
                 (promote-types (select-keys vm [:r0 :ip :ep :sp :fp :say-function :say-method]))))
 
 (defn represent-vm-map [vms]
   (for [[id vm] vms]
-    (add-vm-links id {:id id})))
+    (add-vm-links id (ct/vm-actions vm) {:id id})))
 
 (defn ubytes [page offset len]
   (map #(bit-and 0xff %) (read-bytes page offset len)))
@@ -92,6 +97,7 @@
   (let [[p off] (t3vm/offset vm addr)]
     (add-vm-links
      id
+     (ct/vm-actions vm)
      {:id id :code-section {:address addr :bytes (ubytes p off len)}})))
 
 (defn represent-vm-assembly [id addr]
@@ -99,6 +105,7 @@
         doc-url (str "http://www.tads.org/t3doc/doc/techman/t3spec/opcode.htm#opc_" (.toLowerCase (name (:mnemonic op))))
         op (dissoc op :run-fn)]
     (add-vm-links id
+                  (ct/vm-actions (ct/vm-get id))
                   {:id id
                    :assembly {:op op
                               :args args
@@ -109,11 +116,13 @@
   (let [[p off] (t3vm/const-offset vm addr)]
     (add-vm-links
      id
+     (ct/vm-actions vm)
      {:id id :const-section {:address addr :bytes (ubytes p off len)}})))
 
 (defn represent-vm-objects [id vm oid count]
   (add-vm-links
    id
+   (ct/vm-actions vm)
    {:id id
     :objs (map
            (fn [[k v]] {:oid (p/vm-obj k) :value v})
@@ -122,12 +131,14 @@
 (defn represent-vm-mcld [id vm]
   (add-vm-links
    id
+   (ct/vm-actions vm)
    {:id id
     :mcld (map #(dissoc % :metaclass) (:mcld vm))}))
 
 (defn represent-vm-fnsd [id vm]
   (add-vm-links
    id
+   (ct/vm-actions vm)
    {:id id
     :fnsd (:fnsd vm)}))
 
@@ -199,6 +210,10 @@
   (POST ["/vms/:id/step" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]
       (ct/vm-step id)
+      (response/redirect-after-post (str "/vms/" id))))
+  (POST ["/vms/:id/enter" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (ct/vm-enter id)
       (response/redirect-after-post (str "/vms/" id))))
   (GET ["/vms/:id/dis1/:addr" :id #"[0-9]+"] [id addr]
     (let [id (Integer/parseInt id)

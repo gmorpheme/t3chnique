@@ -24,6 +24,14 @@
     (swap! vms assoc id vm)
     (vm-get id)))
 
+(defn vm-actions
+  "Return the actions available for the vm at its current state"
+  [vm]
+  (if (zero? (:ip vm)) [:action/enter] [:action/step]))
+
+(defn vm-enter [id]
+  (swap! vms update-in [id] #(second ((t3vm/enter) %))))
+
 (defn vm-step [id]
   (swap! vms update-in [id] #(second ((t3vm/step) %))))
 
