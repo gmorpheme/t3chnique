@@ -311,7 +311,7 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
     .attr(
       cAttrs(
         {
-          y: function(d, k) { return (cH + cP) * (objectSection.length - index(k) - 1)},
+          y: function(d, k) { return (cH + cP) * index(k)},
           class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
         }));
 
@@ -325,7 +325,7 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
   labels
     .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
-      y: function (d, k) { return (cH + cP) * (objectSection.length - index(k) - 1) + 15},
+      y: function (d, k) { return (cH + cP) * index(k) + 15},
       class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
     });
   
@@ -335,7 +335,7 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
     .text(function(d) { return types[d.oid.type].render(d.oid.value) })
     .attr({
       x: cW / 2,
-      y: function (d, k) { return (cH + cP) * (objectSection.length - index(k) - 1) + 15},
+      y: function (d, k) { return (cH + cP) * index(k) + 15},
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-size": "13px",
@@ -356,7 +356,7 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
     .attr(
       cAttrs(
         {
-          y: function(d, k) { return (cH + cP) * (objectSection.length - index(k) - 1)},
+          y: function(d, k) { return (cH + cP) * index(k)},
           x: cW + cP,
           class: "metaclass"
         }));
@@ -374,7 +374,7 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
     .text(function(d) { return truncateMetaclassName(mcld[d.value.metaclass]['metaclass-id']); })
     .attr({
       x: cW + cP + cW / 2,
-      y: function (d, k) { return (cH + cP) * (objectSection.length - index(k) - 1) + 15},
+      y: function (d, k) { return (cH + cP) * index(k) + 15},
       "text-anchor": "middle",
       "font-family": "sans-serif",
       "font-weight": "bold",
@@ -382,6 +382,103 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
     });
 
   mclabels.exit()
+    .remove();
+
+  var pgroups = 
+    this.svg
+      .selectAll("g.props")
+      .data(objectSection, key);
+
+  pgroups
+    .enter()
+    .append("g")
+    .attr("class", "props");
+
+  pgroups
+    .exit()
+    .remove();
+
+  var props = pgroups
+    .selectAll("rect.fieldprop")
+    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
+
+  props
+    .enter()
+    .append("rect")
+    .attr(
+      cAttrs(
+        {x: function(d, i) { return (cW + cP) * (2 + (i * 2));  },
+         y: function (d) { return (cH + cP) * d.index; },
+         class: "vm-prop fieldprop"
+        }
+      )
+    );
+
+  props
+    .exit()
+    .remove();
+
+  var proplabels = pgroups
+    .selectAll("text.fieldprop")
+    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
+
+  proplabels
+    .enter()
+    .append("text")
+    .text(function(d) { return vm_prop.render(d.pid); })
+    .attr({
+      x: function(d, i) { return (cW + cP) * (2.5 + (i * 2));  },
+      y: function (d, k) { return (cH + cP) * d.index + 15},
+      "text-anchor": "middle",
+      "font-family": "sans-serif",
+      "font-weight": "bold",
+      class: function(d) { return "vm-pid fieldprop"; }}
+    );
+
+  proplabels
+    .exit()
+    .remove();
+
+  var vals = pgroups
+    .selectAll("rect.fieldval")
+    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
+
+  vals
+    .enter()
+    .append("rect")
+    .attr(
+      cAttrs(
+        {x: function(d, i) { return (cW + cP) * (3 + (i * 2));  },
+         y: function (d) { return (cH + cP) * d.index; },
+         class: function(d) { return "vm-" + types[d.value.type].name + " fieldval"; }
+        }
+      )
+    );
+
+  vals
+    .exit()
+    .remove();
+
+
+  var vallabels = pgroups
+    .selectAll("text.fieldval")
+    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
+
+  vallabels
+    .enter()
+    .append("text")
+    .text(function(d) { return types[d.value.type].render(d.value.value); })
+    .attr({
+      x: function(d, i) { return (cW + cP) * (3.5 + (i * 2));  },
+      y: function (d, k) { return (cH + cP) * d.index + 15},
+      "text-anchor": "middle",
+      "font-family": "sans-serif",
+      "font-weight": "bold",
+      class: function(d) { return "fieldval"; }}
+    );
+
+  vallabels
+    .exit()
     .remove();
 }
 
@@ -459,7 +556,7 @@ var vm = {
         vm.updateStack();
         vm.updateRegisters();
         vm.updateConst(0, 512);
-        vm.updateObjects(0, 30);
+        vm.updateObjects(0, 40);
         vm.updateActions();
       });
     }
