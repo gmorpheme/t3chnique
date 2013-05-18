@@ -16,7 +16,7 @@
   (t3AllocProp [_ argc] "t3AllocProp")
   (t3GetStackTrace [_ argc] "t3GetStackTrace")
   (t3GetNamedArg [_ argc] "t3GetNamedArg")
-  (t3GetNamedArgList [_ argc] "t3GetNamedArgList")))
+  (t3GetNamedArgList [_ argc] "t3GetNamedArgList"))
 
 (facts
   (let [host (TestHost.)]
