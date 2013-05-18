@@ -148,7 +148,7 @@
    id
    (ct/vm-actions vm)
    {:id id
-    :exc (or (:exc vm) "")}))
+    :exc (or (:exc vm) nil)}))
 
 (defn respond
   ([data]

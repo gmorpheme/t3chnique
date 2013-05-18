@@ -90,17 +90,17 @@ function cAttrs(obj) { return _.extend({x: 0, y: 0, rx: 3, ry: 3, width: cW, hei
 
 
 // Actions
-function ActionPanel(div) {
+function ControlPanel(div) {
   this.div = div;
 }
 
 /**
  * Expect each link to be a {href, name} object.
  */
-ActionPanel.prototype.update = function(links) {
+ControlPanel.prototype.update = function(links, exc) {
 
   var actions = this.div
-    .selectAll("a")
+    .selectAll("a.action")
     .data(links, function(d) { return d.href; });
   
   actions
@@ -110,6 +110,7 @@ ActionPanel.prototype.update = function(links) {
     .attr("class", "action")
     .append("a")
     .attr("href", "")
+    .attr("class", "action")
     .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { vm.update(); }) })
     .text(function (d) { return d.name; });
 
@@ -117,6 +118,21 @@ ActionPanel.prototype.update = function(links) {
     .exit()
     .remove();
   
+  var exc = 
+    this.div
+    .selectAll("a.exc")
+    .data(exc ? [exc] : []);
+
+  exc.enter()
+    .append("span")
+    .attr("class", "exc")
+    .append("a")
+    .attr("href", "")
+    .attr("class", "exc")
+    .text(function (d) { return d.substr(0, d.indexOf(":"));});
+
+  exc.exit().remove();
+
   enrichActions(); 
 }
 
@@ -554,12 +570,11 @@ var vm = {
     if (vm_url) {
       d3.json(vm_url, function(o) {
         vm._links = o._links;
-        vm.updateException();
+        vm.updateStatus();
         vm.updateStack();
         vm.updateRegisters();
         vm.updateConst(0, 512);
         vm.updateObjects(0, 40);
-        vm.updateActions();
       });
     }
   },
@@ -582,10 +597,6 @@ var vm = {
         vm.fnsd = f.fnsd;
       });
     }
-  },
-
-  updateActions: function() {
-    actionPanel.update(_.filter(vm._links, function(lk, k) { lk.rel = k; return k.indexOf("action/") >= 0; }));
   },
 
   updateStack: function() {
@@ -650,12 +661,13 @@ var vm = {
     }
   },
 
-  updateException: function(exc) {
+  updateStatus: function(exc) {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.exc.href, function(e) {
         vm._links = e._links;
         vm.exc = e.exc;
+        actionPanel.update(_.filter(vm._links, function(lk, k) { lk.rel = k; return k.indexOf("action/") >= 0; }), vm.exc);
       });
     }
   },
@@ -677,7 +689,7 @@ var vm = {
 
 function init() {
 
-  actionPanel = new ActionPanel(d3.select("div#controls"));
+  actionPanel = new ControlPanel(d3.select("div#controls"));
   stackDiagram = new StackDiagram(d3.select("div.stack"));
   registerDiagram = new RegisterDiagram(d3.select("div.register"));
   objectDiagram = new ObjectDiagram(d3.select("div.object"));
