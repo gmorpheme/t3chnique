@@ -544,6 +544,7 @@ var vm = {
         vm._links = o._links;
         vm.updateMetaclassList();
         vm.updateFunctionList();
+        vm.update();
       });
     }
   },
@@ -673,7 +674,6 @@ function init() {
   constDiagram = new PoolDiagram(d3.select("div.constant"));
 
   vm.init();
-  vm.update();
 }
 
 init();
