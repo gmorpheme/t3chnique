@@ -240,7 +240,7 @@
     [_ (fresh-pc)
      exc (op)
      _ (commit-pc)]
-    nil))
+    exc))
 
 ;; Operations on primitives / op overloads
 
@@ -910,7 +910,7 @@
     (with-monad vm-m (m-result nil)))
   (t3SetSay [_ argc]
     (let [in (fn [v] (if (vm-int? v)
-                      (case (value v)
+                      (case ^int (value v)
                         1 (vm-nil)
                         2 (vm-prop 0)
                         (abort "VMERR_BAD_TYPE_BIF"))

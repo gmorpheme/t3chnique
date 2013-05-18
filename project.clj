@@ -7,11 +7,12 @@
   :main t3chnique.main
   :dependencies [[org.clojure/clojure "1.5.0"]
                  [org.clojure/algo.monads "0.1.0"]
-                 [nio "0.0.5"]
+                 [org.clojure/tools.trace "0.7.5"]
+                 [org.clojure/tools.cli "0.2.2"]
+                 [org.clojure/tools.logging "0.2.6"]
                  [compojure "1.1.5"]
                  [ring/ring-jetty-adapter "1.1.0"]
                  [ring-middleware-format "0.3.0"]
+                 [nio "0.0.5"]
                  [hiccup "1.0.3"]
-                 [org.clojure/tools.trace "0.7.5"]
-                 [midje "1.5.1"]
-                 [org.clojure/tools.cli "0.2.2"]])
+                 [midje "1.5.1"]])

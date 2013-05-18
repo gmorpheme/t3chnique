@@ -1,7 +1,8 @@
 (ns ^{:doc "Common API for VM control (both web and cli)."}
   t3chnique.control
   (:require [t3chnique.parse :as parse]
-            [t3chnique.vm :as t3vm]))
+            [t3chnique.vm :as t3vm]
+            [clojure.stacktrace :as st]))
 
 (def game-catalogue [{:id 1 :name "Elysium.t3"}
                      {:id 2 :name "ditch3.t3"}])
@@ -10,7 +11,7 @@
 
 (defn game-get [id] (first (filter #(= (:id %) id) game-catalogue)))
 
-(def vms (atom {}))
+(defonce vms (atom {}))
 
 (defn vm-map [] @vms)
 
@@ -24,6 +25,9 @@
     (swap! vms assoc id vm)
     (vm-get id)))
 
+(defn vm-destroy! [id]
+  (swap! vms dissoc id))
+
 (defn vm-actions
   "Return the actions available for the vm at its current state"
   [vm]
@@ -33,9 +37,11 @@
   (swap! vms update-in [id] #(second ((t3vm/enter) %))))
 
 (defn vm-step [id]
-  (swap! vms update-in [id] #(second ((t3vm/step) %))))
-
-; todo - patch in doc links http://www.tads.org/t3doc/doc/techman/t3spec/#opc_new1
+  (try
+    (let [[e s] ((t3vm/step) (vm-get id))]
+      (swap! vms assoc-in [id] s))
+    (catch Throwable t
+      (swap! vms assoc-in [id :exc] (with-out-str (st/print-stack-trace t))))))
 
 (defn dis1
   "Disassemble instruction at addr and return {:op {...} :args {...}}"
@@ -45,3 +51,5 @@
         ((t3vm/parse-op))
         (first)
         ((fn [[op args]] {:op op :args args})))))
+
+
