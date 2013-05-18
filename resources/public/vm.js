@@ -85,7 +85,6 @@ var cH = 20; // cell height
 var cW = 70; // cell width
 var cP = 3;  // cell padding
 var rLabelWidth = 25;
-var w = 100;
 function cAttrs(obj) { return _.extend({x: 0, y: 0, rx: 3, ry: 3, width: cW, height: cH}, obj)}
 
 
@@ -189,14 +188,12 @@ function StackDiagram(div) {
   this.svg = 
     this.div
     .append("svg")
-    .attr("class", "stack")
-    .attr("width", w);
+    .attr("class", "stack");
 };
 
 StackDiagram.prototype.update = function(stack) {
   this.svg
-    .attr("height", (cH + cP) * _.max([10, stack.length]))
-    .attr("width", w);
+    .attr("height", (cH + cP) * _.max([10, stack.length]));
 
   var cells = this.svg.selectAll("rect").data(stack);
 
@@ -301,8 +298,7 @@ function ObjectDiagram(div) {
   this.div = div;
   this.svg = this.div
     .append("svg")
-    .attr("class", "object")
-    .attr("height", (cH + cP) * 100);
+    .attr("class", "object");
 }
 
 /**

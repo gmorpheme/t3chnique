@@ -1,10 +1,16 @@
 * { box-sizing: border-box; font-family: sans-serif; }
 h1 { font-size: 20px; }
-div.stack { width: 10%; float: left; }
+div.stack { width: 76px; float: left; }
 div.register { width: 90%; float: left; }
 
-div.code, div.constant, div.object{
-  width: 30%; 
+div.code, div.constant{
+  float: left; 
+  color: white; 
+  font-size: 12px; 
+}
+
+div.object {
+  width: 420px;
   float: left; 
   color: white; 
   font-size: 12px; 
