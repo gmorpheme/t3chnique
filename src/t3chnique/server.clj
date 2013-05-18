@@ -68,6 +68,7 @@
                :objects {:href (str "/vms/" id "/objects{?oid,count}") :templated true}
                :mcld {:href (str "/vms/" id "/mcld")}
                :fnsd {:href (str "/vms/" id "/fnsd")}
+               :exc {:href (str "/vms/" id "/exc")}
                :dis1 {:href (str "/vms/" id "/dis1/{address}") :templated true}}
         action-links (map (fn [x] {x {:href (str "/vms/" id "/" (name x))
                                      :name (string/capitalize (name x))}})
@@ -142,6 +143,13 @@
    {:id id
     :fnsd (:fnsd vm)}))
 
+(defn represent-vm-exc [id vm]
+  (add-vm-links
+   id
+   (ct/vm-actions vm)
+   {:id id
+    :exc (or (:exc vm) "")}))
+
 (defn respond
   ([data]
      {:body data})
@@ -203,6 +211,11 @@
     (let [id (Integer/parseInt id)]
       (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-fnsd id vm))
+        (response/not-found "Nonesuch"))))
+  (GET ["/vms/:id/exc" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (if-let [vm (ct/vm-get id)]
+        (respond (represent-vm-exc id vm))
         (response/not-found "Nonesuch"))))
   (POST ["/vms" :id #"[0-9]+"] [game]
     (let [game (Integer/parseInt game)]

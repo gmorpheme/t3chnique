@@ -554,6 +554,7 @@ var vm = {
     if (vm_url) {
       d3.json(vm_url, function(o) {
         vm._links = o._links;
+        vm.updateException();
         vm.updateStack();
         vm.updateRegisters();
         vm.updateConst(0, 512);
@@ -645,6 +646,16 @@ var vm = {
         vm._links = os._links;
         vm.objectSection = os['objs'];
         objectDiagram.update(vm.objectSection, vm.mcld);
+      });
+    }
+  },
+
+  updateException: function(exc) {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.exc.href, function(e) {
+        vm._links = e._links;
+        vm.exc = e.exc;
       });
     }
   },
