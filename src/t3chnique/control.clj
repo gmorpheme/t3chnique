@@ -39,7 +39,7 @@
 (defn vm-step [id]
   (try
     (let [[e s] ((t3vm/step) (vm-get id))]
-      (swap! vms assoc-in [id] s))
+      (swap! vms assoc-in [id] (assoc s :exc nil)))
     (catch Throwable t
       (swap! vms assoc-in [id :exc] (with-out-str (st/print-stack-trace t))))))
 

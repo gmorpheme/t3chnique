@@ -1,6 +1,7 @@
 (ns t3chnique.metaclass_test
   (:use [midje.sweet]
-        [t3chnique.metaclass])
+        [t3chnique.metaclass]
+        [t3chnique.metaclass.object])
   (:require [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]))
 

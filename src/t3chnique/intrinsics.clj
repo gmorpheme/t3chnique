@@ -115,7 +115,7 @@
 
 (def tads-net (with-meta tads-net {:id "tads-net/030001"}))
 
-(defn- parse-id
+(defn parse-id
   "Parse a function set id into name and version."
   [fsid]
   (update-in (string/split fsid #"/") [1] #(Integer/parseInt %)))

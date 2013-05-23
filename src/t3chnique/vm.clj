@@ -2,7 +2,8 @@
   (:use [t3chnique.primitive])
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
-            [t3chnique.metaclass :as mc])
+            [t3chnique.metaclass :as mc]
+            t3chnique.metaclass.object)
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when]])
   (:import [t3chnique.metaclass TadsObject]
            [java.nio ByteBuffer]))
@@ -527,9 +528,9 @@
 
 (defop getprop 0x60 [:uint2 prop_id]
   (domonad vm-m
-           [target-val (stack-pop)
-            obj (obj-retrieve target-val)]
-           (mc/get-property obj prop_id)))
+    [target-val (stack-pop)
+     obj (obj-retrieve target-val)]
+    (mc/get-property obj prop_id)))
 
 
 (defop callprop 0x61 [:ubyte arg_count :uint2 prop_id])
