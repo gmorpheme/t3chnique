@@ -1,12 +1,12 @@
 (ns t3chnique.vm
-  (:use [t3chnique.primitive])
+  (:use [t3chnique.primitive]
+        [t3chnique.monad])
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
             t3chnique.metaclass.object)
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when]])
-  (:import [t3chnique.metaclass TadsObject]
-           [java.nio ByteBuffer]))
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state]])
+  (:import [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
 
@@ -75,8 +75,6 @@
 (defn vm-from-image [bs]
   (reduce load-image-block (vm-state) bs))
 
-(def vm-m state-m)
-
 (defn abort 
   "Abort if we hit something we haven't implemented yet."
   [msg]
@@ -105,23 +103,17 @@
 (defmacro with-stack 
   "Bind symbols to values popped of top of stack and push result of exprs back on"
   [syms exprs]
-  `(domonad vm-m
-            [~(vec (reverse syms)) (m-seq ~(vec (repeat (count syms) '(stack-pop))))
-             _# (m-seq (map stack-push ~exprs))]
-            nil))
+  `(in-vm
+    [~(vec (reverse syms)) (m-seq ~(vec (repeat (count syms) '(stack-pop))))
+     _# (m-seq (map stack-push ~exprs))]
+    nil))
 
 (defn offset [{:keys [code-page-size code-pages ip]} & ptr]
   (let [p (or (first ptr) ip)]
     [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
 
-(defn m-offset [i]
-  (fn [s] [(offset s i) s]))
-
 (defn const-offset [{:keys [const-page-size const-pages]} ptr]
   [(:bytes (nth const-pages (/ ptr const-page-size))) (mod ptr const-page-size)])
-
-(defn m-const-offset [i]
-  (fn [s] [(const-offset s i) s]))
 
 (defn parse-op []
   (domonad parse/byteparser-m
@@ -131,77 +123,63 @@
     [op args]))
 
 (defn fresh-pc []
-  (domonad vm-m
-           [ip (fetch-val :ip)
-            _ (set-val :pc ip)]
-           nil))
+  (in-vm
+    [ip (fetch-val :ip)
+     _ (set-val :pc ip)]
+    nil))
 
 (def set-pc (partial set-val :pc))
+(defn pc [] (fetch-val :pc))
 
 (defn commit-pc []
-  (fn [s] [nil (-> s
-                  (assoc :ip (:pc s))
-                  (dissoc :pc))]))
+  (in-vm
+   [pc (pc)
+    _ (set-val :ip pc)
+    _ (update-state #(dissoc % :pc))]
+   nil))
 
-(defn- bump-pc [s count]
-  (update-in s [:pc] (partial + count)))
 
 (defn get-say-method [] (fetch-val :say-method))
 (def set-say-method (partial set-val :say-method))
 (defn get-say-function [] (fetch-val :say-function))
 (def set-say-function (partial set-val :say-function))
 
-(defn resolve-bif [set func]
-  (domonad vm-m
-           [fs (fetch-val :fnsd)]
-           (-> fs
-               (nth set)
-               (nth func))))
-
 (defn stack-push [val]
-  (fn [s] [nil (-> s
-                  (update-in [:stack] conj val)
-                  (update-in [:sp] inc))]))
-
-(defn stack-pop []
-  (fn [s] [(last (:stack s))
-          (-> s
-              (update-in [:stack] pop)
-              (update-in [:sp] dec))]))
+  (in-vm
+   [_ (update-val :stack #(conj % val))
+    _ (update-val :sp inc)]
+   nil))
 
 (defn stack-peek []
-  (fn [s]
-    [(last (:stack s)) s]))
+  (in-vm
+   [stack (fetch-val :stack)]
+   (last stack)))
+
+(defn stack-pop []
+  (in-vm
+   [top (stack-peek)
+    _ (update-val :stack pop)
+    _ (update-val :sp dec)]
+   top))
 
 (defn stack-set [idx val]
-  (fn [s]
-    [nil (assoc-in s [:stack idx] val)]))
+  (update-val :stack #(assoc % idx val)))
 
 (defn stack-get [idx]
-  (fn [s]
-    [(nth (:stack s) idx) s]))
+  (in-vm
+   [stack (fetch-val :stack)]
+   (nth stack idx)))
 
 (defn stack-update [idx f]
-  (fn [s]
-    (let [stack (:stack s)
-          [pre [x & post]] (split-at idx stack)
-          stack (concat pre (cons x post))]
-      [nil (assoc s :stack stack)])))
+  (update-val :stack #(update-in % [idx] f)))
 
 (defn stack-swap [i j]
-  (fn [s]
-    (let [stack (:stack s)
-          [i j] (sort [i j])
-          [prei [iv & posti]] (split-at i stack)
-          [prej [jv & postj]] (split-at j posti)
-          stack (concat prei [jv] prej [iv] postj)]
-      [nil (assoc s :stack stack)])))
-
-(defn pc []
-  (fn [s] [(:pc s) s]))
+  (update-val :stack (fn [stack] (-> stack
+                                    (assoc i (stack j))
+                                    (assoc j (stack i))))))
 
 (defn jump [offset]
-  (fn [s] [nil (bump-pc s (- offset 2))]))
+  (update-val :pc (partial + (- offset 2))))
 
 (def reg-get fetch-val)
 (def reg-set set-val)
@@ -215,9 +193,6 @@
 
 (defn obj-retrieve [oid]
   (fn [s] [(get-in s [:objs oid]) s]))
-
-(defn get-string [addr]
-  (fn [s] []))
 
 (defn get-method-header
   "Read method header at specified offset."
@@ -237,7 +212,7 @@
   "Sets up program counter for a single operations implementation and handles
    exceptions, rollback etc."
   [op]
-  (domonad vm-m
+  (in-vm
     [_ (fresh-pc)
      exc (op)
      _ (commit-pc)]
@@ -455,7 +430,7 @@
   (stack-op2 vm->=))
 
 (defn unwind []
-  (domonad vm-m
+  (in-vm
            [sp (reg-get :sp)
             fp (reg-get :fp)
             _ (m-seq (repeat (- sp fp) (stack-pop)))
@@ -470,20 +445,20 @@
            nil))
 
 (defop retval 0x50 []
-  (domonad vm-m
+  (in-vm
            [rv (stack-pop)
             _ (reg-set :r0 rv)
             _ (unwind)]
            nil))
 
 (defop retnil 0x51 []
-  (domonad vm-m
+  (in-vm
            [_ (reg-set :r0 (vm-nil))
             _ (unwind)]
            nil))
 
 (defop rettrue 0x52 []
-  (domonad vm-m
+  (in-vm
            [_ (reg-set :r0 (vm-true))
             _ (unwind)]
            nil))
@@ -505,7 +480,7 @@
       (= ac param-count))))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
-  (domonad vm-m
+  (in-vm
            [_ (stack-push (vm-prop 0))
             _ (m-seq (repeat 3 (stack-push (vm-nil))))
             ep (reg-get :ep)
@@ -527,7 +502,7 @@
 (defop ptrcall 0x59 [:ubyte arg_count])
 
 (defop getprop 0x60 [:uint2 prop_id]
-  (domonad vm-m
+  (in-vm
     [target-val (stack-pop)
      obj (obj-retrieve target-val)]
     (mc/get-property obj prop_id)))
@@ -558,7 +533,7 @@
   (with-stack [d c b a] [a b c d]))
 
 (defop swapn 0x7b [:ubyte idx1 :ubyte idx2]
-  (domonad vm-m
+  (in-vm
            [sp (reg-get :sp)
             _ (stack-swap (- sp idx1) (- sp idx2))]
            nil))
@@ -567,7 +542,7 @@
 ;; stack and push it onto the stack
 
 (defn- copy [reg offsetf]
-  (domonad vm-m [fp (reg-get reg)
+  (in-vm [fp (reg-get reg)
                  rv (stack-get (offsetf fp))
                  _ (stack-push rv)]
            nil))
@@ -647,14 +622,14 @@
 
 (defn- jump-cond1
   [jumpif? branch_offset]
-  (domonad vm-m
+  (in-vm
            [v (stack-pop)
             _ (m-when (jumpif? v) (jump branch_offset))]
            nil))
 
 (defn- jump-cond2
   [jumpif? branch_offset]
-   (domonad vm-m
+   (in-vm
             [v2 (stack-pop)
              v1 (stack-pop)
              _ (m-when (jumpif? v1 v2) (jump branch_offset))]
@@ -685,14 +660,14 @@
   (jump-cond2 vm-<=? branch_offset))
 
 (defop jst 0x9A [:int2 branch_offset]
-  (domonad vm-m [v (stack-peek)
+  (in-vm [v (stack-peek)
                  _ (if (not (vm-falsey? v))
                      (jump branch_offset)
                      (stack-pop))]
            nil))
 
 (defop jsf 0x9B [:int2 branch_offset]
-  (domonad vm-m [v (stack-peek)
+  (in-vm [v (stack-peek)
                  _ (if (vm-falsey? v)
                      (jump branch_offset)
                      (stack-pop))]
@@ -710,12 +685,12 @@
   (jump-cond1 (complement vm-nil?) branch_offset))
 
 (defop jr0t 0xA0 [:int2 branch_offset]
-  (domonad vm-m [r0 (reg-get :r0)
+  (in-vm [r0 (reg-get :r0)
                  _ (m-when (not (vm-falsey? r0)) (jump branch_offset))]
            nil))
 
 (defop jr0f 0xA1 [:int2 branch_offset]
-  (domonad vm-m [r0 (reg-get :r0)
+  (in-vm [r0 (reg-get :r0)
                  _ (m-when (vm-falsey? r0) (jump branch_offset))]
            nil))
 
@@ -744,7 +719,7 @@
 (defop say 0xB0 [:uint4 offset])
 
 (defn- bif [set index argc]
-  (domonad vm-m
+  (in-vm
     [fnsd (fetch-val :fnsd)
      _ (bif/invoke-by-index (host) (nth fnsd set) index argc)]
     nil))
@@ -771,7 +746,7 @@
 
 ; TODO implement
 (defop throw 0xB8 []
-  (domonad vm-m
+  (in-vm
     [ep (reg-get :ep)
      ip (reg-get :ip)
      mh (get-method-header ep)
@@ -806,12 +781,12 @@
 (defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id])
 
 (defn- setlcl [i v]
-  (domonad vm-m [fp (reg-get :fp)
+  (in-vm [fp (reg-get :fp)
                  _ (stack-set (+ fp i) v)]
            nil))
 
 (defn- updlcl [i f]
-  (domonad vm-m [fp (reg-get :fp)
+  (in-vm [fp (reg-get :fp)
                  v (stack-get (+ fp i))
                  _ (stack-set (+ fp i) (f v))]
            nil))
@@ -832,12 +807,12 @@
   (updlcl local_number (partial vm-+ val)))
 
 (defop addtolcl 0xD4 [:uint2 local_number]
-  (domonad vm-m [v (stack-pop)
+  (in-vm [v (stack-pop)
                  _ (updlcl local_number #(vm-+ % v))]
            nil))
 
 (defop subfromlcl 0xD5 [:uint2 local_number]
-  (domonad vm-m [v (stack-pop)
+  (in-vm [v (stack-pop)
                  _ (updlcl local_number #(vm-- % v))]
            nil))
 
@@ -860,23 +835,23 @@
   (setlcl local_number (vm-int 1)))
 
 (defop setlcl1 0xE0 [:ubyte local_number]
-  (domonad vm-m [v (stack-pop)
+  (in-vm [v (stack-pop)
                  _ (setlcl local_number v)]
            nil))
 
 (defop setlcl2 0xE1 [:uint2 local_number]
-  (domonad vm-m [v (stack-pop)
+  (in-vm [v (stack-pop)
                  _ (setlcl local_number v)]
            nil))
 
 (defop setarg1 0xE2 [:ubyte arg_number]
-  (domonad vm-m [fp (reg-get :fp)
+  (in-vm [fp (reg-get :fp)
                  v (stack-pop)
                  _ (stack-set (- fp (+ 9 arg_number)) v)]
            nil))
 
 (defop setarg2 0xE3 [:uint2 arg_number]
-  (domonad vm-m [fp (reg-get :fp)
+  (in-vm [fp (reg-get :fp)
                  v (stack-pop)
                  _ (stack-set (- fp (+ 9 arg_number)) v)]
            nil))
@@ -916,7 +891,7 @@
                         2 (vm-prop 0)
                         (abort "VMERR_BAD_TYPE_BIF"))
                       v))]
-      (domonad vm-m
+      (in-vm
                [val (stack-pop)
                 :let [val' (in val)]
                 current (if (vm-prop? val') (get-say-method) (get-say-function))
@@ -924,15 +899,15 @@
                 _ (reg-set :r0 current)]
                nil)))
   (t3GetVMVsn [_ argc]
-    (domonad vm-m [_ (reg-set :r0 (vm-int 0x00000001))] nil))
+    (in-vm [_ (reg-set :r0 (vm-int 0x00000001))] nil))
   (t3GetVMID [_ argc]
-    (domonad vm-m [_ (reg-set :r0 (vm-sstring "t3chnique"))] nil))
+    (in-vm [_ (reg-set :r0 (vm-sstring "t3chnique"))] nil))
   (t3GetVMBanner [_ argc]
-    (domonad vm-m [_ (reg-set :r0 (vm-sstring "T3chnique Experimental TADS 3 VM - Copyright 2012 Greg Hawkins"))] nil))
+    (in-vm [_ (reg-set :r0 (vm-sstring "T3chnique Experimental TADS 3 VM - Copyright 2012 Greg Hawkins"))] nil))
   (t3GetVMPreinitMode [_ argc]
-    (domonad vm-m [_ (reg-set :r0 (vm-nil))] nil))
+    (in-vm [_ (reg-set :r0 (vm-nil))] nil))
   (t3DebugTrace [_ argc]
-    (domonad vm-m [_ (reg-set :r0 (vm-nil))] nil))
+    (in-vm [_ (reg-set :r0 (vm-nil))] nil))
   ;; TODO symbol table access
   (t3GetGlobalSymbols [_ argc])
   ;; TODO prop allocation
@@ -954,18 +929,18 @@ with the vm map."
 (defn enter 
   "Set up vm at initial entry point."
   []
-  (domonad vm-m
+  (in-vm
     [entp (fetch-val :entry-point-offset)
      _ (op-pushlst 0)
      _ (op-call 1 entp)]
     nil))
 
 (defn step []
-  (domonad vm-m
+  (in-vm
     [ip (fetch-val :ip)
      _ (m-when (zero? ip) (enter))
      ip (fetch-val :ip)
-     [b i] (m-offset ip)
+     [b i] (derive-from-state #(offset % ip))
      :let [[[op args] [_ i']] ((parse-op) [b i])
            f (:run-fn op)]
      _ (set-val :ip i')

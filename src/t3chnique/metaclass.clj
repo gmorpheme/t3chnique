@@ -7,7 +7,7 @@
 (defprotocol MetaClass
   "Operations available to the VM for each metaclass."
   (load-from-image [self buf o] "Load object data from byte buffer; return new object.")
-  (get-property [self vm propid] "Return state function."))
+  (get-property [self propid] "Return monadic value for retrieving propery."))
 
 (defrecord TadsString [text]
   MetaClass

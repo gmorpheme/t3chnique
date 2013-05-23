@@ -1,6 +1,7 @@
 (ns t3chnique.metaclass.object
   (:require [t3chnique.metaclass :as mc])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq]]
+  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
+        [t3chnique.monad :only [vm-m in-vm]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]])
   (:import [t3chnique.metaclass MetaClass]))
 
@@ -36,8 +37,11 @@
            (apply assoc {} (flatten properties))
            {}))) [buf o])))
 
-  (get-property [self vm propid]
-    ))
+  (get-property [self propid]
+    (domonad vm-m
+      [mcld (fetch-val :mcld)
+       ]
+      nil)))
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))
