@@ -5,8 +5,7 @@
 
 (defmacro in-vm [bindings val] `(domonad vm-m ~bindings ~val))
 
-(defn derive-from-state [f]
-  (fn [s] [(f s) s]))
+(defn m-apply [f & args] (fn [s] [(apply f s args) s]))
 
 (comment
 ;;; experimental implementation with cont-m  

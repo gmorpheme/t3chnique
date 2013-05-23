@@ -940,7 +940,7 @@ with the vm map."
     [ip (fetch-val :ip)
      _ (m-when (zero? ip) (enter))
      ip (fetch-val :ip)
-     [b i] (derive-from-state #(offset % ip))
+     [b i] (m-apply offset ip)
      :let [[[op args] [_ i']] ((parse-op) [b i])
            f (:run-fn op)]
      _ (set-val :ip i')
