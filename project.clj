@@ -15,4 +15,5 @@
                  [ring-middleware-format "0.3.0"]
                  [nio "0.0.5"]
                  [hiccup "1.0.3"]
-                 [midje "1.5.1"]])
+                 [midje "1.5.1"]]
+  :jvm-opts ["-Xms48m" "-Xmx1024m" "-XX:MaxPermSize=512m"])

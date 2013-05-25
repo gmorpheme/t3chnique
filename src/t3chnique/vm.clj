@@ -196,9 +196,9 @@
 (defn get-method-header
   "Read method header at specified offset."
   [ptr]
-  (fn [s]
-    (let [[b o] (offset s ptr)]
-      [(first ((parse/method-header (:method-header-size s)) [b o])) s])))
+  (let [f (fn [x] (first ((parse/method-header (:method-header-size x)) (offset x ptr))))]
+    (fn [s]
+      [(f s) s])))
 
 (defn get-exception-table
   "Read exception table at specified offset."
