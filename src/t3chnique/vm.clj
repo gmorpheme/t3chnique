@@ -191,22 +191,21 @@
                         (update-in [:next-oid] inc)
                         (assoc-in [:objs oid] o))])))
 
-(defn obj-retrieve [oid]
-  (fn [s] [(get-in s [:objs oid]) s]))
+(defn obj-retrieve [oid] (m-apply get-in [:objs oid]))
 
 (defn get-method-header
   "Read method header at specified offset."
   [ptr]
-  (fn [s]
-    (let [[b o] (offset s ptr)]
-      [(first ((parse/method-header (:method-header-size s)) [b o])) s])))
+  (m-apply
+   #((first ((parse/method-header (:method-header-size %))
+             (offset % ptr))))))
 
 (defn get-exception-table
   "Read exception table at specified offset."
   [ptr]
-  (fn [s]
-    (let [[b o] (offset s ptr)]
-      [(first ((parse/exception-table) [b o])) s])))
+  (m-apply
+   #((first ((parse/exception-table)
+             (offset % ptr))))))
 
 (defn runop
   "Sets up program counter for a single operations implementation and handles
