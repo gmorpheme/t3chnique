@@ -98,4 +98,3 @@
 
 (fact
  (parse-resource "ditch3.t3") => #(not (empty? %)))
-

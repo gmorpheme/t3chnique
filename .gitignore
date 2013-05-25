@@ -8,3 +8,5 @@ pom.xml
 .lein-deps-sum
 .lein-failures
 .lein-plugins
+/t3/empty/obj
+/t3/suite/obj

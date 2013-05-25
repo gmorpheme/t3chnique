@@ -8,7 +8,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn slice 
+(defn slice
   "Slice a new buffer off the base of count bytes"
   ([^ByteBuffer b]
      (let [slice (.slice b)
@@ -24,7 +24,7 @@
          (.limit b (+ offset count))
          (doto (.slice b)
            (.order ByteOrder/LITTLE_ENDIAN))
-         (finally 
+         (finally
           (.limit b limit)
           (.position b pos))))))
 
@@ -74,7 +74,7 @@
   (read-uint4 [b idx]
     (bit-and 0xffffffff (read-int4 b idx)))
   (read-utf8 [b idx count]
-    (String. ^bytes b idx count "utf-8"))
+    (String. ^bytes b ^int idx ^int count "utf-8"))
   (read-bytes [b idx count]
     (into-array Byte/TYPE (take count (drop idx b)))))
 
@@ -94,7 +94,7 @@
     (first (parser st))))
 
 (with-monad byteparser-m
-  
+
   (defn skip [n]
     (domonad
      [[b i] (fetch-state)
@@ -180,7 +180,7 @@
 
   (defn tagged-parser [kw]
     (cond
-     (= kw :ubyte) (ubyte) 
+     (= kw :ubyte) (ubyte)
      (= kw :sbyte) (sbyte)
      (= kw :uint2) (uint2)
      (= kw :int2) (int2)
@@ -188,19 +188,19 @@
      (= kw :int4) (int4)
      (= kw :pref-utf8) (prefixed-utf8)
      :else (m-result nil)))
-  
+
   (defn data-holder []
     (domonad
      [typeid (ubyte)
       value (within 4 (tagged-parser (:encoding (prim/primitive typeid))))]
      (prim/typed-value typeid value)))
-  
+
   (defn lst []
     (domonad
      [n (uint2)
       v (times n (data-holder))]
      v))
-  
+
   (defn signature []
     (domonad
      [sig (utf8 11)
@@ -208,12 +208,12 @@
       _ (skip 32)
       timestamp (utf8 24)]
      [ver timestamp sig]))
-  
+
   (defn block-header []
     (record :id (utf8 4) :size (uint4) :flags (uint2)))
 
   (defmulti block-body :id)
-  
+
   (defmethod block-body "ENTP" [_]
     (apply record
            [:entry-point-offset (uint4)
@@ -280,7 +280,7 @@
      [_ (skip-to idx)
       val (binary size)]
      val))
-  
+
   (defmethod block-body "MRES" [_]
     (domonad
      [[b start] (fetch-state)
@@ -300,14 +300,14 @@
       data (within (:size header)
                    (block-body header))]
      (merge header data)))
-  
+
   (defn image []
     (domonad
      [[version timestamp] (signature)
       blocks (parse-until #(= (:id %) "EOF ") (block))]
      blocks))
 
-  (defn spec 
+  (defn spec
     "Parse according to argument spec for vm op. Returns ordered map."
     [args]
     (let [[types names] (map #(take-nth 2 %) [args (rest args)])]

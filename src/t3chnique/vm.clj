@@ -5,7 +5,7 @@
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
             t3chnique.metaclass.object)
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state]])
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until]])
   (:import [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
@@ -25,7 +25,7 @@
 
    :say-function (vm-nil)
    :say-method (vm-prop)
-   
+
    :savepoint 0
    :savepoint-count 0
    :code-pages []
@@ -75,7 +75,7 @@
 (defn vm-from-image [bs]
   (reduce load-image-block (vm-state) bs))
 
-(defn abort 
+(defn abort
   "Abort if we hit something we haven't implemented yet."
   [msg]
   (throw (RuntimeException. ^String msg)))
@@ -97,10 +97,10 @@
     `(do
        (defn ^{:opcode ~cd} ~op-fn-name ~param-syms
          (runop (fn [] ~@exprs)))
-       
+
        (swap! table assoc ~cd (OpCode. ~cd '~op ~spec ~(symbol (str "op-" op)))))))
 
-(defmacro with-stack 
+(defmacro with-stack
   "Bind symbols to values popped of top of stack and push result of exprs back on"
   [syms exprs]
   `(in-vm
@@ -283,8 +283,8 @@
 (def vm-dec (vm-lift1 dec vm-int))
 
 ;; Clojure doesn't expose java's >>>, this is from http://pastebin.com/4PgeHmPJ
-(defn logical-shift-right [n s] 
-  (if (neg? n) 
+(defn logical-shift-right [n s]
+  (if (neg? n)
     (bit-or (bit-shift-right (bit-and n 0x7fffffff) s)
             (bit-shift-right 0x40000000 (dec s)))
     (bit-shift-right n s)))
@@ -381,7 +381,7 @@
 
 (defop shl 0x27 []
   (stack-op2 vm-<<))
-  
+
 (defop ashr 0x28 []
   (stack-op2 vm->>))
 
@@ -886,7 +886,7 @@
     (with-monad vm-m (m-result nil)))
   (t3SetSay [_ argc]
     (let [in (fn [v] (if (vm-int? v)
-                      (case ^int (value v)
+                      (case (int (value v))
                         1 (vm-nil)
                         2 (vm-prop 0)
                         (abort "VMERR_BAD_TYPE_BIF"))
@@ -926,7 +926,7 @@ with the vm map."
 
 ;; control
 
-(defn enter 
+(defn enter
   "Set up vm at initial entry point."
   []
   (in-vm
@@ -935,11 +935,11 @@ with the vm map."
      _ (op-call 1 entp)]
     nil))
 
-(defn step []
+(defn step
+  "Execute the op code referenced by the ip register."
+  []
   (in-vm
     [ip (fetch-val :ip)
-     _ (m-when (zero? ip) (enter))
-     ip (fetch-val :ip)
      [b i] (derive-from-state #(offset % ip))
      :let [[[op args] [_ i']] ((parse-op) [b i])
            f (:run-fn op)]
@@ -947,3 +947,10 @@ with the vm map."
      r (apply f (vals args))]
     nil))
 
+(defn run
+  "Run until an error occurs."
+  []
+  (in-vm
+    [s (fetch-state)
+     s (m-until :exc (step) s)]
+   (:exc s)))
