@@ -29,10 +29,12 @@
   (vm-new game))
 
 (defn vm-destroy! [id]
-  (swap! vms dissoc id))
+  (swap! vms dissoc id)
+  nil)
 
 (defn vm-put! [id game]
-  (swap! vms assoc id game))
+  (swap! vms assoc id game)
+  id)
 
 (defn vm-actions
   "Return the actions available for the vm at its current state"
@@ -41,7 +43,7 @@
 
 (defn vm-enter [id]
   (let [[r s] ((t3vm/enter) (vm-get id))]
-    (swap! vms update-in [id] s)
+    (swap! vms assoc-in [id] s)
     r))
 
 (defn vm-step [id]
