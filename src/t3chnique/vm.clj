@@ -4,7 +4,7 @@
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
-            t3chnique.metaclass.object)
+            t3chnique.metaclass.tobject)
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until]])
   (:import [java.nio ByteBuffer]))
 
@@ -184,12 +184,14 @@
 (def reg-get fetch-val)
 (def reg-set set-val)
 
-(defn obj-store [o]
-  (fn [s]
-    (let [oid (:next-oid s)]
-      [(vm-obj oid) (-> s
-                        (update-in [:next-oid] inc)
-                        (assoc-in [:objs oid] o))])))
+(defn new-obj-id []
+  (in-vm
+   [oid (fetch-val :next-oid)
+    _ (update-val :next-oid inc)]
+   oid))
+
+(defn obj-store [oid o]
+  (update-val :objs #(assoc % oid o)))
 
 (defn obj-retrieve [oid] (m-apply get-in [:objs oid]))
 

@@ -6,8 +6,11 @@
 
 (defprotocol MetaClass
   "Operations available to the VM for each metaclass."
-  (load-from-image [self buf o] "Load object data from byte buffer; return new object.")
-  (get-property [self propid] "Return monadic value for retrieving propery."))
+  (load-from-image [self buf o]
+    "Load object data from byte buffer; return new object.")
+  
+  (get-property [self propid]
+    "Return [defining-object property-value]"))
 
 (defrecord TadsString [text]
   MetaClass
@@ -84,5 +87,6 @@
         prototype (mclass-ctor)]
     (into {} (map (fn [obj] [(:oid obj)
                             (-> (load-from-image prototype (:bytes obj) 0)
-                                (assoc :metaclass mcld-index))])
+                                (assoc :metaclass mcld-index)
+                                (assoc :oid (:oid obj)))])
                   (:objects oblock)))))

@@ -18,7 +18,8 @@
 
 (defn add-uses []
   (use '[t3chnique.control :as ct])
-  (use '[t3chnique.server :as sv]))
+  (use '[t3chnique.server :as sv])
+  (use 'clojure.repl))
 
 (defn develop []
   (add-uses)
