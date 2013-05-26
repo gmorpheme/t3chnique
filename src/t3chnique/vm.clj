@@ -4,7 +4,8 @@
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
-            t3chnique.metaclass.tobject)
+            t3chnique.metaclass.tobject
+            t3chnique.metaclass.string)
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until]])
   (:import [java.nio ByteBuffer]))
 
@@ -35,7 +36,8 @@
    :objs (sorted-map)
    :next-oid 0
    :mcld []
-   :fnsd []})
+   :fnsd []
+   :symd []})
 
 ;; image loading
 
@@ -48,7 +50,7 @@
   (assoc s :fnsd (:entries b)))
 
 (defmethod load-image-block "SYMD" [s b]
-  (assoc s :fnsd (:entries b)))
+  (assoc s :symd (:entries b)))
 
 (defmethod load-image-block "CPDF" [s {:keys [pool-id page-count page-size]}]
   (if (= pool-id 1)
@@ -514,7 +516,19 @@
 (defop getpropself 0x63 [:uint2 prop_id])
 (defop callpropself 0x64 [:ubyte arg_count :uint2 prop_id])
 (defop ptrcallpropself 0x65 [:ubyte arg_count])
-(defop objgetprop 0x66 [:uint4 obj_id :uint2 prop_id])
+
+(defop objgetprop 0x66 [:uint4 obj_id :uint2 prop_id]
+  (in-vm
+   [target-val (obj-retrieve obj_id)
+    [defobj prop-val] (mc/get-property target-val prop_id)
+    _ (if prop-val
+        (cond
+         (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+         (vm-dstring? prop-val) (abort "not implemented (say)")
+         (vm-codeofs? prop-val) (abort "not implemented (delegate to call)"))
+        (abort "not implemented propNotDefined"))]
+   nil))
+
 (defop objcallprop 0x67 [:ubyte arg_count :uint4 obj_id :uint2 prop_id])
 (defop getpropdata 0x68 [:uint2 prop_id])
 (defop ptrgetpropdata 0x69 [])

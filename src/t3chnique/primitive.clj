@@ -41,3 +41,4 @@
 (defn typeid [entry] (:type entry))
 (defn value [entry] (:value entry))
 (defn vm-zero? [v] (and (vm-int? v) (zero? (value v))))
+(defn vm-auto-eval? [v] (or (vm-codeofs? v) (vm-dstring? v)))

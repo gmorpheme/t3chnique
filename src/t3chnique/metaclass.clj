@@ -12,14 +12,6 @@
   (get-property [self propid]
     "Return [defining-object property-value]"))
 
-(defrecord TadsString [text]
-  MetaClass
-  (load-from-image [self buf o]
-    (with-monad byteparser-m
-      (TadsString. (first ((prefixed-utf8) [buf o]))))))
-
-(defn tads-string [] (TadsString. nil))
-
 (defrecord TadsList [val]
   MetaClass
   (load-from-image [self buf o]
@@ -44,8 +36,7 @@
 
 (defn unknown-metaclass [] (Unimplemented.))
 
-(defonce metaclasses (atom {:string tads-string
-                            :list tads-list
+(defonce metaclasses (atom {:list tads-list
                             :vector unknown-metaclass
                             :dictionary2 unknown-metaclass
                             :grammar-production unknown-metaclass

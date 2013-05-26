@@ -68,6 +68,7 @@
                :objects {:href (str "/vms/" id "/objects{?oid,count}") :templated true}
                :mcld {:href (str "/vms/" id "/mcld")}
                :fnsd {:href (str "/vms/" id "/fnsd")}
+               :symd {:href (str "/vms/" id "/symd")}
                :exc {:href (str "/vms/" id "/exc")}
                :dis1 {:href (str "/vms/" id "/dis1/{address}") :templated true}}
         action-links (map (fn [x] {x {:href (str "/vms/" id "/" (name x))
@@ -143,6 +144,13 @@
    {:id id
     :fnsd (:fnsd vm)}))
 
+(defn represent-vm-symd [id vm]
+  (add-vm-links
+   id
+   (ct/vm-actions vm)
+   {:id id
+    :symd (:symd vm)}))
+
 (defn represent-vm-exc [id vm]
   (add-vm-links
    id
@@ -211,6 +219,11 @@
     (let [id (Integer/parseInt id)]
       (if-let [vm (ct/vm-get id)]
         (respond (represent-vm-fnsd id vm))
+        (response/not-found "Nonesuch"))))
+  (GET ["/vms/:id/symd" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (if-let [vm (ct/vm-get id)]
+        (respond (represent-vm-symd id vm))
         (response/not-found "Nonesuch"))))
   (GET ["/vms/:id/exc" :id #"[0-9]+"] [id]
     (let [id (Integer/parseInt id)]

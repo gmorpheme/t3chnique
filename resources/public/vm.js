@@ -545,6 +545,7 @@ var vm = {
   registers: [],
   mcld: [],
   fnsd: [],
+  symd: [],
   codeSection: {},
   constSection: {},
   objectSection: {},
@@ -556,6 +557,7 @@ var vm = {
         vm._links = o._links;
         vm.updateMetaclassList();
         vm.updateFunctionList();
+        vm.updateSymbols();
         vm.update();
       });
     }
@@ -591,6 +593,16 @@ var vm = {
       d3.json(vm._links.fnsd.href, function(f) {
         vm._links = f._links;
         vm.fnsd = f.fnsd;
+      });
+    }
+  },
+
+  updateSymbols: function() {
+    var vm = this;
+    if (vm._links) {
+      d3.json(vm._links.symd.href, function(f) {
+        vm._links = f._links;
+        vm.symd = f.symd;
       });
     }
   },
