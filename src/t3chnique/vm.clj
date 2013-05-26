@@ -186,6 +186,11 @@
 (def reg-get fetch-val)
 (def reg-set set-val)
 
+(defn symbol-value [sym]
+  (in-vm
+   [stab (fetch-val :symd)]
+   (get stab sym)))
+
 (defn new-obj-id []
   (in-vm
    [oid (fetch-val :next-oid)

@@ -97,7 +97,7 @@ final instance remains in the sequence."
               lookup (zipmap (:pids mc) tobj-table)
               f (get lookup propid)]
         ]
-       nil))))
+       [obj val]))))
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))
