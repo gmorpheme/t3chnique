@@ -241,6 +241,10 @@
     (let [id (Integer/parseInt id)]
       (ct/vm-enter id)
       (response/redirect-after-post (str "/vms/" id))))
+  (POST ["/vms/:id/run" :id #"[0-9]+"] [id]
+    (let [id (Integer/parseInt id)]
+      (ct/vm-run! id)
+      (response/redirect-after-post (str "/vms/" id))))
   (GET ["/vms/:id/dis1/:addr" :id #"[0-9]+"] [id addr]
     (let [id (Integer/parseInt id)
           addr (Integer/parseInt addr)]

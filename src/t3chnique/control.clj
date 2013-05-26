@@ -39,7 +39,7 @@
 (defn vm-actions
   "Return the actions available for the vm at its current state"
   [vm]
-  (if (zero? (:ip vm)) [:action/enter] [:action/step]))
+  (if (zero? (:ip vm)) [:action/enter] [:action/step :action/run]))
 
 (defn vm-enter [id]
   (let [[r s] ((t3vm/enter) (vm-get id))]
@@ -53,6 +53,13 @@
     (catch Throwable t
       (swap! vms assoc-in [id :exc] (with-out-str (st/print-stack-trace t))))))
 
+(defn vm-run! [id]
+  (try
+    (let [[e s] ((t3vm/run) (vm-get id))]
+      (swap! vms assoc-in [id] (assoc s :exc nil)))
+    (catch Throwable t
+      (swap! vms assoc-in [id :exc] (with-out-str (st/print-stack-trace t))))))
+
 (defn dis1
   "Disassemble instruction at addr and return {:op {...} :args {...}}"
   [id addr]
@@ -61,5 +68,3 @@
         ((t3vm/parse-op))
         (first)
         ((fn [[op args]] {:op op :args args})))))
-
-
