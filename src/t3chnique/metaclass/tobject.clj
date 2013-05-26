@@ -39,8 +39,9 @@ final instance remains in the sequence."
   "Return seq of [defining val] based on inheritance hierarchy."
   [state {:keys [bases properties] :as self} pid]
   (let [inherited (->> bases
-                       (mapcat #(prop-chain state (get (:objs state) %) pid))
-                       (dedupe-chain-backwards :oid))]
+                       (map #(get (:objs state) %))
+                       (mapcat #(prop-chain state % pid))
+                       (dedupe-chain-backwards (comp :oid first)))]
     (if (contains? properties pid)
       (cons [self (get properties pid)] inherited)
       inherited)))

@@ -21,7 +21,7 @@
                                                               1400 (p/vm-codeofs 1228)
                                                               1618 (p/vm-nil)}}))
 
-(facts
+(facts "Deduping lists backwards"
   (dedupe-chain-backwards identity [:a :b :c :b :c :b]) => [:a :c :b]
   (dedupe-chain-backwards identity (apply concat [[:a :c] [:b :c] [:c]])) => [:a :b :c]
   (dedupe-chain-backwards identity (apply concat [[:c] [:b :c] [:a :c]])) => [:b :a :c])
@@ -33,18 +33,36 @@
                     (assoc :oid id)
                     (assoc :metaclass 1))))
 
-(facts
+(facts "Test inheritance order with multiple inheritance"
   (let [vm (vm/vm-state)
-        [[o1 o2 o3 o4] s] ((m/in-vm
-                            [_ (m-seq [(obj 1 [] {1 :a 2 :b 3 :c})
-                                       (obj 2 [1] {2 :d 4 :e})
-                                       (obj 3 [1] {3 :x 4 :y})
-                                       (obj 4 [2 3] {1 :d 5 :z})])
-                             os (m-map vm/obj-retrieve [1 2 3 4])]
-                            os) vm)]
+        [[o1 o2 o3 o4] vm] ((m/in-vm
+                             [_ (m-seq [(obj 1 [] {1 :a 2 :b 3 :c})
+                                        (obj 2 [1] {2 :d 4 :e})
+                                        (obj 3 [1] {3 :x 4 :y})
+                                        (obj 4 [2 3] {1 :d 5 :z})])
+                              os (m-map vm/obj-retrieve [1 2 3 4])]
+                             os) vm)]
+    (:bases o1) => []
+    (:bases o2) => [1]
+    (:bases o3) => [1]
+    (:bases o4) => [2 3]
+
     (map second (prop-chain vm o1 1)) => [:a]
-    ;(map second (prop-chain vm o2 1)) => [:a]
-    ;(map second (prop-chain vm o4 1)) => [:d :a]
-    ;(map second (prop-chain vm o4 2)) => [:d :b]
-    ;(map second (prop-chain vm o4 3)) => [:x :c]
-    ))
+    (map second (prop-chain vm o2 1)) => [:a]
+    (map second (prop-chain vm o3 1)) => [:a]
+    (map second (prop-chain vm o4 1)) => [:d :a]
+
+    (map second (prop-chain vm o1 2)) => [:b]
+    (map second (prop-chain vm o2 2)) => [:d :b]
+    (map second (prop-chain vm o3 2)) => [:b]
+    (map second (prop-chain vm o4 2)) => [:d :b]
+
+    (map second (prop-chain vm o1 3)) => [:c]
+    (map second (prop-chain vm o2 3)) => [:c]
+    (map second (prop-chain vm o3 3)) => [:x :c]
+    (map second (prop-chain vm o4 3)) => [:x :c]
+
+    (map second (prop-chain vm o1 4)) => []
+    (map second (prop-chain vm o2 4)) => [:e]
+    (map second (prop-chain vm o3 4)) => [:y]
+    (map second (prop-chain vm o4 4)) => [:e :y]))
