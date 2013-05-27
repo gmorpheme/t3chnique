@@ -48,16 +48,24 @@ final instance remains in the sequence."
 
 (defn get-prop-from-chain
   "Get a property using the inheritance hierarchy."
+  {:post [#(pr/vm-primitive? (second %))]}
   [state self pid]
-  (first (prop-chain)))
+  (first (prop-chain state self pid)))
+
+(defn inh-prop-from-chain
+  [state self pid]
+  (let [pchain (prop-chain state self pid)]
+    (if (= (ffirst pchain) self)
+      (second pchain)
+      (first pchain))))
 
 (defn get-prop-intrinsic
   "Get a property by considering TadsObject's intrinsic methods."
   [{:keys [mcld] :as state} {mc-idx :metaclass :as self} pid]
   (let [{pids :pids} (nth mcld mc-idx)
         dict (zipmap pids tobj-table)
-        f (get dict pid)]
-    (pr/vm-native-code f)))
+        f (get dict pid nil)]
+    (when f (pr/vm-native-code f))))
 
 (defn get-prop
   "Get property"
@@ -90,14 +98,13 @@ final instance remains in the sequence."
   (get-property [self propid]
     (let [metaclass-index (:metaclass self)]
       (in-vm
-       [[obj val] (m-apply #(first (prop-chain % self propid)))
+       [[obj val] (m-apply #(get-prop % self propid))]
+       [(pr/vm-obj (:oid obj)) val])))
 
-        mcld (fetch-val :mcld)
-        :let [mc (nth mcld metaclass-index)
-              lookup (zipmap (:pids mc) tobj-table)
-              f (get lookup propid)]
-        ]
-       [obj val]))))
+  (inherit-property [self propid]
+    (in-vm
+     [[obj val] (m-apply #(inh-prop-from-chain % self propid))]
+     (when obj [(pr/vm-obj (:oid obj)) val]))))
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))

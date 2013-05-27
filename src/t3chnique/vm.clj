@@ -200,7 +200,9 @@
 (defn obj-store [oid o]
   (update-val :objs #(assoc % oid o)))
 
-(defn obj-retrieve [oid] (m-apply get-in [:objs oid]))
+(defn obj-retrieve [oid]
+  {:pre [(number? oid)]}
+  (m-apply get-in [:objs oid]))
 
 (defn get-method-header
   "Read method header at specified offset."
@@ -487,67 +489,228 @@
       (>= ac varmin)
       (= ac param-count))))
 
-(defop call 0x58 [:ubyte arg_count :uint4 func_offset]
+(defn prepare-frame
+  "Prepare stack frame for call. target-pid is (vm-prop), objs are
+ (vm-obj) or (vm-nil). Func offset and argc are raw int."
+  [target-pid target-obj defining-obj self-obj func-offset argc]
+  {:pre [(vm-prop? target-pid)
+         (vm-obj-or-nil? target-obj)
+         (vm-obj-or-nil? defining-obj)
+         (vm-obj-or-nil? self-obj)
+         (number? func-offset)
+         (number? argc)]}
   (in-vm
-           [_ (stack-push (vm-prop 0))
-            _ (m-seq (repeat 3 (stack-push (vm-nil))))
-            ep (reg-get :ep)
-            p (pc)
-            fp (reg-get :fp)
-            _ (stack-push (vm-codeofs (- p ep)))
-            _ (stack-push (vm-codeofs ep))
-            _ (stack-push (vm-int arg_count))
-            _ (stack-push (vm-stack fp))
-            sp (reg-get :sp)
-            _ (reg-set :fp sp)
-            _ (reg-set :ep func_offset)
-            mh (get-method-header func_offset)
-;            _ (m-when (check-argc mh arg_count))
-            _ (m-seq (repeat (:local-variable-count mh) (stack-push (vm-nil))))
-            _ (set-pc (+ func_offset (:code-offset mh)))]
-           nil))
+   [_ (stack-push target-pid)
+    _ (stack-push target-obj)
+    _ (stack-push defining-obj)
+    _ (stack-push self-obj)
+    ep (reg-get :ep)
+    p (pc)
+    fp (reg-get :fp)
+    _ (stack-push (vm-codeofs (- p ep)))
+    _ (stack-push (vm-codeofs ep))
+    _ (stack-push (vm-int argc))
+    _ (stack-push (vm-stack fp))
+    sp (reg-get :sp)
+    _ (reg-set :fp sp)
+    _ (reg-set :ep func-offset)
+    mh (get-method-header func-offset)
+                                        ;            _ (m-when (check-argc mh arg_count))
+    _ (m-seq (repeat (:local-variable-count mh) (stack-push (vm-nil))))
+    _ (set-pc (+ func-offset (:code-offset mh)))]
+   nil))
 
-(defop ptrcall 0x59 [:ubyte arg_count])
+(defn property-accessor
+  "Construct monadic function using mc-mf to search properties and
+exec-mf to handle the results. mc-mf has signature of Metaclass
+get-property or inherit-property. exec-mf accepts target-val
+as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
+  [mc-mf exec-mf]
+  (fn access [target-val pid argc]
+    {:pre [(vm-obj-or-nil? target-val)
+           (number? pid)]}
+    (in-vm
+     [target (obj-retrieve (value target-val))
+      [defobj prop-val] (mc-mf target pid)
+      r (exec-mf target-val defobj pid prop-val argc)]
+     r)))
+
+(def generic-get-prop
+  (property-accessor mc/get-property
+                     (fn [target-val defobj pid prop-val argc]
+                       (if prop-val
+                         (cond
+                          (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+                          (vm-dstring? prop-val) (abort "not implemented (say)")
+                          (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
+                                                                target-val
+                                                                defobj
+                                                                target-val
+                                                                (value prop-val)
+                                                                argc))
+                         (abort "not implemented propNotDefined")))))
+
+(def generic-inherit-prop
+  (property-accessor mc/inherit-property
+                     (fn [target-val defobj pid prop-val argc]
+                       (if prop-val
+                         (cond
+                          (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+                          (vm-dstring? prop-val) (abort "not implemented (say)")
+                          (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
+                                                                target-val
+                                                                defobj
+                                                                target-val
+                                                                (value prop-val)
+                                                                argc))
+                         (abort "not implemented propNotDefined")))))
+
+(def generic-get-prop-data
+  (property-accessor mc/get-property
+                     (fn [target-val defobj pid prop-val argc]
+                       (if prop-val
+                         (cond
+                          (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+                          :else (abort "BAD_SPEC_EVAL"))))))
+
+(defop call 0x58 [:ubyte arg_count :uint4 func_offset]
+  (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count))
+
+(defop ptrcall 0x59 [:ubyte arg_count]
+  (in-vm
+   [val (stack-pop)
+    r (cond
+       (vm-funcptr? val) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value val) arg_count)
+       (vm-prop? val) (abort "todo as per ptrcallpropself")
+       (vm-obj? val) (abort "todo ObjectCallProp")
+       :else (abort "FUNCPTR_VAL_REQD"))]
+   r))
 
 (defop getprop 0x60 [:uint2 prop_id]
   (in-vm
-    [target-val (stack-pop)
-     obj (obj-retrieve target-val)]
-    (mc/get-property obj prop_id)))
+    [obj (stack-pop)
+     r (generic-get-prop obj prop_id 0)]
+    r))
 
+(defop callprop 0x61 [:ubyte arg_count :uint2 prop_id]
+  (in-vm
+   [obj (stack-pop)
+    r (generic-get-prop obj prop_id arg_count)]
+   r))
 
-(defop callprop 0x61 [:ubyte arg_count :uint2 prop_id])
-(defop ptrcallprop 0x62 [:ubyte arg_count])
-(defop getpropself 0x63 [:uint2 prop_id])
-(defop callpropself 0x64 [:ubyte arg_count :uint2 prop_id])
-(defop ptrcallpropself 0x65 [:ubyte arg_count])
+(defop ptrcallprop 0x62 [:ubyte arg_count]
+  (in-vm
+   [prop (stack-pop)
+    target-val (stack-pop)
+    r (generic-get-prop target-val (value prop) arg_count)]
+   r))
+
+(defn- get-stack-self []
+  (in-vm
+   [fp (reg-get :fp)
+    self (stack-get (- fp 5))]
+   self))
+
+(defn- get-stack-local [i]
+  (in-vm
+   [fp (reg-get :fp)
+    target (stack-get (+ fp i))]
+   target))
+
+(defop getpropself 0x63 [:uint2 prop_id]
+  (in-vm
+   [self (get-stack-self)
+    r (generic-get-prop self prop_id 0)]
+   r))
+
+(defop callpropself 0x64 [:ubyte arg_count :uint2 prop_id]
+  (in-vm
+   [self (get-stack-self)
+    r (generic-get-prop self prop_id arg_count)]
+   r))
+
+(defop ptrcallpropself 0x65 [:ubyte arg_count]
+  (in-vm
+   [self (get-stack-self)
+    prop (stack-pop)
+    r (generic-get-prop self (value prop) arg_count)]
+   r))
 
 (defop objgetprop 0x66 [:uint4 obj_id :uint2 prop_id]
-  (in-vm
-   [target-val (obj-retrieve obj_id)
-    [defobj prop-val] (mc/get-property target-val prop_id)
-    _ (if prop-val
-        (cond
-         (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
-         (vm-dstring? prop-val) (abort "not implemented (say)")
-         (vm-codeofs? prop-val) (abort "not implemented (delegate to call)"))
-        (abort "not implemented propNotDefined"))]
-   nil))
+  (generic-get-prop (vm-obj obj_id) prop_id 0))
 
-(defop objcallprop 0x67 [:ubyte arg_count :uint4 obj_id :uint2 prop_id])
-(defop getpropdata 0x68 [:uint2 prop_id])
-(defop ptrgetpropdata 0x69 [])
-(defop getproplcl1 0x6A [:ubyte local_number :uint2 prop_id])
-(defop callproplcl1 0x6B [:ubyte arg_count :ubyte local_number :uint2 prop_id])
-(defop getpropr0 0x6C [:uint2 prop_id])
-(defop callpropr0 0x6D [:ubyte arg_count :uint2 prop_id])
-(defop inherit 0x72 [:ubyte arg_count :uint2 prop_id])
-(defop ptrinherit 0x73 [:ubyte arg_count])
-(defop expinherit 0x74 [:ubyte arg_count :uint2 prop_id :uint4 obj_id])
-(defop ptrexpinherit 0x75 [:ubyte arg_count :uint4 obj_id])
-(defop varargc 0x76 [])
-(defop delegate 0x77 [:ubyte arg_count :uint2 prop_id])
-(defop ptrdelegate 0x78 [:ubyte arg_count])
+(defop objcallprop 0x67 [:ubyte arg_count :uint4 obj_id :uint2 prop_id]
+  (generic-get-prop (vm-obj obj_id prop_id arg_count)))
+
+(defop getpropdata 0x68 [:uint2 prop_id]
+  (in-vm
+   [target-val (stack-pop)
+    r (generic-get-prop-data target-val prop_id)]
+   r))
+
+(defop ptrgetpropdata 0x69 []
+  (in-vm
+   [prop (stack-pop)
+    target-val (stack-pop)
+    r (generic-get-prop-data target-val (value prop))]
+   r))
+
+(defop getproplcl1 0x6A [:ubyte local_number :uint2 prop_id]
+  (in-vm
+   [target-val (get-stack-local local_number)
+    r (generic-get-prop target-val prop_id 0)]
+   r))
+
+(defop callproplcl1 0x6B [:ubyte arg_count :ubyte local_number :uint2 prop_id]
+  (in-vm
+   [target-val (get-stack-local local_number)
+    r (generic-get-prop target-val prop_id arg_count)]
+   r))
+
+(defop getpropr0 0x6C [:uint2 prop_id]
+  (in-vm
+   [target-val (reg-get :r0)
+    r (generic-get-prop target-val prop_id 0)]
+   r))
+
+(defop callpropr0 0x6D [:ubyte arg_count :uint2 prop_id]
+  (in-vm
+   [target-val (reg-get :r0)
+    r (generic-get-prop target-val prop_id arg_count)]
+   r))
+
+(defop inherit 0x72 [:ubyte arg_count :uint2 prop_id]
+  (in-vm
+   [target-val (stack-pop)
+    r (generic-inherit-prop target-val prop_id arg_count)]
+   r))
+
+(defop ptrinherit 0x73 [:ubyte arg_count]
+  (in-vm
+   [prop (stack-pop)
+    target-val (stack-pop)
+    r (generic-inherit-prop target-val (value prop) arg_count)]
+   r))
+
+(defop expinherit 0x74 [:ubyte arg_count :uint2 prop_id :uint4 obj_id]
+  ; TODO expinherit
+  )
+
+(defop ptrexpinherit 0x75 [:ubyte arg_count :uint4 obj_id]
+  ; TODO ptrexpinherit
+  )
+
+(defop varargc 0x76 []
+  ; TODO varags
+  )
+
+(defop delegate 0x77 [:ubyte arg_count :uint2 prop_id]
+  ; TODO delegation
+  )
+
+(defop ptrdelegate 0x78 [:ubyte arg_count]
+  ; TODO delegation
+  )
 
 (defop swap2 0x7a []
   (with-stack [d c b a] [a b c d]))
@@ -563,9 +726,9 @@
 
 (defn- copy [reg offsetf]
   (in-vm [fp (reg-get reg)
-                 rv (stack-get (offsetf fp))
-                 _ (stack-push rv)]
-           nil))
+          rv (stack-get (offsetf fp))
+          _ (stack-push rv)]
+         nil))
 
 (defop getlcl1 0x80 [:ubyte local_number]
   (copy :fp (partial + local_number)))
@@ -965,12 +1128,12 @@ with the vm map."
            f (:run-fn op)]
      _ (set-val :ip i')
      r (apply f (vals args))]
-    nil))
+    r))
 
 (defn run
   "Run until an error occurs."
   []
   (in-vm
     [s (fetch-state)
-     s (m-until :exc (step) s)]
+     s (m-until :exc (fn [x] (step)) s)]
    (:exc s)))

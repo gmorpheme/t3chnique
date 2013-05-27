@@ -10,7 +10,10 @@
     "Load object data from byte buffer; return new object.")
   
   (get-property [self propid]
-    "Return [defining-object property-value]"))
+    "Monadic value to return [defining-object property-value]")
+
+  (inherit-property [self propid]
+    "Monadic value to return [defining-object property-value"))
 
 (defrecord TadsList [val]
   MetaClass

@@ -36,9 +36,14 @@
 (defprimitive vm-bifptr 16 "built-in function pointer; 32-bit integer, encoding the function set dependency table index in the high-order 16 bits, and the function's index within its set in the low-order 16 bits." :uint4)
 (defprimitive vm-objx 17 "Reserved for implementation use for an executable object, as a 32-bit object ID number (see note below)" :uint4)
 
-(defn vm-string? [x] (some [vm-sstring? vm-dstring?] x))
+(def vm-obj-or-nil? (some-fn vm-obj? vm-nil?))
+(def vm-string? (some-fn vm-sstring? vm-dstring?))
+(def vm-auto-eval? (some-fn vm-codeofs? vm-dstring?))
+
 (defn vm-bool [v] (if v (vm-true) (vm-nil)))
 (defn typeid [entry] (:type entry))
 (defn value [entry] (:value entry))
 (defn vm-zero? [v] (and (vm-int? v) (zero? (value v))))
-(defn vm-auto-eval? [v] (or (vm-codeofs? v) (vm-dstring? v)))
+(defn vm-primitive? [v] (and
+                         (contains? v :type)
+                         (contains? v :value)))
