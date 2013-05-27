@@ -3,9 +3,7 @@
         [t3chnique.monad])
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
-            [t3chnique.metaclass :as mc]
-            t3chnique.metaclass.tobject
-            t3chnique.metaclass.string)
+            [t3chnique.metaclass :as mc])
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until]])
   (:import [java.nio ByteBuffer]))
 
@@ -76,11 +74,6 @@
 
 (defn vm-from-image [bs]
   (reduce load-image-block (vm-state) bs))
-
-(defn abort
-  "Abort if we hit something we haven't implemented yet."
-  [msg]
-  (throw (RuntimeException. ^String msg)))
 
 (defrecord OpCode [code mnemonic parse-spec run-fn])
 
@@ -951,11 +944,18 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 ;; TODO
 (defop idxint8 0xBC [:ubyte index_val])
 
-;; TODO
-(defop new1 0xC0 [:ubyte arg_count :ubyte metaclass_id])
+;; TODO byte code construction
+(defop new1 0xC0 [:ubyte arg_count :ubyte metaclass_id]
+  (in-vm
+   [proto (m-apply #(mc/prototype % metaclass_id))
+    obj (mc/load-from-stack proto arg_count)
+    id (new-obj-id)
+    _ (obj-store id obj)
+    _ (reg-set :r0 (vm-obj id))]
+   nil))
 
-;; TODO
-(defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id])
+(defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id]
+  )
 
 ;; TODO
 (defop trnew1 0xC2 [:ubyte arg_count :ubyte metaclass_id])

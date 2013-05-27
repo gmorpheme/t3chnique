@@ -7,6 +7,11 @@
 
 (defn m-apply [f & args] (fn [s] [(apply f s args) s]))
 
+(defn abort
+  "For now, throw - incorporate into monad later."
+  [msg]
+  (throw (RuntimeException. ^String msg)))
+
 (comment
 ;;; experimental implementation with cont-m  
   (def vm-m (state-t cont-m))

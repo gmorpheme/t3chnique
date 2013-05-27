@@ -2,6 +2,7 @@
   t3chnique.control
   (:require [t3chnique.parse :as parse]
             [t3chnique.vm :as t3vm]
+            [t3chnique.all]
             [clojure.stacktrace :as st]))
 
 (def game-catalogue [{:id 1 :name "Elysium.t3"}

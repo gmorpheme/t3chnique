@@ -1,23 +1,23 @@
 (ns t3chnique.metaclass.tobject
   (:require [t3chnique.metaclass :as mc]
-            [t3chnique.primitive :as pr]
-            [t3chnique.metaclass.object :as obj])
+            [t3chnique.primitive :as p]
+            [t3chnique.metaclass.object :as obj]
+            [t3chnique.monad :as m])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
-        [t3chnique.monad :only [vm-m in-vm m-apply]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]])
   (:import [t3chnique.metaclass MetaClass]))
 
 (def tobj-table
   [
-   (fn getp-undef [])
-   (fn getp-create-instance [])
-   (fn getp-create-clone [])
-   (fn getp-create-trans-instance [])
-   (fn getp-create-instance-of [])
-   (fn getp-create-trans-instance-of [])
-   (fn getp-set-sc-list [])
-   (fn getp-get-method [])
-   (fn getp-set-method [])
+   (fn tobj-undef [argc] (m/abort "todo tobj-undef"))
+   (fn tobj-create-instance [argc] (m/abort "todo tobj-create-instance"))
+   (fn tobj-create-clone [argc] (m/abort "todo tobj-create-clone"))
+   (fn tobj-create-trans-instance [argc] (m/abort "todo tobj-create-trans-instance"))
+   (fn tobj-create-instance-of [argc] (m/abort "todo tobj-create-instance-of"))
+   (fn tobj-create-trans-instance-of [argc] (m/abort "todo tobj-create-trans-instance-of"))
+   (fn tobj-set-sc-list [argc] (m/abort "todo tobj-set-sc-list"))
+   (fn tobj-get-method [argc] (m/abort "todo tobj-get-method"))
+   (fn tobj-set-method [argc] (m/abort "todo tobj-set-method"))
    ])
 
 (defn dedupe-chain-backwards
@@ -48,7 +48,7 @@ final instance remains in the sequence."
 
 (defn get-prop-from-chain
   "Get a property using the inheritance hierarchy."
-  {:post [#(pr/vm-primitive? (second %))]}
+  {:post [#(p/vm-primitive? (second %))]}
   [state self pid]
   (first (prop-chain state self pid)))
 
@@ -61,11 +61,8 @@ final instance remains in the sequence."
 
 (defn get-prop-intrinsic
   "Get a property by considering TadsObject's intrinsic methods."
-  [{:keys [mcld] :as state} {mc-idx :metaclass :as self} pid]
-  (let [{pids :pids} (nth mcld mc-idx)
-        dict (zipmap pids tobj-table)
-        f (get dict pid nil)]
-    (when f (pr/vm-native-code f))))
+  [state {mcidx :metaclass} pid]
+  (mc/get-intrinsic-method state mcidx pid tobj-table))
 
 (defn get-prop
   "Get property"
@@ -95,16 +92,22 @@ final instance remains in the sequence."
            (apply assoc {} (flatten properties))
            {}))) [buf o])))
 
-  (get-property [self propid]
+  (get-property [self propid argc]
     (let [metaclass-index (:metaclass self)]
-      (in-vm
-       [[obj val] (m-apply #(get-prop % self propid))]
-       [(pr/vm-obj (:oid obj)) val])))
+      (m/in-vm
+       [[obj val] (m/m-apply #(get-prop % self propid))]
+       (if (and (p/vm-native-code? val) (not (nil? argc)))
+         ((p/value val) argc)
+         [(p/vm-obj (:oid obj)) val]))))
 
   (inherit-property [self propid]
-    (in-vm
-     [[obj val] (m-apply #(inh-prop-from-chain % self propid))]
-     (when obj [(pr/vm-obj (:oid obj)) val]))))
+    (m/in-vm
+     [[obj val] (m/m-apply #(inh-prop-from-chain % self propid))]
+     (when obj [(p/vm-obj (:oid obj)) val])))
+
+  (list-like? [self state]
+    )
+  )
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))

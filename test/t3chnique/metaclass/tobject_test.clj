@@ -67,16 +67,16 @@
     (map second (prop-chain vm o3 4)) => [:y]
     (map second (prop-chain vm o4 4)) => [:e :y]
 
-    (first ((mc/get-property o1 1) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/get-property o2 1) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/get-property o3 1) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/get-property o4 1) vm)) => [(p/vm-obj 4) :d]
+    (first ((mc/get-property o1 1 0) vm)) => [(p/vm-obj 1) :a]
+    (first ((mc/get-property o2 1 0) vm)) => [(p/vm-obj 1) :a]
+    (first ((mc/get-property o3 1 0) vm)) => [(p/vm-obj 1) :a]
+    (first ((mc/get-property o4 1 0) vm)) => [(p/vm-obj 4) :d]
 
     (first ((mc/inherit-property o1 1) vm)) => nil
     (first ((mc/inherit-property o2 1) vm)) => [(p/vm-obj 1) :a]
     (first ((mc/inherit-property o3 1) vm)) => [(p/vm-obj 1) :a]
     (first ((mc/inherit-property o4 1) vm)) => [(p/vm-obj 1) :a]
     
-    (first ((mc/get-property o4 4) vm)) => [(p/vm-obj 2) :e]))
+    (first ((mc/get-property o4 4 0) vm)) => [(p/vm-obj 2) :e]))
 
 

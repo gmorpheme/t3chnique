@@ -1,6 +1,7 @@
 (ns t3chnique.metaclass
   (:require [clojure.string :as string]
-            [t3chnique.intrinsics :as bif])
+            [t3chnique.intrinsics :as bif]
+            [t3chnique.primitive :as p])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
@@ -8,12 +9,18 @@
   "Operations available to the VM for each metaclass."
   (load-from-image [self buf o]
     "Load object data from byte buffer; return new object.")
+
+  (load-from-stack [_ argc]
+    "Return monadic value to create from stack.")
   
-  (get-property [self propid]
+  (get-property [self propid argc]
     "Monadic value to return [defining-object property-value]")
 
   (inherit-property [self propid]
-    "Monadic value to return [defining-object property-value"))
+    "Monadic value to return [defining-object property-value")
+
+  (list-like? [self vm]
+    "Whether the object is list like"))
 
 (defrecord TadsList [val]
   MetaClass
@@ -40,7 +47,6 @@
 (defn unknown-metaclass [] (Unimplemented.))
 
 (defonce metaclasses (atom {:list tads-list
-                            :vector unknown-metaclass
                             :dictionary2 unknown-metaclass
                             :grammar-production unknown-metaclass
                             :anon-func-ptr anon-fn
@@ -71,9 +77,15 @@
   (for [{:keys [name pids]} mcld]
     (let [[n version-required] (string/split name #"/")
           k (keyword n)
-          metaclass (k @metaclasses)]
-      (when (nil? metaclass) (throw (RuntimeException. (str "Metaclass " k " not available"))))
-      {:metaclass-id k :pids pids :metaclass metaclass})))
+          ctor (k @metaclasses)]
+      (when (nil? ctor) (throw (RuntimeException. (str "Metaclass " k " not available"))))
+      {:metaclass-id k :pids pids :metaclass ctor :_prototype (ctor)})))
+
+(defn prototype
+  "Return a metaclass prototype by state and index."
+  [{:keys [mcld] :as state} index]
+  (let [mcld-entry (nth mcld index)]
+    (or (:_prototype mcld-entry) ((:metaclass mcld-entry)))))
 
 (defn read-object-block [mcld oblock]
   (let [mcld-index (:mcld-index oblock)
@@ -84,3 +96,9 @@
                                 (assoc :metaclass mcld-index)
                                 (assoc :oid (:oid obj)))])
                   (:objects oblock)))))
+
+(defn get-intrinsic-method [{:keys [mcld] :as state} mcidx pid table]
+  (let [{pids :pids} (nth mcld mcidx)
+        dict (zipmap pids table)
+        f (get dict pid nil)]
+    (when f (p/vm-native-code f))))
