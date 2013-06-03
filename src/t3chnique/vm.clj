@@ -524,7 +524,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
            (number? pid)]}
     (in-vm
      [target (obj-retrieve (value target-val))
-      [defobj prop-val] (mc-mf target pid)
+      [defobj prop-val] (mc-mf target pid argc)
       r (exec-mf target-val defobj pid prop-val argc)]
      r)))
 
