@@ -279,10 +279,10 @@
   [system game-id]
   (let [name (:name (game-get system game-id))
         prefix (first (string/split name #"\W"))
-        histories @(:vm-histories system)
-        id (first (remove (partial contains? histories) (repeatedly #(new-id prefix))))
+        histories (:vm-histories system)
+        id (first (remove (partial contains? @histories) (repeatedly #(new-id prefix))))
         vm (assoc (t3vm/vm-from-image (parse/parse-resource name)) :id id)]
-    (swap! histories assoc-in [id [vm]])))
+    (swap! histories assoc id [vm])))
 
 (defn vm-destroy!
   "Delete a VM by id"
