@@ -64,7 +64,8 @@
                             :lookuptable-iterator unknown-metaclass
                             :file unknown-metaclass
                             :string-comparator unknown-metaclass
-                            :bignumber unknown-metaclass}))
+                            :bignumber unknown-metaclass
+                            :stack-frame-desc unknown-metaclass}))
 
 (defn register-metaclass! [metaclass-id constructor]
   (let [[id version] (bif/parse-id metaclass-id)
