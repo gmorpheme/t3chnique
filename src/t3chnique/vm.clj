@@ -732,7 +732,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 (defop getarg1 0x82 [:ubyte param_number]
   (copy :fp #(- % (+ 9 param_number))))
 
-(defop getarg2 0x83 [:UNIT2 param_number]
+(defop getarg2 0x83 [:uint2 param_number]
   (copy :fp #(- % (+ 9 param_number))))
 
 (defop getargn0 0x7C []
@@ -1188,7 +1188,7 @@ with the vm map."
      [b i] (m-apply offset ip)
      :let [[[op args] [_ i']] ((parse-op) [b i])
            f (:run-fn op)]
-     _ (set-val :ip i')
+     _ (update-val :ip #(+ % (- i' i)))
      r (apply f (vals args))]
     r))
 
