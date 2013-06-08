@@ -36,7 +36,7 @@
 (defn add-uses []
   (require '[t3chnique.control :as ct])
   (require '[t3chnique.server :as sv])
-  (require '[t3chnique.server :as vm])
+  (require '[t3chnique.vm :as vm])
   (require '[t3chnique.parse :as parse])
   (require '[t3chnique.primitive :as p])
   (require '[t3chnique.monad :as m])

@@ -278,3 +278,15 @@
                   (vm-state-with :say-function (vm-funcptr 0x30) :stack [(vm-int 1)])
                   [(bif/t3SetSay (host) 1)]))
   => (vm-nil))
+
+(fact "dataType returns 1 for nil"
+  (:r0 (apply-ops
+        (vm-state-with :stack [(vm-nil)])
+        [(bif/dataType (host) 1)]))
+  => (vm-int 1))
+
+(fact "dataType returns 7 for int"
+  (:r0 (apply-ops
+        (vm-state-with :stack [(vm-int 0)])
+        [(bif/dataType (host) 1)]))
+  => (vm-int 7))

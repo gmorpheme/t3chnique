@@ -873,22 +873,22 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 (defop getspn 0xA6 [:ubyte index]
   (copy :sp #(- % (inc index))))
 
-(defop getlcln0 0x8AA []
+(defop getlcln0 0xAA []
   (copy :fp identity))
 
-(defop getlcln1 0x8AB []
+(defop getlcln1 0xAB []
   (copy :fp inc))
 
-(defop getlcln2 0x8AC []
+(defop getlcln2 0xAC []
   (copy :fp (partial + 2)))
 
-(defop getlcln3 0x8AD []
+(defop getlcln3 0xAD []
   (copy :fp (partial + 3)))
 
-(defop getlcln4 0x8AE []
+(defop getlcln4 0xAE []
   (copy :fp (partial + 4)))
 
-(defop getlcln5 0x8AF []
+(defop getlcln5 0xAF []
   (copy :fp (partial + 5)))
 
 ;; TODO
@@ -1123,7 +1123,46 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   ;; TODO named args
   (t3GetNamedArg [_ argc])
   ;; TODO named args
-  (t3GetNamedArgList [_ argc]))
+  (t3GetNamedArgList [_ argc])
+
+  bif/tads-gen
+  ;; TODO abs
+  (abs [_ argc])
+  ;; TODO concat
+  (concat [_ argc])
+  
+  (dataType [_ argc]
+    (in-vm
+     [val (stack-pop)
+      _ (reg-set :r0 (vm-int (typeid val)))]
+     nil))
+  
+  (firstObj [_ argc])
+  (getArg [_ argc])
+  (getFuncParams [_ argc])
+  (getTime [_ argc])
+  (makeList [_ argc])
+  (makeString [_ argc])
+  (max [_ argc])
+  (min [_ argc])
+  (nextObj [_ argc])
+  (rand [_ argc])
+  (randomize [_ argc])
+  (restartGame [_ argc])
+  (restoreGame [_ argc])
+  (rexGroup [_ argc])
+  (rexMatch [_ argc])
+  (rexReplace [_ argc])
+  (rexSearch [_ argc])
+  (rexSearchLast [_ argc])
+  (saveGame [_ argc])
+  (savepoint [_ argc])
+  (sgn [_ argc])
+  (sprintf [_ argc])
+  (toInteger [_ argc])
+  (toNumber [_ argc])
+  (toString [_ argc])
+  (undo [_ argc]))
 
 (defn host
   "Allow the VM access to a host - this may become dynamic or be associated
