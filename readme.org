@@ -45,7 +45,7 @@ served up by server.clj and the vm.js javascript functionality.
 *** TODO main loop
 *** TODO clean-up app start / stop handling in control.clj
     - http://thinkrelevance.com/blog/2013/06/04/clojure-workflow-reloaded
-*** TODO recursive calls
+*** TODO fix stack usage for recursive calls and frame refs
 *** TODO exception handling
 *** TODO yield (via continuation monad)
 *** TODO minimise monad usage for r/o stuff

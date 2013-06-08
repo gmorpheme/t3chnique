@@ -8,6 +8,7 @@
   :dependencies [[org.clojure/clojure "1.5.0"]
                  [org.clojure/algo.monads "0.1.0"]
                  [org.clojure/tools.cli "0.2.2"]
+                 [org.clojure/java.classpath "0.2.0"]
                  [org.clojure/tools.logging "0.2.6"]
                  [compojure "1.1.5"]
                  [ring/ring-jetty-adapter "1.1.0"]
@@ -20,5 +21,5 @@
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["t3"]
                    :dependencies [[org.clojure/tools.trace "0.7.5"]
-                                  [org.clojure/java.classpath "0.2.0"]
+                                  [org.clojure/tools.namespace "0.2.3"]
                                   [midje "1.5.1"]]}})

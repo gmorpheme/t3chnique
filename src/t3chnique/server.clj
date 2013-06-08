@@ -1,10 +1,9 @@
-(ns ^{:doc "REST server"}
+(ns ^{:doc "Server for maintaining managing running VMs."}
     t3chnique.server
-  (:use [t3chnique.parse :only [load-image-file read-bytes]]
-        [ring.middleware.format-params :only [wrap-restful-params]]
+  (:use [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
-        [compojure.core :only [defroutes GET POST]]
+        [compojure.core :only [routes GET POST]]
         clojure.java.io)
   (:require [ring.adapter.jetty :as j]
             [ring.util.response :as response]
@@ -14,11 +13,18 @@
             [hiccup.core :as h]
             [hiccup.page :as hp]
             [clojure.tools.trace :as t]
-            [clojure.string :as string])
-  (:require [compojure.route :as route]
+            [clojure.string :as string]
+            [clojure.java.classpath :as cp]
+            [compojure.route :as route]
             [t3chnique.vm :as t3vm]
             [t3chnique.primitive :as p]
-            [t3chnique.control :as ct]))
+            [t3chnique.parse :as parse]
+            [clojure.stacktrace :as st]))
+
+(defn vm-actions
+  "Return the actions available for the vm at its current state"
+  [vm]
+  (if (zero? (:ip vm)) [:action/enter] [:action/step :action/run]))
 
 (defn render-html [data]
   (if-let [page (:page (meta data))]
@@ -78,36 +84,35 @@
     (assoc repn :_links links)))
 
 (defn represent-vm [id vm]
-  (add-vm-links id (ct/vm-actions vm) {:id id}))
+  (add-vm-links id (vm-actions vm) {:id id}))
 
 (defn represent-vm-stack [id vm]
-  (add-vm-links id (ct/vm-actions vm) (select-keys vm [:stack])))
+  (add-vm-links id (vm-actions vm) (select-keys vm [:stack])))
 
 (defn represent-vm-registers [id vm]
   (add-vm-links id
-                (ct/vm-actions vm)
+                (vm-actions vm)
                 (promote-types (select-keys vm [:r0 :ip :ep :sp :fp :say-function :say-method]))))
 
 (defn represent-vm-map [vms]
   (for [[id vm] vms]
-    (add-vm-links id (ct/vm-actions vm) {:id id})))
+    (add-vm-links id (vm-actions vm) {:id id})))
 
 (defn ubytes [page offset len]
-  (map #(bit-and 0xff %) (read-bytes page offset len)))
+  (map #(bit-and 0xff %) (parse/read-bytes page offset len)))
 
 (defn represent-vm-code [id vm addr len]
   (let [[p off] (t3vm/offset vm addr)]
     (add-vm-links
      id
-     (ct/vm-actions vm)
+     (vm-actions vm)
      {:id id :code-section {:address addr :bytes (ubytes p off len)}})))
 
-(defn represent-vm-assembly [id addr]
-  (let [{:keys [op args]} (ct/dis1 id addr)
-        doc-url (str "http://www.tads.org/t3doc/doc/techman/t3spec/opcode.htm#opc_" (.toLowerCase (name (:mnemonic op))))
+(defn represent-vm-assembly [id vm addr {:keys [op args]}]
+  (let [doc-url (str "http://www.tads.org/t3doc/doc/techman/t3spec/opcode.htm#opc_" (.toLowerCase (name (:mnemonic op))))
         op (dissoc op :run-fn)]
     (add-vm-links id
-                  (ct/vm-actions (ct/vm-get id))
+                  (vm-actions vm)
                   {:id id
                    :assembly {:op op
                               :args args
@@ -118,13 +123,13 @@
   (let [[p off] (t3vm/const-offset vm addr)]
     (add-vm-links
      id
-     (ct/vm-actions vm)
+     (vm-actions vm)
      {:id id :const-section {:address addr :bytes (ubytes p off len)}})))
 
 (defn represent-vm-objects [id vm oid count]
   (add-vm-links
    id
-   (ct/vm-actions vm)
+   (vm-actions vm)
    {:id id
     :objs (map
            (fn [[k v]] {:oid (p/vm-obj k) :value v})
@@ -133,28 +138,28 @@
 (defn represent-vm-mcld [id vm]
   (add-vm-links
    id
-   (ct/vm-actions vm)
+   (vm-actions vm)
    {:id id
     :mcld (map #(dissoc % :metaclass) (:mcld vm))}))
 
 (defn represent-vm-fnsd [id vm]
   (add-vm-links
    id
-   (ct/vm-actions vm)
+   (vm-actions vm)
    {:id id
     :fnsd (:fnsd vm)}))
 
 (defn represent-vm-symd [id vm]
   (add-vm-links
    id
-   (ct/vm-actions vm)
+   (vm-actions vm)
    {:id id
     :symd (:symd vm)}))
 
 (defn represent-vm-exc [id vm]
   (add-vm-links
    id
-   (ct/vm-actions vm)
+   (vm-actions vm)
    {:id id
     :exc (or (:exc vm) nil)}))
 
@@ -164,109 +169,8 @@
   ([page data]
      {:body (with-meta data {:page page})}))
 
-(defroutes vm-routes
-  (GET "/games" []
-    (respond "t3chnique.server/games-page" (represent-game-list (ct/game-list))))
-  (GET ["/games/:id" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [game (ct/game-get id)]
-        (respond "t3chnique.server/game-page" (represent-game game))
-        (response/not-found "Nonesuch"))))
-  (GET "/vms" []
-    (respond "t3chnique.server/vms-page" (represent-vm-map (ct/vm-map))))
-  (GET ["/vms/:id" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond "t3chnique.server/vm-page" (represent-vm id vm))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/stack" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-stack id vm))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/registers" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-registers id vm))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/code" :id #"[0-9]+"] [id address length]
-    (let [id (Integer/parseInt id)
-          addr (Integer/parseInt address)
-          len (Integer/parseInt length)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-code id vm addr len))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/const" :id #"[0-9]+"] [id address length]
-    (let [id (Integer/parseInt id)
-          addr (Integer/parseInt address)
-          len (Integer/parseInt length)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-const id vm addr len))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/objects" :id #"[0-9]+"] [id oid count]
-    (let [id (Integer/parseInt id)
-          o (Integer/parseInt oid)
-          n (Integer/parseInt count)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-objects id vm o n))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/mcld" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-mcld id vm))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/fnsd" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-fnsd id vm))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/symd" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-symd id vm))
-        (response/not-found "Nonesuch"))))
-  (GET ["/vms/:id/exc" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-exc id vm))
-        (response/not-found "Nonesuch"))))
-  (POST ["/vms" :id #"[0-9]+"] [game]
-    (let [game (Integer/parseInt game)]
-      (response/redirect-after-post (str "/vms/" (:id (ct/vm-new game))))))
-  (POST ["/vms/:id/step" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (ct/vm-step id)
-      (response/redirect-after-post (str "/vms/" id))))
-  (POST ["/vms/:id/enter" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (ct/vm-enter id)
-      (response/redirect-after-post (str "/vms/" id))))
-  (POST ["/vms/:id/run" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (ct/vm-run! id)
-      (response/redirect-after-post (str "/vms/" id))))
-  (GET ["/vms/:id/dis1/:addr" :id #"[0-9]+"] [id addr]
-    (let [id (Integer/parseInt id)
-          addr (Integer/parseInt addr)]
-      (if-let [vm (ct/vm-get id)]
-        (respond (represent-vm-assembly id addr))
-        (response/not-found "Nonesuch"))))
-  (GET ["/exec/:id" :id #"[0-9]+"] [id]
-    (let [id (Integer/parseInt id)]
-      (if-let [vm (ct/vm-get id)]
-        (respond "t3chnique.server/exec-page" (represent-vm id vm))
-        (response/not-found "Nonesuch"))))
-  (route/resources "/")
-  (route/not-found "No such resource"))
 
-(def app
-  (-> (handler/api vm-routes)
-      (wrap-restful-params)
-      (wrap-response)
-      (wrap-stacktrace-web)))
 
-(defn start []
-  (j/run-jetty #'app {:port 8080 :join? false}))
 
 ;; tooling site - static html access to the restful data
 
@@ -333,3 +237,235 @@
     [:div {:class "constant"}]
     [:div {:class "object"}]]
    [:script {:type "text/javascript" :src "/vm.js"}]))
+
+
+(defn scan-for-t3
+  "Scan the classpath for .t3 files to produce the game catalogue."
+  []
+  (->> (cp/classpath-directories)
+       (mapcat file-seq)
+       (map #(.getName %))
+       (filter #(.endsWith % ".t3"))))
+
+(defn new-id
+  "Create a new id string with prefix"
+  [prefix]
+  (apply str prefix \- (take 6 (->> (repeatedly (partial rand-int 26))
+                                    (map (partial + 97))
+                                    (map char)))))
+
+(defn game-list
+  "List available games."
+  [system] (:game-catalogue system))
+
+(defn game-get
+  "Retrive game by id."
+  [system id]
+  (first (filter #(= (:id %) id)
+                 (game-list system))))
+
+(defn vm-map
+  "List ids of all VMs in the system."
+  [system]
+  {:pre [(not (nil? system))]}
+  (map (fn [[k v]] [k (peek v)]) @(:vm-histories system)))
+
+(defn vm-get
+  "Return a VM by id"
+  [system id] (peek (get @(:vm-histories system) id)))
+
+(defn vm-new!
+  "Create a new VM for the game specified"
+  [system game-id]
+  (let [name (:name (game-get system game-id))
+        prefix (first (string/split name #"\W"))
+        histories @(:vm-histories system)
+        id (first (remove (partial contains? histories) (repeatedly #(new-id prefix))))
+        vm (assoc (t3vm/vm-from-image (parse/parse-resource name)) :id id)]
+    (swap! histories assoc-in [id [vm]])))
+
+(defn vm-destroy!
+  "Delete a VM by id"
+  [system id]
+  (swap! (:vm-histories system) dissoc id)
+  nil)
+
+(defn vm-enter!
+  "Enter the VM with specified id."
+  [system id]
+  (let [[r s] ((t3vm/enter) (vm-get system id))]
+    (swap! (:vm-histories system) update-in [id] conj s)
+    r))
+
+(defn vm-step!
+  "Single-step the VM with specified id."
+  [system id]
+  (let [initial-state (vm-get system id)]
+    (try
+      (let [[e s] ((t3vm/step) initial-state)]
+        (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
+      (catch Throwable t
+        (swap! (:vm-histories system)
+               update-in [id] (conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t)))))))))
+
+(defn vm-run!
+  "Run VM until an error is hit or input is required."
+  [system id]
+  (let [initial-state (vm-get system id)]
+    (try
+      (let [[e s] ((t3vm/run-state) (vm-get system id))]
+        (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
+      (catch Throwable t
+        (swap! (:vm-histories system) update-in [id] (conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t)))))))))
+
+(defn dis1
+  "Disassemble instruction at addr and return {:op {...} :args {...}}"
+  [system id addr]
+  (let [vm (vm-get system id)]
+    (-> (t3vm/offset vm addr)
+        ((t3vm/parse-op))
+        (first)
+        ((fn [[op args]] {:op op :args args})))))
+
+(defn make-routes
+  "Make routes for system"
+  [system]
+  {:pre [(not (nil? system))
+         (associative? system)]}
+  (routes
+
+   (GET "/games" []
+     (respond "t3chnique.server/games-page" (represent-game-list (game-list system))))
+
+   (GET ["/games/:id"] [id]
+     (let [id (Integer/parseInt id)]
+       (if-let [game (game-get system id)]
+         (respond "t3chnique.server/game-page" (represent-game game))
+         (response/not-found "Nonesuch"))))
+
+   (GET "/vms" []
+     (respond "t3chnique.server/vms-page" (represent-vm-map (vm-map system))))
+
+   (GET ["/vms/:id"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond "t3chnique.server/vm-page" (represent-vm id vm))
+       (response/not-found "Nonesuch")))
+   
+   (GET ["/vms/:id/stack"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond (represent-vm-stack id vm))
+       (response/not-found "Nonesuch")))
+   
+   (GET ["/vms/:id/registers"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond (represent-vm-registers id vm))
+       (response/not-found "Nonesuch")))
+   
+   (GET ["/vms/:id/code"] [id address length]
+     (let [addr (Integer/parseInt address)
+           len (Integer/parseInt length)]
+       (if-let [vm (vm-get system id)]
+         (respond (represent-vm-code id vm addr len))
+         (response/not-found "Nonesuch"))))
+
+   (GET ["/vms/:id/const"] [id address length]
+     (let [addr (Integer/parseInt address)
+           len (Integer/parseInt length)]
+       (if-let [vm (vm-get system id)]
+         (respond (represent-vm-const id vm addr len))
+         (response/not-found "Nonesuch"))))
+
+   (GET ["/vms/:id/objects"] [id oid count]
+     (let [o (Integer/parseInt oid)
+           n (Integer/parseInt count)]
+       (if-let [vm (vm-get system id)]
+         (respond (represent-vm-objects id vm o n))
+         (response/not-found "Nonesuch"))))
+   
+   (GET ["/vms/:id/mcld"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond (represent-vm-mcld id vm))
+       (response/not-found "Nonesuch")))
+
+   (GET ["/vms/:id/fnsd"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond (represent-vm-fnsd id vm))
+       (response/not-found "Nonesuch")))
+   
+   (GET ["/vms/:id/symd"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond (represent-vm-symd id vm))
+       (response/not-found "Nonesuch")))
+   
+   (GET ["/vms/:id/exc"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond (represent-vm-exc id vm))
+       (response/not-found "Nonesuch")))
+
+   ;; actions
+   
+   (POST ["/vms"] [game]
+     (let [game (Integer/parseInt game)]
+       (response/redirect-after-post (str "/vms/" (:id (vm-new! system game))))))
+   
+   (POST ["/vms/:id/step"] [id]
+     (vm-step! system id)
+     (response/redirect-after-post (str "/vms/" id)))
+   
+   (POST ["/vms/:id/enter"] [id]
+     (vm-enter! system id)
+     (response/redirect-after-post (str "/vms/" id)))
+   
+   (POST ["/vms/:id/run"] [id]
+     (vm-run! system id)
+     (response/redirect-after-post (str "/vms/" id)))
+   
+   (GET ["/vms/:id/dis1/:addr"] [id addr]
+     (let [addr (Integer/parseInt addr)]
+       (if-let [vm (vm-get system id)]
+         (respond (represent-vm-assembly id (vm-get system id) addr (dis1 id addr)))
+         (response/not-found "Nonesuch"))))
+   
+   (GET ["/exec/:id"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond "t3chnique.server/exec-page" (represent-vm id vm))
+       (response/not-found "Nonesuch")))
+   
+   (route/resources "/")
+   
+   (route/not-found "No such resource")))
+
+(defn make-app [system]
+  (-> (handler/api (make-routes system))
+      (wrap-restful-params)
+      (wrap-response)
+      (wrap-stacktrace-web)))
+
+(defn start-server [system]
+  (j/run-jetty (make-app system) {:port 8080 :join? false}))
+
+(defn stop-server [system]
+  (when-let [server @(:server system)]
+    (.stop server)))
+
+(defn system 
+  "Initialise a new instance of the whole application."
+  []
+  (let [t3s (scan-for-t3)
+        game-catalogue (map (fn [id name] {:id id :name name}) (range (count t3s)) t3s)]
+    {:game-catalogue game-catalogue
+     :vm-histories (atom {})
+     :server (atom nil)}))
+
+(defn start
+  "Start an instance of the application."
+  [system]
+  {:pre [(not (nil? system))]}
+  (swap! (:server system) (constantly (start-server system)))
+  system)
+
+(defn stop
+  "Stop serving requests."
+  [system]
+  (stop-server system)
+  system)

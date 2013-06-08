@@ -35,7 +35,12 @@
    :next-oid 0
    :mcld []
    :fnsd []
-   :symd []})
+   :symd []
+
+   :exc nil ; exception caused by last action 
+   :id nil ; VM id 
+   :sequence 0 ; sequence number in VM history
+   })
 
 ;; image loading
 
