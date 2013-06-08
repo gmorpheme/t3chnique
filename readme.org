@@ -8,6 +8,45 @@ semantics.
 
 If it were ever finished, it would doubtless perform extremely poorly.
 
+This source tree contains items for testing purposes which are
+copyright Michael J Roberts and Eric Eve.
 
+The ZMPP2 project also contains an unfinished scala-based sketch of a
+TADS3 implementation.
 
+** Organisation
 
+primitives.clj and monad.clj provide the lowest level
+
+parse.clj is building blocks for parsing image files and byte-code
+instructions
+
+vm.clj contains the representation of VM state and the primary means
+of manipulating it (or computing new states - as this is purely
+functional)
+
+On top of this, there are implementations of various "intrinsics"
+including intrinsic function sets (bif.clj) and metaclasses (in
+t3chnique.metaclass).
+
+all.clj, loads all of these up.
+
+control.clj is the basics for managing in-play games and intended to
+be the commonality between the REST interface (server.clj) and CLI
+toolin (main.clj).
+
+there's very crude visualisation of the VM available using pages
+served up by server.clj and the vm.js javascript functionality.
+
+** Backlog
+
+*** TODO main loop
+*** TODO clean-up app start / stop handling in control.clj
+    - http://thinkrelevance.com/blog/2013/06/04/clojure-workflow-reloaded
+*** TODO recursive calls
+*** TODO exception handling
+*** TODO yield (via continuation monad)
+*** TODO minimise monad usage for r/o stuff
+*** TODO main loop
+*** work through t3 tests to complete implementation 
+**** TODO vector.t3
