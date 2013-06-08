@@ -1,6 +1,7 @@
 (ns t3chnique.intrinsics
   (:refer-clojure :exclude [min max rand concat])
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [t3chnique.monad :as m]))
 
 (defprotocol t3vm
   "Internal VM operations"
@@ -127,7 +128,7 @@ set identified by provided."
   (let [[required-name required-version] (parse-id required)
         [provided-name provided-version] (parse-id provided)]
     (and (= required-name provided-name)
-         (< required-version provided-version ))))
+         (<= required-version provided-version ))))
 
 (defn find-protocol
   "Find protocol for the specified function set id."
@@ -140,6 +141,7 @@ set identified by provided."
 method in the function set identified by fsid at index n, passing
 specified args."
   [host fsid n & args]
-  (let [prot (find-protocol fsid)
+  {:pre [(number? n)]}
+  (let [prot (or (find-protocol fsid) (m/abort (str "Missing function set " fsid)))
         f (get (:fns (meta prot)) n)]
     (apply f host args)))

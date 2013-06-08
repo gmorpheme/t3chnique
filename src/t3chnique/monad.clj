@@ -5,7 +5,10 @@
 
 (defmacro in-vm [bindings val] `(domonad vm-m ~bindings ~val))
 
-(defn m-apply [f & args] (fn [s] [(apply f s args) s]))
+(defn m-apply
+  [f & args]
+  {:pre [f]}
+  (fn [s] {:pre [s]} [(apply f s args) s]))
 
 (defn abort
   "For now, throw - incorporate into monad later."

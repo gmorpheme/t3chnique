@@ -20,4 +20,5 @@
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["t3"]
                    :dependencies [[org.clojure/tools.trace "0.7.5"]
+                                  [org.clojure/java.classpath "0.2.0"]
                                   [midje "1.5.1"]]}})

@@ -1153,10 +1153,14 @@ with the vm map."
      r (apply f (vals args))]
     r))
 
-(defn run
-  "Run until an error occurs."
+(defn run-state
+  "Run until an error occurs. Explicitly in the state monad!"
   []
-  (in-vm
-    [s (fetch-state)
-     s (m-until :exc (fn [x] (step)) s)]
-   (:exc s)))
+  (fn [s]
+    (loop [state s]
+      (assert state)
+      (let [[newr new-state] ((step) state)]
+        (assert new-state)
+        (if-let [e (or newr (:exc new-state))]
+          [e new-state]
+          (recur new-state))))))
