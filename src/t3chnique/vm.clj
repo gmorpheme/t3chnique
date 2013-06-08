@@ -965,14 +965,14 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 
 (defn- setlcl [i v]
   (in-vm [fp (reg-get :fp)
-                 _ (stack-set (+ fp i) v)]
-           nil))
+          _ (stack-set (+ fp i) v)]
+         nil))
 
 (defn- updlcl [i f]
   (in-vm [fp (reg-get :fp)
-                 v (stack-get (+ fp i))
-                 _ (stack-set (+ fp i) (f v))]
-           nil))
+          v (stack-get (+ fp i))
+          _ (stack-set (+ fp i) (f v))]
+         nil))
 
 (defop inclcl 0xD0 [:uint2 local_number]
   (updlcl local_number vm-inc))
@@ -1019,19 +1019,19 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 
 (defop setlcl1 0xE0 [:ubyte local_number]
   (in-vm [v (stack-pop)
-                 _ (setlcl local_number v)]
-           nil))
+          _ (setlcl local_number v)]
+         nil))
 
 (defop setlcl2 0xE1 [:uint2 local_number]
   (in-vm [v (stack-pop)
-                 _ (setlcl local_number v)]
-           nil))
+          _ (setlcl local_number v)]
+         nil))
 
 (defop setarg1 0xE2 [:ubyte arg_number]
   (in-vm [fp (reg-get :fp)
-                 v (stack-pop)
-                 _ (stack-set (- fp (+ 9 arg_number)) v)]
-           nil))
+          v (stack-pop)
+          _ (stack-set (- fp (+ 9 arg_number)) v)]
+         nil))
 
 (defop setarg2 0xE3 [:uint2 arg_number]
   (in-vm [fp (reg-get :fp)
@@ -1039,24 +1039,47 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
                  _ (stack-set (- fp (+ 9 arg_number)) v)]
            nil))
 
+;TODO setind
 (defop setind 0xE4 [])
+
+;TODO setprop
 (defop setprop 0xE5 [:uint2 prop_id])
+
+;TODO ptrsetprop
 (defop ptrsetprop 0xE6 [])
+
+;TODO setpropself
 (defop setpropself 0xE7 [:uint2 prop_id])
+
+;TODO objsetprop
 (defop objsetprop 0xE8 [:uint4 obj :uint2 prop_id])
+
+;TODO setdblcl
 (defop setdblcl 0xE9 [:uint2 local_number])
+
+;TODO setdbarg
 (defop setdbarg 0xEA [:uint2 param_number])
+
+;TODO setself
 (defop setself 0xEB [])
+
+;TODO loadctx
 (defop loadctx 0xEC [])
+
+;TODO storectx
 (defop storectx 0xED [])
-(defop setlcl1r0 0xEE [:ubyte local_number])
+
+(defop setlcl1r0 0xEE [:ubyte local_number]
+  (in-vm [v (reg-get :r0)
+          _ (setlcl local_number v)]
+         nil))
+
 (defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val])
 
 ;; TODO debugger
 (defop bp 0xF1 [])
 
 (defop nop 0xF2 [])
-
 
 ;;;;;;;; intrinsic impls
 

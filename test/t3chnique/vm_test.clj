@@ -229,6 +229,18 @@
     (fact (apply-ops vm [(op-setarg1 0)]) => (contains {:stack (has-prefix (st 1 999))}))
     (fact (apply-ops vm [(op-setarg1 1)]) => (contains {:stack (has-prefix (st 999 2))}))))
 
+(facts "Set locals"
+  (let [vm (vm-state-with :ep 0x1234
+                          :ip 0x123e
+                          :fp 10
+                          :r0 (vm-int 727)
+                          :stack (st 1 2
+                                  nil nil nil nil
+                                  (vm-codeofs 0x20)
+                                  (vm-codeofs 0x10)
+                                  2 0 nil nil))]
+    (fact (apply-ops vm [(op-setlcl1r0 0) (op-setlcl1r0 1)]) => (contains {:stack (has-suffix (st 727 727))}))))
+
 (fact "t3SetSay sets method"
   (:say-method (apply-ops
                 (vm-state-with :stack [(vm-prop 0x10)])
