@@ -282,7 +282,8 @@
         histories (:vm-histories system)
         id (first (remove (partial contains? @histories) (repeatedly #(new-id prefix))))
         vm (assoc (t3vm/vm-from-image (parse/parse-resource name)) :id id)]
-    (swap! histories assoc id [vm])))
+    (swap! histories assoc id [vm])
+    vm))
 
 (defn vm-destroy!
   "Delete a VM by id"
@@ -423,7 +424,7 @@
    (GET ["/vms/:id/dis1/:addr"] [id addr]
      (let [addr (Integer/parseInt addr)]
        (if-let [vm (vm-get system id)]
-         (respond (represent-vm-assembly id (vm-get system id) addr (dis1 id addr)))
+         (respond (represent-vm-assembly id (vm-get system id) addr (dis1 system id addr)))
          (response/not-found "Nonesuch"))))
    
    (GET ["/exec/:id"] [id]
