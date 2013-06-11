@@ -128,6 +128,7 @@
       :ip 0x123e
       :fp 10
       :sp 14
+      :sequence 1
       :stack (st 1 2 (vm-prop 0) nil nil nil
                  (vm-codeofs 0x20)
                  (vm-codeofs 0x10)
@@ -144,7 +145,7 @@
                                      (vm-codeofs 0x20)
                                      (vm-codeofs 0x10)
                                      2 0 nil nil nil nil 99))]
-    (fact (apply-ops vm [(op-retval)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 99))))
+    (fact (apply-ops vm [(op-retval)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 99) :sequence 1)))
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
                           :fp 10
@@ -152,9 +153,9 @@
                                      (vm-codeofs 0x20)
                                      (vm-codeofs 0x10)
                                      2 0 nil nil nil nil))]
-    (fact (apply-ops vm [(op-retnil)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-nil)))
-    (fact (apply-ops vm [(op-rettrue)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-true)))
-    (fact (apply-ops (assoc vm :r0 (vm-int 111)) [(op-ret)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 111)))))
+    (fact (apply-ops vm [(op-retnil)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-nil) :sequence 1))
+    (fact (apply-ops vm [(op-rettrue)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-true) :sequence 1))
+    (fact (apply-ops (assoc vm :r0 (vm-int 111)) [(op-ret)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 111) :sequence 1))))
 
 (fact "Local access"
   (let [stack (map vm-int (range 4))]

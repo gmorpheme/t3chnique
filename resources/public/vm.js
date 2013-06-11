@@ -110,7 +110,7 @@ ControlPanel.prototype.update = function(links, exc) {
     .append("a")
     .attr("href", "")
     .attr("class", "action")
-    .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { vm.update(); }) })
+    .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { vm.update(); }); return false; })
     .text(function (d) { return d.name; });
 
   actions

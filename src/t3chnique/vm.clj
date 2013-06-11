@@ -223,6 +223,7 @@
   (in-vm
     [_ (fresh-pc)
      exc (op)
+     _ (update-val :sequence inc)
      _ (commit-pc)]
     exc))
 

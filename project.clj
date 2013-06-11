@@ -15,7 +15,7 @@
                  [ring-middleware-format "0.3.0"]
                  [nio "0.0.5"]
                  [hiccup "1.0.3"]]
-  :jvm-opts ["-Xms48m" "-Xmx1024m" "-XX:MaxPermSize=512m"]
+  :jvm-opts ["-Xms48m" "-Xmx1g" "-XX:MaxPermSize=512M"]
 
   ; add t3 tests to resources for 
   :profiles {:dev {:source-paths ["dev"]
