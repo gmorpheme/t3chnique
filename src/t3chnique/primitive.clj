@@ -47,3 +47,10 @@
 (defn vm-primitive? [v] (and
                          (contains? v :type)
                          (contains? v :value)))
+(defn valid? [v]
+  (cond
+   (vm-obj? v) (pos? (value v))
+   (vm-prop? v) (pos? (value v))
+   (vm-objx? v) (pos? (value v))
+   (vm-funcptr? v) (pos? (value v))
+   :else true))

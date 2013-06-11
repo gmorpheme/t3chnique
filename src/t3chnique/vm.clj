@@ -608,7 +608,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (in-vm
    [fp (reg-get :fp)
     self (stack-get (- fp 5))]
-   self))
+   (if (vm-obj? self) self (vm-obj nil))))
 
 (defn- get-stack-local [i]
   (in-vm
@@ -898,7 +898,15 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (copy :fp (partial + 5)))
 
 ;; TODO
-(defop say 0xB0 [:uint4 offset])
+(defop say 0xB0 [:uint4 offset]
+  (in-vm
+   [_ (stack-push (vm-sstring offset))
+    self (get-stack-self)
+    sm (get-say-method)
+    v (m-when (and (valid? self) (valid? sm)) (generic-get-prop self sm 1))
+    sf (get-say-function)
+    v (m-when (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1))]
+   nil))
 
 (defn- bif [set index argc]
   (in-vm
