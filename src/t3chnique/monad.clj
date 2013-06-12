@@ -3,9 +3,18 @@
 
 (def vm-m state-m)
 
-(defmacro in-vm [bindings val] `(domonad vm-m ~bindings ~val))
+(defmacro do-vm
+  "Sugar: 'do'-syntax for running monadic values in the vm monad."
+  [bindings val]
+  `(domonad vm-m ~bindings ~val))
+
+(defmacro in-vm
+  "Sugar: run mv in the vm monad."
+  [mv]
+  `(with-monad vm-m ~mv))
 
 (defn m-apply
+  "Return result of applying f to state, do not evolve state."
   [f & args]
   {:pre [f]}
   (fn [s] {:pre [s]} [(apply f s args) s]))

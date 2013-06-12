@@ -1,4 +1,6 @@
-(ns t3chnique.vm
+(ns ^{:doc "Main VM implementation including state and ops. Depends on metaclass
+and function set protocols."}
+    t3chnique.vm
   (:use [t3chnique.primitive]
         [t3chnique.monad])
   (:require [t3chnique.parse :as parse]
@@ -15,7 +17,10 @@
 ;;
 ;; vm state:
 (defn vm-state []
-  {:stack []
+  {
+   ;; stack and registers
+   
+   :stack []
    :r0 (vm-nil) ; ret val
    :ip 0 ; instruction pointer
    :ep 0 ; entry point
@@ -27,6 +32,9 @@
 
    :savepoint 0
    :savepoint-count 0
+
+   ;; code and constant pools, symbols, index lookups etc.
+   
    :code-pages []
    :code-page-size 0
    :const-pages []
@@ -38,13 +46,19 @@
    :symd []
 
    :exc nil ; exception caused by last action 
+
+   ;; metadata / id
+
    :id nil ; VM id 
    :sequence 0 ; sequence number in VM history
    })
 
 ;; image loading
 
-(defmulti load-image-block (fn [s b] (:id b)))
+(defmulti load-image-block
+  "Takes block from parsed image and loads the data into VM state. Dispatches
+on block type."
+  (fn [s b] (:id b)))
 
 (defmethod load-image-block "ENTP" [s b]
   (merge s (dissoc b :flags :id)))
@@ -103,7 +117,7 @@
 (defmacro with-stack
   "Bind symbols to values popped of top of stack and push result of exprs back on"
   [syms exprs]
-  `(in-vm
+  `(do-vm
     [~(vec (reverse syms)) (m-seq ~(vec (repeat (count syms) '(stack-pop))))
      _# (m-seq (map stack-push ~exprs))]
     nil))
@@ -129,7 +143,7 @@
     [op args]))
 
 (defn fresh-pc []
-  (in-vm
+  (do-vm
     [ip (fetch-val :ip)
      _ (set-val :pc ip)]
     nil))
@@ -138,7 +152,7 @@
 (defn pc [] (fetch-val :pc))
 
 (defn commit-pc []
-  (in-vm
+  (do-vm
    [pc (pc)
     _ (set-val :ip pc)
     _ (update-state #(dissoc % :pc))]
@@ -151,18 +165,18 @@
 (def set-say-function (partial set-val :say-function))
 
 (defn stack-push [val]
-  (in-vm
+  (do-vm
    [_ (update-val :stack #(conj % val))
     _ (update-val :sp inc)]
    nil))
 
 (defn stack-peek []
-  (in-vm
+  (do-vm
    [stack (fetch-val :stack)]
    (last stack)))
 
 (defn stack-pop []
-  (in-vm
+  (do-vm
    [top (stack-peek)
     _ (update-val :stack pop)
     _ (update-val :sp dec)]
@@ -172,7 +186,7 @@
   (update-val :stack #(assoc % idx val)))
 
 (defn stack-get [idx]
-  (in-vm
+  (do-vm
    [stack (fetch-val :stack)]
    (nth stack idx)))
 
@@ -191,12 +205,12 @@
 (def reg-set set-val)
 
 (defn symbol-value [sym]
-  (in-vm
+  (do-vm
    [stab (fetch-val :symd)]
    (get stab sym)))
 
 (defn new-obj-id []
-  (in-vm
+  (do-vm
    [oid (fetch-val :next-oid)
     _ (update-val :next-oid inc)]
    oid))
@@ -226,7 +240,7 @@
   "Sets up program counter for a single operations implementation and handles
    exceptions, rollback etc."
   [op]
-  (in-vm
+  (do-vm
     [_ (fresh-pc)
      exc (op)
      _ (update-val :sequence inc)
@@ -445,7 +459,7 @@
   (stack-op2 vm->=))
 
 (defn unwind []
-  (in-vm
+  (do-vm
    [sp (reg-get :sp)
     fp (reg-get :fp)
     _ (m-seq (repeat (- sp fp) (stack-pop)))
@@ -460,20 +474,20 @@
    nil))
 
 (defop retval 0x50 []
-  (in-vm
+  (do-vm
    [rv (stack-pop)
     _ (reg-set :r0 rv)
     _ (unwind)]
    nil))
 
 (defop retnil 0x51 []
-  (in-vm
+  (do-vm
    [_ (reg-set :r0 (vm-nil))
     _ (unwind)]
    nil))
 
 (defop rettrue 0x52 []
-  (in-vm
+  (do-vm
    [_ (reg-set :r0 (vm-true))
     _ (unwind)]
    nil))
@@ -504,7 +518,7 @@
          (vm-obj-or-nil? self-obj)
          (number? func-offset)
          (number? argc)]}
-  (in-vm
+  (do-vm
    [_ (stack-push target-pid)
     _ (stack-push target-obj)
     _ (stack-push defining-obj)
@@ -534,13 +548,15 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (fn access [target-val pid argc]
     {:pre [(vm-obj-or-nil? target-val)
            (number? pid)]}
-    (in-vm
+    (do-vm
      [target (obj-retrieve (value target-val))
       [defobj prop-val] (mc-mf target pid argc)
       r (exec-mf target-val defobj pid prop-val argc)]
      r)))
 
 (def generic-get-prop
+  "[target-val pid argc] - get property pid of target-val using argc
+arguments from stack, evaluates the result."
   (property-accessor
    mc/get-property
    (fn [target-val defobj pid prop-val argc]
@@ -585,7 +601,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count))
 
 (defop ptrcall 0x59 [:ubyte arg_count]
-  (in-vm
+  (do-vm
    [val (stack-pop)
     r (cond
        (vm-funcptr? val) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value val) arg_count)
@@ -595,50 +611,50 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
    r))
 
 (defop getprop 0x60 [:uint2 prop_id]
-  (in-vm
+  (do-vm
     [obj (stack-pop)
      r (generic-get-prop obj prop_id 0)]
     r))
 
 (defop callprop 0x61 [:ubyte arg_count :uint2 prop_id]
-  (in-vm
+  (do-vm
    [obj (stack-pop)
     r (generic-get-prop obj prop_id arg_count)]
    r))
 
 (defop ptrcallprop 0x62 [:ubyte arg_count]
-  (in-vm
+  (do-vm
    [prop (stack-pop)
     target-val (stack-pop)
     r (generic-get-prop target-val (value prop) arg_count)]
    r))
 
 (defn- get-stack-self []
-  (in-vm
+  (do-vm
    [fp (reg-get :fp)
     self (stack-get (- fp 5))]
    (if (vm-obj? self) self (vm-obj nil))))
 
 (defn- get-stack-local [i]
-  (in-vm
+  (do-vm
    [fp (reg-get :fp)
     target (stack-get (+ fp i))]
    target))
 
 (defop getpropself 0x63 [:uint2 prop_id]
-  (in-vm
+  (do-vm
    [self (get-stack-self)
     r (generic-get-prop self prop_id 0)]
    r))
 
 (defop callpropself 0x64 [:ubyte arg_count :uint2 prop_id]
-  (in-vm
+  (do-vm
    [self (get-stack-self)
     r (generic-get-prop self prop_id arg_count)]
    r))
 
 (defop ptrcallpropself 0x65 [:ubyte arg_count]
-  (in-vm
+  (do-vm
    [self (get-stack-self)
     prop (stack-pop)
     r (generic-get-prop self (value prop) arg_count)]
@@ -651,50 +667,50 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (generic-get-prop (vm-obj obj_id prop_id arg_count)))
 
 (defop getpropdata 0x68 [:uint2 prop_id]
-  (in-vm
+  (do-vm
    [target-val (stack-pop)
     r (generic-get-prop-data target-val prop_id)]
    r))
 
 (defop ptrgetpropdata 0x69 []
-  (in-vm
+  (do-vm
    [prop (stack-pop)
     target-val (stack-pop)
     r (generic-get-prop-data target-val (value prop))]
    r))
 
 (defop getproplcl1 0x6A [:ubyte local_number :uint2 prop_id]
-  (in-vm
+  (do-vm
    [target-val (get-stack-local local_number)
     r (generic-get-prop target-val prop_id 0)]
    r))
 
 (defop callproplcl1 0x6B [:ubyte arg_count :ubyte local_number :uint2 prop_id]
-  (in-vm
+  (do-vm
    [target-val (get-stack-local local_number)
     r (generic-get-prop target-val prop_id arg_count)]
    r))
 
 (defop getpropr0 0x6C [:uint2 prop_id]
-  (in-vm
+  (do-vm
    [target-val (reg-get :r0)
     r (generic-get-prop target-val prop_id 0)]
    r))
 
 (defop callpropr0 0x6D [:ubyte arg_count :uint2 prop_id]
-  (in-vm
+  (do-vm
    [target-val (reg-get :r0)
     r (generic-get-prop target-val prop_id arg_count)]
    r))
 
 (defop inherit 0x72 [:ubyte arg_count :uint2 prop_id]
-  (in-vm
+  (do-vm
    [target-val (stack-pop)
     r (generic-inherit-prop target-val prop_id arg_count)]
    r))
 
 (defop ptrinherit 0x73 [:ubyte arg_count]
-  (in-vm
+  (do-vm
    [prop (stack-pop)
     target-val (stack-pop)
     r (generic-inherit-prop target-val (value prop) arg_count)]
@@ -724,7 +740,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (with-stack [d c b a] [a b c d]))
 
 (defop swapn 0x7b [:ubyte idx1 :ubyte idx2]
-  (in-vm
+  (do-vm
    [sp (reg-get :sp)
     _ (stack-swap (- sp idx1) (- sp idx2))]
    nil))
@@ -733,7 +749,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 ;; stack and push it onto the stack
 
 (defn- copy [reg offsetf]
-  (in-vm
+  (do-vm
    [fp (reg-get reg)
     rv (stack-get (offsetf fp))
     _ (stack-push rv)]
@@ -814,14 +830,14 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 
 (defn- jump-cond1
   [jumpif? branch_offset]
-  (in-vm
+  (do-vm
            [v (stack-pop)
             _ (m-when (jumpif? v) (jump branch_offset))]
            nil))
 
 (defn- jump-cond2
   [jumpif? branch_offset]
-   (in-vm
+   (do-vm
             [v2 (stack-pop)
              v1 (stack-pop)
              _ (m-when (jumpif? v1 v2) (jump branch_offset))]
@@ -852,14 +868,14 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (jump-cond2 vm-<=? branch_offset))
 
 (defop jst 0x9A [:int2 branch_offset]
-  (in-vm [v (stack-peek)
+  (do-vm [v (stack-peek)
                  _ (if (not (vm-falsey? v))
                      (jump branch_offset)
                      (stack-pop))]
            nil))
 
 (defop jsf 0x9B [:int2 branch_offset]
-  (in-vm [v (stack-peek)
+  (do-vm [v (stack-peek)
                  _ (if (vm-falsey? v)
                      (jump branch_offset)
                      (stack-pop))]
@@ -877,12 +893,12 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (jump-cond1 (complement vm-nil?) branch_offset))
 
 (defop jr0t 0xA0 [:int2 branch_offset]
-  (in-vm [r0 (reg-get :r0)
+  (do-vm [r0 (reg-get :r0)
                  _ (m-when (not (vm-falsey? r0)) (jump branch_offset))]
            nil))
 
 (defop jr0f 0xA1 [:int2 branch_offset]
-  (in-vm [r0 (reg-get :r0)
+  (do-vm [r0 (reg-get :r0)
                  _ (m-when (vm-falsey? r0) (jump branch_offset))]
            nil))
 
@@ -907,19 +923,29 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 (defop getlcln5 0xAF []
   (copy :fp (partial + 5)))
 
-;; TODO
-(defop say 0xB0 [:uint4 offset]
-  (in-vm
-   [_ (stack-push (vm-sstring offset))
-    self (get-stack-self)
+(defn- say-value
+  "Take the value from top of stack and say it."
+  []
+  (do-vm
+   [self (get-stack-self)
     sm (get-say-method)
-    v (m-when (and (valid? self) (valid? sm)) (generic-get-prop self sm 1))
     sf (get-say-function)
-    v (m-when (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1))]
+    v (cond
+       (and (valid? self) (valid? sm)) (generic-get-prop self sm 1)
+       (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1))]
    nil))
 
-(defn- bif [set index argc]
-  (in-vm
+;; TODO
+(defop say 0xB0 [:uint4 offset]
+  (do-vm
+   [_ (stack-push (vm-sstring offset))
+    _ (say-value)]
+   nil))
+
+(defn- bif
+  "Call intrinsic function with index in set using argc arguments from stack. "
+  [set index argc]
+  (do-vm
     [fnsd (fetch-val :fnsd)
      _ (bif/invoke-by-index (host) (nth fnsd set) index argc)]
     nil))
@@ -942,11 +968,12 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 (defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index]
   (bif set_index func_index argc))
 
-(defop callext 0xB7 [] (abort "callext not implemented"))
+(defop callext 0xB7 []
+  (abort "callext not implemented"))
 
 ; TODO implement
 (defop throw 0xB8 []
-  (in-vm
+  (do-vm
     [ep (reg-get :ep)
      ip (reg-get :ip)
      mh (get-method-header ep)
@@ -956,8 +983,8 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
      ]
     nil))
 
-;; TODO
-(defop sayval 0xB9 [])
+(defop sayval 0xB9 []
+  (say-value))
 
 ;; TODO
 (defop index 0xBA [])
@@ -970,7 +997,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 
 ;; TODO byte code construction
 (defop new1 0xC0 [:ubyte arg_count :ubyte metaclass_id]
-  (in-vm
+  (do-vm
    [proto (m-apply #(mc/prototype % metaclass_id))
     obj (mc/load-from-stack proto arg_count)
     id (new-obj-id)
@@ -988,12 +1015,12 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 (defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id])
 
 (defn- setlcl [i v]
-  (in-vm [fp (reg-get :fp)
+  (do-vm [fp (reg-get :fp)
           _ (stack-set (+ fp i) v)]
          nil))
 
 (defn- updlcl [i f]
-  (in-vm [fp (reg-get :fp)
+  (do-vm [fp (reg-get :fp)
           v (stack-get (+ fp i))
           _ (stack-set (+ fp i) (f v))]
          nil))
@@ -1014,12 +1041,12 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (updlcl local_number (partial vm-+ val)))
 
 (defop addtolcl 0xD4 [:uint2 local_number]
-  (in-vm [v (stack-pop)
+  (do-vm [v (stack-pop)
                  _ (updlcl local_number #(vm-+ % v))]
            nil))
 
 (defop subfromlcl 0xD5 [:uint2 local_number]
-  (in-vm [v (stack-pop)
+  (do-vm [v (stack-pop)
                  _ (updlcl local_number #(vm-- % v))]
            nil))
 
@@ -1042,23 +1069,23 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (setlcl local_number (vm-int 1)))
 
 (defop setlcl1 0xE0 [:ubyte local_number]
-  (in-vm [v (stack-pop)
+  (do-vm [v (stack-pop)
           _ (setlcl local_number v)]
          nil))
 
 (defop setlcl2 0xE1 [:uint2 local_number]
-  (in-vm [v (stack-pop)
+  (do-vm [v (stack-pop)
           _ (setlcl local_number v)]
          nil))
 
 (defop setarg1 0xE2 [:ubyte arg_number]
-  (in-vm [fp (reg-get :fp)
+  (do-vm [fp (reg-get :fp)
           v (stack-pop)
           _ (stack-set (- fp (+ 9 arg_number)) v)]
          nil))
 
 (defop setarg2 0xE3 [:uint2 arg_number]
-  (in-vm [fp (reg-get :fp)
+  (do-vm [fp (reg-get :fp)
                  v (stack-pop)
                  _ (stack-set (- fp (+ 9 arg_number)) v)]
            nil))
@@ -1094,7 +1121,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 (defop storectx 0xED [])
 
 (defop setlcl1r0 0xEE [:ubyte local_number]
-  (in-vm [v (reg-get :r0)
+  (do-vm [v (reg-get :r0)
           _ (setlcl local_number v)]
          nil))
 
@@ -1121,7 +1148,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
                         2 (vm-prop 0)
                         (abort "VMERR_BAD_TYPE_BIF"))
                       v))]
-      (in-vm
+      (do-vm
                [val (stack-pop)
                 :let [val' (in val)]
                 current (if (vm-prop? val') (get-say-method) (get-say-function))
@@ -1129,15 +1156,15 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
                 _ (reg-set :r0 current)]
                nil)))
   (t3GetVMVsn [_ argc]
-    (in-vm [_ (reg-set :r0 (vm-int 0x00000001))] nil))
+    (do-vm [_ (reg-set :r0 (vm-int 0x00000001))] nil))
   (t3GetVMID [_ argc]
-    (in-vm [_ (reg-set :r0 (vm-sstring "t3chnique"))] nil))
+    (do-vm [_ (reg-set :r0 (vm-sstring "t3chnique"))] nil))
   (t3GetVMBanner [_ argc]
-    (in-vm [_ (reg-set :r0 (vm-sstring "T3chnique Experimental TADS 3 VM - Copyright 2012 Greg Hawkins"))] nil))
+    (do-vm [_ (reg-set :r0 (vm-sstring "T3chnique Experimental TADS 3 VM - Copyright 2012 Greg Hawkins"))] nil))
   (t3GetVMPreinitMode [_ argc]
-    (in-vm [_ (reg-set :r0 (vm-nil))] nil))
+    (do-vm [_ (reg-set :r0 (vm-nil))] nil))
   (t3DebugTrace [_ argc]
-    (in-vm [_ (reg-set :r0 (vm-nil))] nil))
+    (do-vm [_ (reg-set :r0 (vm-nil))] nil))
   ;; TODO symbol table access
   (t3GetGlobalSymbols [_ argc])
   ;; TODO prop allocation
@@ -1156,7 +1183,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   (concat [_ argc])
   
   (dataType [_ argc]
-    (in-vm
+    (do-vm
      [val (stack-pop)
       _ (reg-set :r0 (vm-int (typeid val)))]
      nil))
@@ -1198,7 +1225,7 @@ with the vm map."
 (defn enter
   "Set up vm at initial entry point."
   []
-  (in-vm
+  (do-vm
     [entp (fetch-val :entry-point-offset)
      _ (op-pushlst 0)
      _ (op-call 1 entp)]
@@ -1207,7 +1234,7 @@ with the vm map."
 (defn step
   "Execute the op code referenced by the ip register."
   []
-  (in-vm
+  (do-vm
     [ip (fetch-val :ip)
      [b i] (m-apply offset ip)
      :let [[[op args] [_ i']] ((parse-op) [b i])

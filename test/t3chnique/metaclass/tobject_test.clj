@@ -35,7 +35,7 @@
 
 (facts "Test inheritance order with multiple inheritance"
   (let [vm (vm/vm-state)
-        [[o1 o2 o3 o4] vm] ((m/in-vm
+        [[o1 o2 o3 o4] vm] ((m/do-vm
                              [_ (m-seq [(obj 1 [] {1 :a 2 :b 3 :c})
                                         (obj 2 [1] {2 :d 4 :e})
                                         (obj 3 [1] {3 :x 4 :y})
@@ -80,7 +80,7 @@
     (first ((mc/get-property o4 4 0) vm)) => [(p/vm-obj 2) :e]))
 
 (let [vm (vm/vm-state)
-      [[o1 o2] vm] ((m/in-vm
+      [[o1 o2] vm] ((m/do-vm
                      [_ (m-seq [(obj 1 [] {1 (p/vm-int 1) 2 (p/vm-int 2)})
                                 (obj 2 [1] {1 (p/vm-int 11)})])
                       os (m-map vm/obj-retrieve [1 2])]

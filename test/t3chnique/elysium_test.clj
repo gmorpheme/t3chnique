@@ -8,7 +8,7 @@
 
 (let [vm (vm/vm-from-image (parse/parse-resource "Elysium.t3"))]
 
-  (let [[o34 val] (first ((m/in-vm
+  (let [[o34 val] (first ((m/do-vm
                            [o34 (vm/obj-retrieve 34)
                             [do pv] (mc/get-property o34 183 0)]
                            [o34 pv]) vm))]

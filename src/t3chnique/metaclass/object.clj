@@ -1,8 +1,6 @@
 (ns t3chnique.metaclass.object
   (:require [t3chnique.metaclass :as mc])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
-        [t3chnique.monad :only [vm-m in-vm]]
-        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]])
+  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]])
   (:import [t3chnique.metaclass MetaClass]))
 
 

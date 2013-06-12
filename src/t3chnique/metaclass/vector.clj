@@ -5,7 +5,7 @@
             [t3chnique.vm :as vm]
             [t3chnique.monad :as m])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
-        [t3chnique.monad :only [vm-m in-vm m-apply]]
+        [t3chnique.monad :only [vm-m do-vm m-apply]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]])
   (:import [t3chnique.metaclass MetaClass]))
 
@@ -59,13 +59,13 @@
   (load-from-stack [_ argc]
 
     (case argc
-      0 (in-vm [] (Vector. []))
-      1 (in-vm
+      0 (do-vm [] (Vector. []))
+      1 (do-vm
          [arg (vm/stack-pop)]
          (if (p/vm-int? arg)
            (Vector. [])
            (m/abort "todo vector copy")))
-      2 (in-vm
+      2 (do-vm
          [arg1 (vm/stack-pop)
           arg2 (vm/stack-pop)]
          (if (every? p/vm-int? [arg1 arg2])
@@ -75,7 +75,7 @@
 
   (get-property [self propid argc]
     (let [mcidx (:metaclass self)]
-      (in-vm
+      (do-vm
        [[obj {f :value}] (m-apply #(mc/get-intrinsic-method % mcidx propid vec-table))
         r (f argc)]
        r)))

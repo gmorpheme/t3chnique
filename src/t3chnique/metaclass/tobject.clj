@@ -94,7 +94,7 @@ final instance remains in the sequence."
 
   (get-property [self propid argc]
     (let [metaclass-index (:metaclass self)]
-      (m/in-vm
+      (m/do-vm
        [[obj val] (m/m-apply #(get-prop % self propid))]
 
        ; eval intrinsic method if argc allows - otherwise return
@@ -103,7 +103,7 @@ final instance remains in the sequence."
          [(p/vm-obj (:oid obj)) val]))))
 
   (inherit-property [self propid argc]
-    (m/in-vm
+    (m/do-vm
      [[obj val] (m/m-apply #(inh-prop-from-chain % self propid))]
      (when obj
        [(p/vm-obj (:oid obj)) val])))
