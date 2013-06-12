@@ -7,6 +7,7 @@
 
 (defprotocol MetaClass
   "Operations available to the VM for each metaclass."
+
   (load-from-image [self buf o]
     "Load object data from byte buffer; return new object.")
 
@@ -14,30 +15,19 @@
     "Return monadic value to create from stack.")
   
   (get-property [self propid argc]
-    "Monadic value to return [defining-object property-value]")
+    "Monadic value to return [defining-object property-value]. When argc
+is not nil, intrinsic methods may be invoked. Otherwise a vm-native-code
+value may be returned to indicate that an intrinsic method would have
+been invoked.")
 
-  (inherit-property [self propid]
-    "Monadic value to return [defining-object property-value")
+  (inherit-property [self propid argc]
+    "Monadic value to return [defining-object property-value. When argc
+is not nil, intrinsic methods may be invoked. Otherwise a vm-native-code
+value may be returned to indicate that an intrinsic method would have
+been invoked.")
 
   (list-like? [self vm]
     "Whether the object is list like"))
-
-(defrecord TadsList [val]
-  MetaClass
-  (load-from-image [self buf o]
-    (first ((domonad byteparser-m
-              [n (uint2)
-               values (times n (data-holder))]
-              (TadsList. values)) [buf o]))))
-
-(defn tads-list [] (TadsList. nil))
-
-(defrecord AnonFn []
-  MetaClass
-  (load-from-image [self buf o]
-    (AnonFn.)))
-
-(defn anon-fn [] (AnonFn.))
 
 (defrecord Unimplemented []
   MetaClass
@@ -46,10 +36,9 @@
 
 (defn unknown-metaclass [] (Unimplemented.))
 
-(defonce metaclasses (atom {:list tads-list
-                            :dictionary2 unknown-metaclass
+(defonce metaclasses (atom {:dictionary2 unknown-metaclass
                             :grammar-production unknown-metaclass
-                            :anon-func-ptr anon-fn
+                            :anon-func-ptr unknown-metaclass
                             :int-class-mod unknown-metaclass
                             :root-object unknown-metaclass
                             :intrinsic-class unknown-metaclass

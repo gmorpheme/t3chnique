@@ -96,14 +96,17 @@ final instance remains in the sequence."
     (let [metaclass-index (:metaclass self)]
       (m/in-vm
        [[obj val] (m/m-apply #(get-prop % self propid))]
+
+       ; eval intrinsic method if argc allows - otherwise return
        (if (and (p/vm-native-code? val) (not (nil? argc)))
          ((p/value val) argc)
          [(p/vm-obj (:oid obj)) val]))))
 
-  (inherit-property [self propid]
+  (inherit-property [self propid argc]
     (m/in-vm
      [[obj val] (m/m-apply #(inh-prop-from-chain % self propid))]
-     (when obj [(p/vm-obj (:oid obj)) val])))
+     (when obj
+       [(p/vm-obj (:oid obj)) val])))
 
   (list-like? [self state]
     )

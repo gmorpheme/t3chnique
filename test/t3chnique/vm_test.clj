@@ -3,7 +3,8 @@
         [t3chnique.vm]
         [t3chnique.primitive]
         [midje.sweet])
-  (:require [t3chnique.intrinsics :as bif]))
+  (:require [t3chnique.intrinsics :as bif]
+            [t3chnique.monad :as m]))
 
 ;; helpers
 
@@ -291,3 +292,4 @@
         (vm-state-with :stack [(vm-int 0)])
         [(bif/dataType (host) 1)]))
   => (vm-int 7))
+

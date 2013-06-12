@@ -72,11 +72,19 @@
     (first ((mc/get-property o3 1 0) vm)) => [(p/vm-obj 1) :a]
     (first ((mc/get-property o4 1 0) vm)) => [(p/vm-obj 4) :d]
 
-    (first ((mc/inherit-property o1 1) vm)) => nil
-    (first ((mc/inherit-property o2 1) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/inherit-property o3 1) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/inherit-property o4 1) vm)) => [(p/vm-obj 1) :a]
+    (first ((mc/inherit-property o1 1 0) vm)) => nil
+    (first ((mc/inherit-property o2 1 0) vm)) => [(p/vm-obj 1) :a]
+    (first ((mc/inherit-property o3 1 0) vm)) => [(p/vm-obj 1) :a]
+    (first ((mc/inherit-property o4 1 0) vm)) => [(p/vm-obj 1) :a]
     
     (first ((mc/get-property o4 4 0) vm)) => [(p/vm-obj 2) :e]))
 
-
+(let [vm (vm/vm-state)
+      [[o1 o2] vm] ((m/in-vm
+                     [_ (m-seq [(obj 1 [] {1 (p/vm-int 1) 2 (p/vm-int 2)})
+                                (obj 2 [1] {1 (p/vm-int 11)})])
+                      os (m-map vm/obj-retrieve [1 2])]
+                     os) vm)]
+  (facts "VM property access helpers with tads-objects"
+    (:r0 (second ((vm/generic-get-prop (p/vm-obj 2) 1 0) vm))) => (p/vm-int 11)
+    (:r0 (second ((vm/generic-inherit-prop (p/vm-obj 2) 1 0) vm))) => (p/vm-int 1)))

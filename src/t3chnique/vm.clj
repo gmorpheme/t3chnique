@@ -108,14 +108,20 @@
      _# (m-seq (map stack-push ~exprs))]
     nil))
 
-(defn offset [{:keys [code-page-size code-pages ip]} & ptr]
+(defn offset
+  "Translate code pointer to buffer / offset pair."
+  [{:keys [code-page-size code-pages ip]} & ptr]
   (let [p (or (first ptr) ip)]
     [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
 
-(defn const-offset [{:keys [const-page-size const-pages]} ptr]
+(defn const-offset
+  "Translate const pointer to buffer / offset pair."
+  [{:keys [const-page-size const-pages]} ptr]
   [(:bytes (nth const-pages (/ ptr const-page-size))) (mod ptr const-page-size)])
 
-(defn parse-op []
+(defn parse-op
+  "Parser for reading op code and args from offset into code pool."
+  []
   (domonad parse/byteparser-m
     [opcode (parse/ubyte)
      :let [op (@table opcode)]
@@ -440,37 +446,37 @@
 
 (defn unwind []
   (in-vm
-           [sp (reg-get :sp)
-            fp (reg-get :fp)
-            _ (m-seq (repeat (- sp fp) (stack-pop)))
-            fp (stack-pop)
-            ac (stack-pop)
-            of (stack-pop)
-            ep (stack-pop)
-            _ (m-seq (repeat (+ 4 (value ac)) (stack-pop)))
-            _ (reg-set :fp (value fp))
-            _ (reg-set :ep (value ep))
-            _ (set-pc (+ (value ep) (value of)))]
-           nil))
+   [sp (reg-get :sp)
+    fp (reg-get :fp)
+    _ (m-seq (repeat (- sp fp) (stack-pop)))
+    fp (stack-pop)
+    ac (stack-pop)
+    of (stack-pop)
+    ep (stack-pop)
+    _ (m-seq (repeat (+ 4 (value ac)) (stack-pop)))
+    _ (reg-set :fp (value fp))
+    _ (reg-set :ep (value ep))
+    _ (set-pc (+ (value ep) (value of)))]
+   nil))
 
 (defop retval 0x50 []
   (in-vm
-           [rv (stack-pop)
-            _ (reg-set :r0 rv)
-            _ (unwind)]
-           nil))
+   [rv (stack-pop)
+    _ (reg-set :r0 rv)
+    _ (unwind)]
+   nil))
 
 (defop retnil 0x51 []
   (in-vm
-           [_ (reg-set :r0 (vm-nil))
-            _ (unwind)]
-           nil))
+   [_ (reg-set :r0 (vm-nil))
+    _ (unwind)]
+   nil))
 
 (defop rettrue 0x52 []
   (in-vm
-           [_ (reg-set :r0 (vm-true))
-            _ (unwind)]
-           nil))
+   [_ (reg-set :r0 (vm-true))
+    _ (unwind)]
+   nil))
 
 (defop ret 0x54 []
   (unwind))
@@ -535,42 +541,45 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
      r)))
 
 (def generic-get-prop
-  (property-accessor mc/get-property
-                     (fn [target-val defobj pid prop-val argc]
-                       (if prop-val
-                         (cond
-                          (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
-                          (vm-dstring? prop-val) (abort "not implemented (say)")
-                          (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
-                                                                target-val
-                                                                defobj
-                                                                target-val
-                                                                (value prop-val)
-                                                                argc))
-                         (abort "not implemented propNotDefined")))))
+  (property-accessor
+   mc/get-property
+   (fn [target-val defobj pid prop-val argc]
+     (if prop-val
+       (cond
+        (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+        (vm-dstring? prop-val) (abort "not implemented (say)")
+        (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
+                                              target-val
+                                              defobj
+                                              target-val
+                                              (value prop-val)
+                                              argc))
+       (abort "not implemented propNotDefined")))))
 
 (def generic-inherit-prop
-  (property-accessor mc/inherit-property
-                     (fn [target-val defobj pid prop-val argc]
-                       (if prop-val
-                         (cond
-                          (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
-                          (vm-dstring? prop-val) (abort "not implemented (say)")
-                          (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
-                                                                target-val
-                                                                defobj
-                                                                target-val
-                                                                (value prop-val)
-                                                                argc))
-                         (abort "not implemented propNotDefined")))))
+  (property-accessor
+   mc/inherit-property
+   (fn [target-val defobj pid prop-val argc]
+     (if prop-val
+       (cond
+        (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+        (vm-dstring? prop-val) (abort "not implemented (say)")
+        (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
+                                              target-val
+                                              defobj
+                                              target-val
+                                              (value prop-val)
+                                              argc))
+       (abort "not implemented propNotDefined")))))
 
 (def generic-get-prop-data
-  (property-accessor mc/get-property
-                     (fn [target-val defobj pid prop-val argc]
-                       (if prop-val
-                         (cond
-                          (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
-                          :else (abort "BAD_SPEC_EVAL"))))))
+  (property-accessor
+   mc/get-property
+   (fn [target-val defobj pid prop-val argc]
+     (if prop-val
+       (cond
+        (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+        :else (abort "BAD_SPEC_EVAL"))))))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
   (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count))
@@ -716,18 +725,19 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 
 (defop swapn 0x7b [:ubyte idx1 :ubyte idx2]
   (in-vm
-           [sp (reg-get :sp)
-            _ (stack-swap (- sp idx1) (- sp idx2))]
-           nil))
+   [sp (reg-get :sp)
+    _ (stack-swap (- sp idx1) (- sp idx2))]
+   nil))
 
 ;; A set of operations which retrieve an item from lower down the
 ;; stack and push it onto the stack
 
 (defn- copy [reg offsetf]
-  (in-vm [fp (reg-get reg)
-          rv (stack-get (offsetf fp))
-          _ (stack-push rv)]
-         nil))
+  (in-vm
+   [fp (reg-get reg)
+    rv (stack-get (offsetf fp))
+    _ (stack-push rv)]
+   nil))
 
 (defop getlcl1 0x80 [:ubyte local_number]
   (copy :fp (partial + local_number)))
