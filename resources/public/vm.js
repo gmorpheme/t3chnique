@@ -85,7 +85,16 @@ var cH = 20; // cell height
 var cW = 70; // cell width
 var cP = 3;  // cell padding
 var rLabelWidth = 25;
-function cAttrs(obj) { return _.extend({x: 0, y: 0, rx: 3, ry: 3, width: cW, height: cH}, obj)}
+function cAttrs(obj) { 
+  return _.extend({x: 0, 
+                   y: 0, 
+                   rx: 3, 
+                   ry: 3, 
+                   width: cW, 
+                   height: cH
+                  }, 
+                  obj)
+}
 
 
 // Actions
@@ -204,6 +213,7 @@ StackDiagram.prototype.update = function(stack) {
     })
     .enter()
     .append("rect")
+    .on("click", function(d) { return vm.updateToContext(d); })
     .attr(
       cAttrs(
         {
@@ -255,6 +265,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .attr("class", function(d) { return "vm-" + types[d.value.type].name; })
     .enter()
     .append("rect")
+    .on("click", function(d) { return vm.updateToContext(d); })
     .attr(
       cAttrs(
         {
@@ -320,6 +331,7 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
   cells
     .enter()
     .append("rect")
+    .on("click", function(d) { return vm.updateToContext(d); })
     .attr(
       cAttrs(
         {
@@ -363,7 +375,8 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
       .selectAll("rect.mc")
       .data(objectSection, key);
 
-  mcs.enter()
+  mcs
+    .enter()
     .append("rect")
     .attr(
       cAttrs(
@@ -417,6 +430,7 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
   props
     .enter()
     .append("rect")
+    .on("click", function(d) { return vm.updateToContext(d); })
     .attr(
       cAttrs(
         {x: function(d, i) { return (cW + cP) * (2 + (i * 2));  },
@@ -465,7 +479,8 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
          class: function(d) { return "vm-" + types[d.value.type].name + " fieldval"; }
         }
       )
-    );
+    )
+    .on("click", function(d) { return vm.updateToContext(d); });
 
   vals
     .exit()
@@ -697,6 +712,11 @@ var vm = {
     var len = 512;
     this.updateCode(addr, len);
   },
+
+
+  updateToContext: function(typedValue) {
+    console.log(typedValue);
+  }
 }
 
 function init() {
