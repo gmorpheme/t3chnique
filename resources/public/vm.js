@@ -252,6 +252,7 @@ function RegisterDiagram(div) {
 RegisterDiagram.prototype.update = function(registers) {
   this.svg.selectAll("rect")
     .data(registers)
+    .attr("class", function(d) { return "vm-" + types[d.value.type].name; })
     .enter()
     .append("rect")
     .attr(
