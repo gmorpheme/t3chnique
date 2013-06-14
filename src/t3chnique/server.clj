@@ -24,7 +24,7 @@
 (defn vm-actions
   "Return the actions available for the vm at its current state"
   [vm]
-  (if (zero? (:ip vm)) [:action/enter] [:action/step :action/run]))
+  (if (zero? (:ip vm)) [:action/enter] [:action/step :action/run :action/back]))
 
 (defn render-html [data]
   (if-let [page (:page (meta data))]
@@ -96,7 +96,7 @@
 
 (defn represent-vm-map [vms]
   (for [[id vm] vms]
-    (add-vm-links id (vm-actions vm) {:id id})))
+    (add-vm-links id (vm-actions vm) {:id id :sequence (:sequence vm)})))
 
 (defn ubytes [page offset len]
   (map #(bit-and 0xff %) (parse/read-bytes page offset len)))
@@ -296,7 +296,7 @@
   [system id]
   (let [[r s] ((t3vm/enter) (vm-get system id))]
     (swap! (:vm-histories system) update-in [id] conj s)
-    r))
+    (vm-get system id)))
 
 (defn vm-step!
   "Single-step the VM with specified id."
@@ -307,7 +307,14 @@
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
         (swap! (:vm-histories system)
-               update-in [id] (conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t)))))))))
+               update-in [id] conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t))))))
+    (vm-get system id)))
+
+(defn vm-back!
+  "Reverse the last operation."
+  [system id]
+  (swap! (:vm-histories system) update-in [id] pop)
+  (vm-get system id))
 
 (defn vm-run!
   "Run VM until an error is hit or input is required."
@@ -317,7 +324,8 @@
       (let [[e s] ((t3vm/run-state) (vm-get system id))]
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
-        (swap! (:vm-histories system) update-in [id] (conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t)))))))))
+        (swap! (:vm-histories system) update-in [id] conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t))))))
+    (vm-get system id)))
 
 (defn dis1
   "Disassemble instruction at addr and return {:op {...} :args {...}}"
@@ -410,16 +418,16 @@
        (response/redirect-after-post (str "/vms/" (:id (vm-new! system game))))))
    
    (POST ["/vms/:id/step"] [id]
-     (vm-step! system id)
-     (response/redirect-after-post (str "/vms/" id)))
+     (respond (represent-vm id (vm-step! system id))))
    
    (POST ["/vms/:id/enter"] [id]
-     (vm-enter! system id)
-     (response/redirect-after-post (str "/vms/" id)))
+     (respond (represent-vm id (vm-enter! system id))))
    
    (POST ["/vms/:id/run"] [id]
-     (vm-run! system id)
-     (response/redirect-after-post (str "/vms/" id)))
+     (respond (represent-vm id (vm-run! system id))))
+
+   (POST ["/vms/:id/back"] [id]
+     (respond (represent-vm id (vm-back! system id))))
    
    (GET ["/vms/:id/dis1/:addr"] [id addr]
      (let [addr (Integer/parseInt addr)]

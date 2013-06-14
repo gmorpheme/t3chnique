@@ -108,9 +108,9 @@ ControlPanel.prototype.update = function(links, exc) {
     .attr("id", function(d) { return d.rel.replace('/', '-'); })
     .attr("class", "action")
     .append("a")
-    .attr("href", "")
+    .attr("href", "#")
     .attr("class", "action")
-    .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { vm.update(); }); return false; })
+    .on("click", function(d) { console.log("Starting post"); d3.xhr(d.href).post().on("load", function() { console.log("handling post response"); vm.update(); }); return false; })
     .text(function (d) { return d.name; });
 
   actions
@@ -266,8 +266,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .enter()
     .append("text")
     .attr({
-      class: "label",
-      class: function(d) { return "vm-" + types[d.value.type].name; },
+      class: function(d) { return "label vm-" + types[d.value.type].name; },
       x: function(d, i) { return (rLabelWidth / 2) + (cW + rLabelWidth + cP) * i; },
       y: 15,
       "text-anchor": "middle",
@@ -278,11 +277,11 @@ RegisterDiagram.prototype.update = function(registers) {
 
   this.svg.selectAll("text.value")
     .data(registers)
+    .text(function(d) { return types[d.value.type].render(d.value.value) })
     .enter()
     .append("text")
     .attr({
-      class: "value",
-      class: function(d) { return "vm-" + types[d.value.type].name; },
+      class: function(d) { return "value vm-" + types[d.value.type].name; },
       x: function (d, i) { return rLabelWidth + (cW / 2) + (cW + rLabelWidth + cP) * i },
       y: 15,
       "text-anchor": "middle",
@@ -551,9 +550,11 @@ var vm = {
   objectSection: {},
 
   init: function() {
+    console.log("In init");
     var vm = this;
     if (vm_url) {
       d3.json(vm_url, function(o) {
+        console.log("In init response");
         vm._links = o._links;
         vm.updateMetaclassList();
         vm.updateFunctionList();
@@ -564,9 +565,11 @@ var vm = {
   },
 
   update: function() {
+    console.log("In update");
     var vm = this;
     if (vm_url) {
       d3.json(vm_url, function(o) {
+        console.log("Handling vm response");
         vm._links = o._links;
         vm.updateStatus();
         vm.updateStack();
