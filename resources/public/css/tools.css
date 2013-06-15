@@ -29,6 +29,8 @@ th { font-weight: normal; text-align: right; font-family: "Lucida Console", Mona
 body { background-color: #222; color: white; padding: 2px;}
 div { padding: 2px; }
 
+span.action { padding: 4px; }
+
 #action-step a:hover { text-decoration: none; background-color: #333; }
 a span.prompt { color: #808080; padding: 4px; }
 a span.mnemonic { color: #EE5A6E; padding: 4px; }
@@ -37,6 +39,14 @@ a.additional { color: #808080; padding: 4px; }
 
 a.exc { color: red; border: 1px solid red; padding: 2px; }
 a.exc:hover { text-decoration: none; background-color: #333; }
+
+div#information h1 { font-size: 15px; font-weight: bold; display: inline; padding: 2px; }
+div.fnsd { background-color: #333; margin: 4px; border-radius: 3px;}
+div.fnsd span.builtin { color: #808080; padding: 2px; }
+div.mcld { background-color: #333; margin: 4px; border-radius: 3px;}
+div.mcld span.metaclass { color: #808080; padding: 2px; }
+div.symd { background-color: #333; margin: 4px; border-radius: 3px;}
+div.symd span.symbol { color: #808080; padding: 2px; }
 
 /*
 

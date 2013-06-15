@@ -114,6 +114,7 @@ function cells(svg, style, data, x, y, key, val, prefix) {
 
   rects
     .on("click", function(d) { vm.updateToContext(val(d)); })
+    .transition()
     .attr(
       cAttrs({
         x: function(d, k) { return x(d, k) * (cW + cP + prefixPad) + prefixPad; },
@@ -134,6 +135,7 @@ function cells(svg, style, data, x, y, key, val, prefix) {
   labels
     .text(function(d) { return type(val(d)).render(value(val(d))); })
     .on("click", function(d) { return vm.updateToContext(val(d)); })
+    .transition()
     .attr({
       x: function(d, k) { return x(d, k) * (cW + cP + prefixPad) + cW / 2 + prefixPad; },
       y: function (d, k) { return (cH + cP) * y(d, k) + 15},
@@ -271,6 +273,64 @@ function enrichActions() {
       d3.json(dis1link, function(o) { vm.assembly = o.assembly; formatOpCode('#action-step', vm.assembly)})
     }
   }
+}
+
+// Information Panel
+
+function InformationPanel(div) {
+  this.div = div;
+  this.fnsd = this.div.append("div").attr("class", "fnsd");
+  this.fnsd.append("h1").text("Function Sets:");
+  this.mcld = this.div.append("div").attr("class", "mcld");
+  this.mcld.append("h1").text("Metaclasses:");
+  this.symd = this.div.append("div").attr("class", "symd");
+  this.symd.append("h1").text("Symbols:");
+}
+
+InformationPanel.prototype.update = function(vm) {
+  note("updating info panel");
+
+  var fns = this.fnsd
+    .selectAll("span.builtin")
+    .data(vm.fnsd);
+
+  fns
+    .enter()
+    .append("span");
+
+  fns
+    .attr("class", "builtin")
+    .text(function(d, i) { return "" + i + ": " + d; });
+  
+  fns.exit().remove();
+
+  var mcs = this.mcld
+    .selectAll("span.metaclass")
+    .data(vm.mcld);
+
+  mcs
+    .enter()
+    .append("span");
+
+  mcs
+    .attr("class", "metaclass")
+    .text(function(d, i) { return "" + i + ": " + d["metaclass-id"]; });
+
+  mcs.exit().remove();
+
+  var syms = this.symd
+    .selectAll("span.symbol")
+    .data(vm.symd);
+
+  syms
+    .enter()
+    .append("span");
+
+  syms
+    .attr("class", "symbol")
+    .text(function(d) { return d.name; });
+
+  syms.exit().remove();
 }
 
 // Stack Diagram
@@ -472,13 +532,6 @@ PoolDiagram.prototype.update = function(section) {
 
 }
 
-var actionPanel;
-var stackDiagram;
-var registerDiagram;
-var objectPoolDiagram;
-var objectInspectorDiagram;
-var codeDiagram;
-var constDiagram;
 
 function detemplatiseUrl(u) {
   return u.substr(0, u.indexOf('{'));
@@ -536,6 +589,7 @@ var vm = {
       d3.json(vm._links.mcld.href, function(m) {
         vm._links = m._links;
         vm.mcld = m.mcld;
+        infoPanel.update(vm);
       });
     }
   },
@@ -546,6 +600,7 @@ var vm = {
       d3.json(vm._links.fnsd.href, function(f) {
         vm._links = f._links;
         vm.fnsd = f.fnsd;
+        infoPanel.update(vm);
       });
     }
   },
@@ -556,6 +611,7 @@ var vm = {
       d3.json(vm._links.symd.href, function(f) {
         vm._links = f._links;
         vm.symd = f.symd;
+        infoPanel.update(vm);
       });
     }
   },
@@ -669,9 +725,19 @@ var vm = {
   }
 }
 
+var actionPanel;
+var stackDiagram;
+var registerDiagram;
+var objectPoolDiagram;
+var objectInspectorDiagram;
+var codeDiagram;
+var constDiagram;
+var infoPanel;
+
 function init() {
 
   actionPanel = new ControlPanel(d3.select("div#controls"));
+  infoPanel = new InformationPanel(d3.select("div#information"));
   stackDiagram = new StackDiagram(d3.select("div.stack"));
   registerDiagram = new RegisterDiagram(d3.select("div.register"));
   objectPoolDiagram = new ObjectPoolDiagram(d3.select("div.object"));

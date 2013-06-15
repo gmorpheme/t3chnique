@@ -229,6 +229,7 @@
   (chrome
    [:script (str "vm_url = '/exec/" id  "';")]
    [:div {:id "header"}]
+   [:div {:id "information" :clear "left" :width "100%"}]
    [:div {:id "controls" :clear "left" :width "100%"}]
    [:div
     [:div {:class "stack"}]
