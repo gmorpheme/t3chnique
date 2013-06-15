@@ -84,7 +84,7 @@
     (assoc repn :_links links)))
 
 (defn represent-vm [id vm]
-  (add-vm-links id (vm-actions vm) {:id id}))
+  (add-vm-links id (vm-actions vm) {:id id :sequence (:sequence vm)}))
 
 (defn represent-vm-stack [id vm]
   (add-vm-links id (vm-actions vm) (select-keys vm [:stack])))

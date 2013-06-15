@@ -279,6 +279,8 @@ function enrichActions() {
 
 function InformationPanel(div) {
   this.div = div;
+  this.meta = this.div.append("div").attr("class", "meta");
+  this.meta.append("h1").text("VM:");
   this.fnsd = this.div.append("div").attr("class", "fnsd");
   this.fnsd.append("h1").text("Function Sets:");
   this.mcld = this.div.append("div").attr("class", "mcld");
@@ -289,6 +291,22 @@ function InformationPanel(div) {
 
 InformationPanel.prototype.update = function(vm) {
   note("updating info panel");
+
+  var details = this.meta
+    .selectAll("span.meta")
+    .data(_.pairs(_.pick(vm, "id", "sequence")));
+
+  details
+    .enter()
+    .append("span");
+
+  details
+    .attr("class", "meta")
+    .text(function(d) { return d[0] + ": " + d[1]; });
+
+  details
+    .exit()
+    .remove();
 
   var fns = this.fnsd
     .selectAll("span.builtin")
@@ -577,6 +595,7 @@ var vm = {
         vm.updateRegisters();
         vm.updateConst(0, 512);
         vm.updateObjects(0, 40);
+        infoPanel.update(vm);
       });
     }
   },
