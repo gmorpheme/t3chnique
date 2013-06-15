@@ -63,29 +63,71 @@ vm_enum = new PrimitiveType(15, "enum", prefixed("e"))
 vm_bifptr = new PrimitiveType(16, "bifptr", prefixedHex("bf"))
 vm_objx = new PrimitiveType(17, "objx", prefixed("ox"))
 
-var types = [null,
-             vm_nil,
-             vm_true,
-             vm_stack,
-             vm_codeptr,
-             vm_obj,
-             vm_prop,
-             vm_int,
-             vm_sstring,
-             vm_dstring,
-             vm_list,
-             vm_codeofs,
-             vm_funcptr,
-             vm_empty,
-             vm_native,
-             vm_enum,
-             vm_bifptr,
-             vm_objx];
+var types = [vm_nil, vm_true, vm_stack, vm_codeptr, vm_obj, vm_prop,
+             vm_int, vm_sstring, vm_dstring, vm_list, vm_codeofs, vm_funcptr,
+             vm_empty, vm_native, vm_enum, vm_bifptr, vm_objx];
+
+function type(o) { return _.find(types, function(t) { return t != null && t.id == o.type; })}
+function value(o) { return o.value; }
 
 var cH = 20; // cell height
 var cW = 70; // cell width
 var cP = 3;  // cell padding
 var rLabelWidth = 25;
+
+/*
+ * Maintain a group of cells under svg.
+ * val(d) -> typed value from d
+ * x(d, k), y(d, k) -> cell pos from d
+ * key(d) -> key
+ */
+function cells(svg, style, data, x, y, key, val) {
+
+  if (val == undefined || val == null) {
+    val = _.identity;
+  }
+
+  console.log(data);
+
+  var rects = svg.selectAll("rect." + style).data(data, key);
+  
+  rects
+    .enter()
+    .append("rect");
+
+  rects
+    .on("click", function(d) { vm.updateToContext(val(d)); })
+    .attr(
+      cAttrs({
+        x: function(d, k) { return x(d, k) * (cW + cP); },
+        y: function(d, k) { return y(d, k) * (cH + cP); },
+        class: function(d) { return "vm-" + type(val(d)).name + " " + style; }
+      }));
+
+  rects
+    .exit()
+    .remove();
+
+  var labels = svg.selectAll("text." + style + "-label").data(data, key);
+
+  labels
+    .enter()
+    .append("text");
+  
+  labels
+    .text(function(d) { return type(val(d)).render(value(val(d))); })
+    .on("click", function(d) { return vm.updateToContext(val(d)); })
+    .attr({
+      x: function(d, k) { return x(d, k) * (cW + cP) + cW / 2; },
+      y: function (d, k) { return (cH + cP) * y(d, k) + 15},
+      class: function(d) { return "vm-" + type(val(d)).name + " " + style + "-label"; }
+    });
+  
+  labels
+    .exit()
+    .remove();
+}
+
 function cAttrs(obj) { 
   return _.extend({x: 0, 
                    y: 0, 
@@ -205,47 +247,11 @@ StackDiagram.prototype.update = function(stack) {
   this.svg
     .attr("height", (cH + cP) * _.max([10, stack.length]));
 
-  var cells = this.svg.selectAll("rect").data(stack);
-
-  cells
-    .attr({
-      y: function(d, i) { return (cH + cP) * (stack.length - i - 1)},
-      class: function(d) { return "vm-" + types[d.type].name; }
-    })
-    .enter()
-    .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d); })
-    .attr(
-      cAttrs(
-        {
-          y: function(d, i) { return (cH + cP) * (stack.length - i - 1)},
-          class: function(d) { return "vm-" + types[d.type].name; }
-        }));
-
-  cells.exit().remove();
-
-  var labels = this.svg.selectAll("text").data(stack);
-
-  labels
-    .text(function(d) { return types[d.type].render(d.value) })
-    .attr({
-      y: function (d, i) { return (cH + cP) * (stack.length - i - 1) + 15},
-      class: function(d) { return "vm-" + types[d.type].name; }
-    });
-  
-  labels
-    .enter()
-    .append("text")
-    .on("click", function(d) { return vm.updateToContext(d); })
-    .text(function(d) { return types[d.type].render(d.value) })
-    .attr({
-      x: cW / 2,
-      y: function (d, i) { return (cH + cP) * (stack.length - i - 1) + 15},
-      class: function(d) { return "vm-" + types[d.type].name; }
-    });
-
-  labels
-    .exit().remove();
+  cells(this.svg, 
+        "stack-item", 
+        stack, 
+        function() { return 0; },
+        function(d, i) { return stack.length - i - 1; });
 }
 
 // Register Diagram
@@ -260,7 +266,7 @@ function RegisterDiagram(div) {
 RegisterDiagram.prototype.update = function(registers) {
   this.svg.selectAll("rect")
     .data(registers)
-    .attr("class", function(d) { return "vm-" + types[d.value.type].name; })
+    .attr("class", function(d) { return "vm-" + type(d.value).name; })
     .enter()
     .append("rect")
     .on("click", function(d) { return vm.updateToContext(d.value); })
@@ -268,7 +274,7 @@ RegisterDiagram.prototype.update = function(registers) {
       cAttrs(
         {
           x: function (d, i) { return rLabelWidth + (cW + rLabelWidth + cP) * i },
-          class: function(d) { return "vm-" + types[d.value.type].name; }
+          class: function(d) { return "vm-" + type(d.value).name; }
         }));
 
   this.svg.selectAll("text.label")
@@ -276,7 +282,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .enter()
     .append("text")
     .attr({
-      class: function(d) { return "label vm-" + types[d.value.type].name; },
+      class: function(d) { return "label vm-" + type(d.value).name; },
       x: function(d, i) { return (rLabelWidth / 2) + (cW + rLabelWidth + cP) * i; },
       y: 15
     })
@@ -284,16 +290,16 @@ RegisterDiagram.prototype.update = function(registers) {
 
   this.svg.selectAll("text.value")
     .data(registers)
-    .text(function(d) { return types[d.value.type].render(d.value.value) })
+    .text(function(d) { return type(d.value).render(d.value.value) })
     .enter()
     .append("text")
     .on("click", function(d) { return vm.updateToContext(d.value); })
     .attr({
-      class: function(d) { return "value vm-" + types[d.value.type].name; },
+      class: function(d) { return "value vm-" + type(d.value).name; },
       x: function (d, i) { return rLabelWidth + (cW / 2) + (cW + rLabelWidth + cP) * i },
       y: 15
     })
-    .text(function(d) { return types[d.value.type].render(d.value.value) });
+    .text(function(d) { return type(d.value).render(d.value.value) });
 }
 
 // Object Diagram
@@ -315,44 +321,13 @@ ObjectPoolDiagram.prototype.update = function(objectSection, mcld) {
 
   // -- first the oid cells
 
-  var cells = 
-    this.svg
-      .selectAll("rect.oid")
-      .data(objectSection, key);
-
-  cells
-    .attr("y", function(d, k) { return (cH + cP) * index(d); })
-    .enter()
-    .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d.oid); })
-    .attr(
-      cAttrs(
-        {
-          y: function(d, k) { return (cH + cP) * index(d) },
-          class: function(d) { return "oid vm-" + types[d.oid.type].name; }
-        }));
-
-  cells.exit().remove();
-
-  var labels = 
-    this.svg
-      .selectAll("text.oid")
-      .data(objectSection, key);
-  
-  labels
-    .attr("y", function(d, k) { return (cH + cP) * index(d) + 15; })
-    .enter()
-    .append("text")
-    .text(function(d) { return types[d.oid.type].render(d.oid.value) })
-    .on("click", function(d) { return vm.updateToContext(d.oid); })
-    .attr({
-      x: cW / 2,
-      y: function (d, k) { return (cH + cP) * index(d) + 15},
-      class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
-    });
-
-  labels
-    .exit().remove();
+  cells(this.svg,
+        "oid",
+        objectSection,
+        function() { return 0; },
+        index,
+        key,
+        function(d) { return d.oid; });
 
   // -- then the mc cells
   var mcs = 
@@ -403,183 +378,56 @@ function ObjectInspectorDiagram(div) {
 }
 
 ObjectInspectorDiagram.prototype.update = function(object) {
+
+  // object header
+  cells(this.svg,
+        "object",
+        [object],
+        function() { return 0; },
+        function() { return 0; },
+        function(d) { return d.oid; },
+        function(d) { return d.oid; });
+
+  // bases
+  var baseObjects = 
+    _.chain(object.value.bases)
+     .map(function (value) { return {type: vm_obj.id, value: value}; })
+    .value();
+
+  cells(this.svg,
+        "base",
+        baseObjects,
+        function() { return 0; },
+        function(d, i) { return 1 + i; });
+
+  // properties
+
   var countBases = _.has(object.value, "bases") ? object.value.bases.length : 0;
-  var countProps = _.has(object.value, "properties") ? object.value.bases.length : 0;
-  
   var properties =
     _.chain(object.value.properties)
     .map(function(value, pid) { return {pid: {type: vm_prop.id, value:  parseInt(pid)}, value: value}; })
     .map(function(value, index) { return _.extend(value, {index: index}); })
     .value();
 
-  var baseObjects = 
-    _.chain(object.value.bases)
-     .map(function (value) { return {type: vm_obj.id, value: value}; })
-    .value();
-
   function key (data) { return [object.oid.value, data.pid.value]; }
   function index (data) { return data.index; }
 
-  console.log("Properties: ", properties);
-  console.log("Bases: ", baseObjects);
-
-  // object header
-  var header =
-    this.svg
-    .selectAll("rect.object")
-    .data([object]);
+  cells(this.svg,
+        "property",
+        properties,
+        function() { return 0; },
+        function(d) { return 1 + countBases + index(d); },
+        key,
+        function(d) { return d.pid; });
   
-  header
-    .enter()
-    .append("rect")
-    .attr(cAttrs({
-      class: "object vm-obj"
-    }));
-
-  header
-    .on("click", function(d) { return vm.updateToContext(d.oid); })
-
-  header.exit().remove();
-
-  var headerlabel = 
-    this.svg
-    .selectAll("text.object")
-    .data([object]);
-
-  headerlabel
-    .enter()
-    .append("text")
-    .attr(cAttrs({
-      x: cW / 2, 
-      y: 15,
-      class: "object vm-obj"
-    }));
-
-  headerlabel
-    .text(function(d) { return types[d.oid.type].render(d.oid.value); })
-    .on("click", function(d) { return vm.updateToContext(d.oid); });
-
-  headerlabel.exit().remove();
-
-  // bases
-  var bases = 
-    this.svg
-    .selectAll("rect.base")
-    .data(baseObjects);
-
-  bases
-    .enter()
-    .append("rect")
-    .attr(
-      cAttrs({
-        class: function(d) { return "base vm-" + types[d.type].name; }
-      }));
-
-  bases
-    .attr("y", function(d, i) { return (cH + cP) * (1 + i); })
-    .on("click", function(d) { return vm.updateToContext(d); });
-
-  bases.exit().remove();
-
-  var baselabels =
-    this.svg
-    .selectAll("text.base")
-    .data(baseObjects);
-
-  baselabels
-    .enter()
-    .append("text")
-    .attr({
-      x: cW / 2,
-      class: function(d) { return "vm-" + types[d.type].name + " base"; }
-    });
-
-  baselabels
-    .on("click", function(d) { return vm.updateToContext(d); })
-    .text(function(d) { return types[d.type].render(d.value); })
-    .attr("y", function (d, i) { return (cH + cP) * (1 + i) + 15});
-
-  baselabels.exit().remove();
-
-  var props = 
-    this.svg
-    .selectAll("rect.prop")
-    .data(properties, key);
-
-  props
-    .enter()
-    .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d.pid); })
-    .attr(
-      cAttrs(
-        {
-          class: function(d) { return "prop vm-" + types[d.pid.type].name; }
-        }));
-
-  props.attr("y", function(d) { return (cH + cP) * (1 + countBases + index(d)); });
-    
-  props
-    .exit().remove();
-
-  var proplabels =
-    this.svg
-    .selectAll("text.prop")
-    .data(properties, key);
-
-  proplabels
-    .enter()
-    .append("text")
-    .on("click", function(d) { return vm.updateToContext(d.pid); })
-    .text(function(d) { return types[d.pid.type].render(d.pid.value) })
-    .attr({
-      x: cW / 2,
-      class: function(d) { return "vm-" + types[d.pid.type].name + " prop"; }
-    });
-
-  proplabels.attr("y", function (d, k) { return (cH + cP) * (1 + countBases + index(d)) + 15});
-
-  proplabels
-    .exit().remove();
-  
-  var propvals = 
-    this.svg
-    .selectAll("rect.propval")
-    .data(properties, key);
-
-  propvals
-    .enter()
-    .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d.value); })
-    .attr(
-      cAttrs(
-        {
-          x: cW + cP,
-          class: function(d) { return "propval vm-" + types[d.value.type].name; }
-        }));
-
-  propvals.attr("y", function(d) { return (cH + cP) * (1 + countBases + index(d)); });
-
-  propvals.exit().remove();
-
-  var propvallabels =
-    this.svg
-    .selectAll("text.propval")
-    .data(properties, key);
-
-  propvallabels
-    .enter()
-    .append("text")
-    .on("click", function(d) { return vm.updateToContext(d.value); })
-    .text(function(d) { return types[d.value.type].render(d.value.value) })
-    .attr({
-      x: cW + cP + cW / 2,
-      class: function(d) { return "vm-" + types[d.pid.type].name + " propval"; }
-    });
-
-  propvallabels.attr("y", function (d, k) { return (cH + cP) * (1 + countBases + index(d)) + 15});
-
-  propvallabels.exit().remove();
-
+  // property values
+  cells(this.svg,
+        "property-value",
+        properties,
+        function() { return 1; },
+        function(d) { return 1 + countBases + index(d); },
+        key,
+        function(d) { return d.value; });
 }
 
 
