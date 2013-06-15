@@ -557,8 +557,7 @@ var vm = {
     var vm = this;
     if (vm_url) {
       d3.json(vm_url, function(o) {
-        console.log("In init response");
-        vm._links = o._links;
+        _.extend(vm, o);
         vm.updateMetaclassList();
         vm.updateFunctionList();
         vm.updateSymbols();
@@ -572,8 +571,7 @@ var vm = {
     var vm = this;
     if (vm_url) {
       d3.json(vm_url, function(o) {
-        console.log("Handling vm response");
-        vm._links = o._links;
+        _.extend(vm, o);
         vm.updateStatus();
         vm.updateStack();
         vm.updateRegisters();
@@ -587,8 +585,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.mcld.href, function(m) {
-        vm._links = m._links;
-        vm.mcld = m.mcld;
+        _.extend(vm, m);
         infoPanel.update(vm);
       });
     }
@@ -598,8 +595,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.fnsd.href, function(f) {
-        vm._links = f._links;
-        vm.fnsd = f.fnsd;
+        _.extend(vm, f);
         infoPanel.update(vm);
       });
     }
@@ -609,8 +605,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.symd.href, function(f) {
-        vm._links = f._links;
-        vm.symd = f.symd;
+        _.extend(vm, f);
         infoPanel.update(vm);
       });
     }
@@ -620,8 +615,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.stack.href, function(s) {
-        vm._links = s._links;
-        vm.stack = s.stack;
+        _.extend(vm, s);
         stackDiagram.update(vm.stack);
       });
     }
@@ -631,7 +625,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.registers.href, function(r) {
-        vm._links = r._links;
+        _.extend(vm, r);
         vm.registers = 
           _.chain(r)
           .map(function(v, k) { return {name: abbreviateRegisterName(k), value: v}})
@@ -649,7 +643,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(detemplatiseUrl(vm._links.code.href) + '?address=' + address + '&length=' + length, function(cs) {
-        vm._links = cs._links;
+        _.extend(vm, cs);
         vm.codeSection = cs['code-section'];
         codeDiagram.update(vm.codeSection);
       });
@@ -660,7 +654,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(detemplatiseUrl(vm._links.const.href) + '?address=' + address + '&length=' + length, function(cs) {
-        vm._links = cs._links;
+        _.extend(vm, cs);
         vm.constSection = cs['const-section'];
         constDiagram.update(vm.constSection);
       });
@@ -671,7 +665,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(detemplatiseUrl(vm._links.objects.href) + '?oid=' + oid + '&count=' + count, function(os) {
-        vm._links = os._links;
+        _.extend(vm, os);
         vm.objectSection = os['objs'];
         objectPoolDiagram.update(vm.objectSection, vm.mcld);
         objectInspectorDiagram.update(vm.objectSection[0]);
@@ -683,8 +677,7 @@ var vm = {
     var vm = this;
     if (vm._links) {
       d3.json(vm._links.exc.href, function(e) {
-        vm._links = e._links;
-        vm.exc = e.exc;
+        _.extend(vm, e);
         actionPanel.update(_.filter(vm._links, function(lk, k) { lk.rel = k; return k.indexOf("action/") >= 0; }), vm.exc);
       });
     }
