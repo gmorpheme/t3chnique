@@ -9,6 +9,22 @@ _.mixin({
   }
 })
 
+function fail(thing) {
+  throw new Error(thing);
+}
+
+function warn(thing) {
+  console.log(["WARNING:", thing].join(' '));
+}
+
+function note(thing) {
+  console.log(["NOTE:", thing].join(' '));
+}
+
+function existy(x) { return x != null };
+
+function truthy(x) { return (x !== false) && existy(x) };
+
 /**
  * Abbreviate a register name to two characters.
  */
@@ -67,7 +83,7 @@ var types = [vm_nil, vm_true, vm_stack, vm_codeptr, vm_obj, vm_prop,
              vm_int, vm_sstring, vm_dstring, vm_list, vm_codeofs, vm_funcptr,
              vm_empty, vm_native, vm_enum, vm_bifptr, vm_objx];
 
-function type(o) { return _.find(types, function(t) { return t != null && t.id == o.type; })}
+function type(o) { return _.find(types, function(t) { return existy(t) && t.id == o.type; })}
 function value(o) { return o.value; }
 
 var cH = 20; // cell height
@@ -80,14 +96,15 @@ var rLabelWidth = 25;
  * val(d) -> typed value from d
  * x(d, k), y(d, k) -> cell pos from d
  * key(d) -> key
+ * prefix(d) -> prefix label
  */
-function cells(svg, style, data, x, y, key, val) {
+function cells(svg, style, data, x, y, key, val, prefix) {
 
-  if (val == undefined || val == null) {
+  if (!existy(val)) {
     val = _.identity;
   }
 
-  console.log(data);
+  var prefixPad = existy(prefix) ? rLabelWidth : 0;
 
   var rects = svg.selectAll("rect." + style).data(data, key);
   
@@ -99,7 +116,7 @@ function cells(svg, style, data, x, y, key, val) {
     .on("click", function(d) { vm.updateToContext(val(d)); })
     .attr(
       cAttrs({
-        x: function(d, k) { return x(d, k) * (cW + cP); },
+        x: function(d, k) { return x(d, k) * (cW + cP + prefixPad) + prefixPad; },
         y: function(d, k) { return y(d, k) * (cH + cP); },
         class: function(d) { return "vm-" + type(val(d)).name + " " + style; }
       }));
@@ -118,7 +135,7 @@ function cells(svg, style, data, x, y, key, val) {
     .text(function(d) { return type(val(d)).render(value(val(d))); })
     .on("click", function(d) { return vm.updateToContext(val(d)); })
     .attr({
-      x: function(d, k) { return x(d, k) * (cW + cP) + cW / 2; },
+      x: function(d, k) { return x(d, k) * (cW + cP + prefixPad) + cW / 2 + prefixPad; },
       y: function (d, k) { return (cH + cP) * y(d, k) + 15},
       class: function(d) { return "vm-" + type(val(d)).name + " " + style + "-label"; }
     });
@@ -126,6 +143,28 @@ function cells(svg, style, data, x, y, key, val) {
   labels
     .exit()
     .remove();
+
+  if (existy(prefix)) {
+    
+    var prefixes = svg.selectAll("text." + style + "-prefix").data(data, key);
+
+    prefixes
+      .enter()
+      .append("text");
+
+    prefixes
+      .text(function(d) { return prefix(d); })
+      .attr({
+        x: function(d, k) { return x(d, k) * (cW + cP + prefixPad) + prefixPad / 2; },
+        y: function (d, k) { return (cH + cP) * y(d, k) + 15; },
+        class: style + "-prefix"
+      });
+
+    prefixes
+      .exit()
+      .remove();
+
+  }
 }
 
 function cAttrs(obj) { 
@@ -264,42 +303,14 @@ function RegisterDiagram(div) {
 }
 
 RegisterDiagram.prototype.update = function(registers) {
-  this.svg.selectAll("rect")
-    .data(registers)
-    .attr("class", function(d) { return "vm-" + type(d.value).name; })
-    .enter()
-    .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d.value); })
-    .attr(
-      cAttrs(
-        {
-          x: function (d, i) { return rLabelWidth + (cW + rLabelWidth + cP) * i },
-          class: function(d) { return "vm-" + type(d.value).name; }
-        }));
-
-  this.svg.selectAll("text.label")
-    .data(registers)
-    .enter()
-    .append("text")
-    .attr({
-      class: function(d) { return "label vm-" + type(d.value).name; },
-      x: function(d, i) { return (rLabelWidth / 2) + (cW + rLabelWidth + cP) * i; },
-      y: 15
-    })
-    .text(function (d) { return d.name });
-
-  this.svg.selectAll("text.value")
-    .data(registers)
-    .text(function(d) { return type(d.value).render(d.value.value) })
-    .enter()
-    .append("text")
-    .on("click", function(d) { return vm.updateToContext(d.value); })
-    .attr({
-      class: function(d) { return "value vm-" + type(d.value).name; },
-      x: function (d, i) { return rLabelWidth + (cW / 2) + (cW + rLabelWidth + cP) * i },
-      y: 15
-    })
-    .text(function(d) { return type(d.value).render(d.value.value) });
+  cells(this.svg,
+        "register",
+        registers,
+        function(d, i) { return i; },
+        function() { return 0; },
+        null,
+        function(d) { return d.value; },
+        function(d) { return d.name; });
 }
 
 // Object Diagram
