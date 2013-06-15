@@ -10,10 +10,15 @@ div.code, div.constant{
 }
 
 div.object {
-  width: 420px;
+  width: 152px;
   float: left; 
   color: white; 
   font-size: 12px; 
+}
+
+div.inspector {
+  float: left;
+  width: 152px;
 }
 
 th { font-weight: normal; text-align: right; font-family: "Lucida Console", Monaco, monospace; }
@@ -72,6 +77,6 @@ svg rect.vm-native-code { fill: #ee5a6e; }
 svg rect.vm-enum { fill: #1a957d; }
 svg rect.vm-bifptr { fill: #ee5a6e; }
 svg rect.vm-objx { fill: #085e4e; }
-svg text { fill: white; font-size: "13px"; }
+svg text { fill: white; font-size: 13px; text-anchor: middle; font-family: sans-serif; font-weight: bold; }
 svg rect.metaclass { fill: #6dc9b7; }
-svg text.metaclass { fill: black; } /* #808080; } */
+svg text.metaclass { fill: black; } 

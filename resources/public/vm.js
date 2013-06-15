@@ -35,7 +35,8 @@ function toTable(section) {
     .value();
 }
 
-function PrimitiveType(name, render) {
+function PrimitiveType(id, name, render) {
+  this.id = id;
   this.name = name;
   this.render = render;
 }
@@ -44,23 +45,23 @@ PrimitiveType.prototype.onClick = function(data) {
   return null;
 }
 
-vm_nil = new PrimitiveType("nil", function(_) { return "nil"; });
-vm_true = new PrimitiveType("true",  function(_) { return "true"; })
-vm_stack = new PrimitiveType("stack", prefixed("st"))
-vm_codeptr = new PrimitiveType("codeptr", prefixedHex("c"))
-vm_obj = new PrimitiveType("obj", prefixed("o"))
-vm_prop = new PrimitiveType("prop", prefixed("pid"))
-vm_int = new PrimitiveType("int", function(v) { return v; })
-vm_sstring = new PrimitiveType("sstring", prefixedHex("'"))
-vm_dstring = new PrimitiveType("dstring", prefixedHex("\""))
-vm_list = new PrimitiveType("list", prefixedHex("[]"))
-vm_codeofs = new PrimitiveType("codeofs", prefixed("of"))
-vm_funcptr = new PrimitiveType("funcptr", prefixedHex("()"))
-vm_empty = new PrimitiveType("empty", function(_) { return "empty"; })
-vm_native = new PrimitiveType("native-code", prefixedHex("n"))
-vm_enum = new PrimitiveType("enum", prefixed("e"))
-vm_bifptr = new PrimitiveType("bifptr", prefixedHex("bf"))
-vm_objx = new PrimitiveType("objx", prefixed("ox"))
+vm_nil = new PrimitiveType(1, "nil", function(_) { return "nil"; });
+vm_true = new PrimitiveType(2, "true",  function(_) { return "true"; })
+vm_stack = new PrimitiveType(3, "stack", prefixed("st"))
+vm_codeptr = new PrimitiveType(4, "codeptr", prefixedHex("c"))
+vm_obj = new PrimitiveType(5, "obj", prefixed("o"))
+vm_prop = new PrimitiveType(6, "prop", prefixed("pid"))
+vm_int = new PrimitiveType(7, "int", function(v) { return v; })
+vm_sstring = new PrimitiveType(8, "sstring", prefixedHex("'"))
+vm_dstring = new PrimitiveType(9, "dstring", prefixedHex("\""))
+vm_list = new PrimitiveType(10, "list", prefixedHex("[]"))
+vm_codeofs = new PrimitiveType(11, "codeofs", prefixed("of"))
+vm_funcptr = new PrimitiveType(12, "funcptr", prefixedHex("()"))
+vm_empty = new PrimitiveType(13, "empty", function(_) { return "empty"; })
+vm_native = new PrimitiveType(14, "native-code", prefixedHex("n"))
+vm_enum = new PrimitiveType(15, "enum", prefixed("e"))
+vm_bifptr = new PrimitiveType(16, "bifptr", prefixedHex("bf"))
+vm_objx = new PrimitiveType(17, "objx", prefixed("ox"))
 
 var types = [null,
              vm_nil,
@@ -119,7 +120,7 @@ ControlPanel.prototype.update = function(links, exc) {
     .append("a")
     .attr("href", "#")
     .attr("class", "action")
-    .on("click", function(d) { console.log("Starting post"); d3.xhr(d.href).post().on("load", function() { console.log("handling post response"); vm.update(); }); return false; })
+    .on("click", function(d) { d3.xhr(d.href).post().on("load", function() { vm.update(); }); return false; })
     .text(function (d) { return d.name; });
 
   actions
@@ -235,15 +236,12 @@ StackDiagram.prototype.update = function(stack) {
   labels
     .enter()
     .append("text")
+    .on("click", function(d) { return vm.updateToContext(d); })
     .text(function(d) { return types[d.type].render(d.value) })
     .attr({
       x: cW / 2,
       y: function (d, i) { return (cH + cP) * (stack.length - i - 1) + 15},
-      class: function(d) { return "vm-" + types[d.type].name; },
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-size": "13px",
-      "font-weight": "bold"
+      class: function(d) { return "vm-" + types[d.type].name; }
     });
 
   labels
@@ -265,7 +263,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .attr("class", function(d) { return "vm-" + types[d.value.type].name; })
     .enter()
     .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d); })
+    .on("click", function(d) { return vm.updateToContext(d.value); })
     .attr(
       cAttrs(
         {
@@ -280,10 +278,7 @@ RegisterDiagram.prototype.update = function(registers) {
     .attr({
       class: function(d) { return "label vm-" + types[d.value.type].name; },
       x: function(d, i) { return (rLabelWidth / 2) + (cW + rLabelWidth + cP) * i; },
-      y: 15,
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-size": "13px",
+      y: 15
     })
     .text(function (d) { return d.name });
 
@@ -292,20 +287,17 @@ RegisterDiagram.prototype.update = function(registers) {
     .text(function(d) { return types[d.value.type].render(d.value.value) })
     .enter()
     .append("text")
+    .on("click", function(d) { return vm.updateToContext(d.value); })
     .attr({
       class: function(d) { return "value vm-" + types[d.value.type].name; },
       x: function (d, i) { return rLabelWidth + (cW / 2) + (cW + rLabelWidth + cP) * i },
-      y: 15,
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-size": "13px",
-      "font-weight": "bold",
+      y: 15
     })
     .text(function(d) { return types[d.value.type].render(d.value.value) });
 }
 
 // Object Diagram
-function ObjectDiagram(div) {
+function ObjectPoolDiagram(div) {
   this.div = div;
   this.svg = this.div
     .append("svg")
@@ -316,10 +308,10 @@ function ObjectDiagram(div) {
  * Update display to show the specified section of the object pool, 
  * using the metaclass lookup list provided.
  */
-ObjectDiagram.prototype.update = function(objectSection, mcld) {
+ObjectPoolDiagram.prototype.update = function(objectSection, mcld) {
 
   var key = function(d) { return d.oid.value; }
-  var index = function(k) { return k - objectSection[0].oid.value + 1; };
+  var index = function(d) { return _.indexOf(objectSection, d); };
 
   // -- first the oid cells
 
@@ -329,14 +321,15 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
       .data(objectSection, key);
 
   cells
+    .attr("y", function(d, k) { return (cH + cP) * index(d); })
     .enter()
     .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d); })
+    .on("click", function(d) { return vm.updateToContext(d.oid); })
     .attr(
       cAttrs(
         {
-          y: function(d, k) { return (cH + cP) * index(k)},
-          class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
+          y: function(d, k) { return (cH + cP) * index(d) },
+          class: function(d) { return "oid vm-" + types[d.oid.type].name; }
         }));
 
   cells.exit().remove();
@@ -345,25 +338,17 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
     this.svg
       .selectAll("text.oid")
       .data(objectSection, key);
-
-  labels
-    .text(function(d) { return types[d.oid.type].render(d.oid.value) })
-    .attr({
-      y: function (d, k) { return (cH + cP) * index(k) + 15},
-      class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
-    });
   
   labels
+    .attr("y", function(d, k) { return (cH + cP) * index(d) + 15; })
     .enter()
     .append("text")
     .text(function(d) { return types[d.oid.type].render(d.oid.value) })
+    .on("click", function(d) { return vm.updateToContext(d.oid); })
     .attr({
       x: cW / 2,
-      y: function (d, k) { return (cH + cP) * index(k) + 15},
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-size": "13px",
-      "font-weight": "bold"
+      y: function (d, k) { return (cH + cP) * index(d) + 15},
+      class: function(d) { return "vm-" + types[d.oid.type].name + " oid"; }
     });
 
   labels
@@ -372,16 +357,17 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
   // -- then the mc cells
   var mcs = 
     this.svg
-      .selectAll("rect.mc")
+      .selectAll("rect.metaclass")
       .data(objectSection, key);
 
   mcs
+    .attr("y", function(d) { return (cH + cP) * index(d); })
     .enter()
     .append("rect")
     .attr(
       cAttrs(
         {
-          y: function(d, k) { return (cH + cP) * index(k)},
+          y: function(d) { return (cH + cP) * index(d)},
           x: cW + cP,
           class: "metaclass"
         }));
@@ -391,123 +377,211 @@ ObjectDiagram.prototype.update = function(objectSection, mcld) {
 
   var mclabels = 
     this.svg
-      .selectAll("text.mc")
+      .selectAll("text.metaclass")
       .data(objectSection, key);
 
-  mclabels.enter()
+  mclabels
+    .attr("y", function(d) { return (cH + cP) * index(d) + 15; })
+    .enter()
     .append("text")
     .text(function(d) { return truncateMetaclassName(mcld[d.value.metaclass]['metaclass-id']); })
     .attr({
       x: cW + cP + cW / 2,
-      y: function (d, k) { return (cH + cP) * index(k) + 15},
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-weight": "bold",
+      y: function (d) { return (cH + cP) * index(d) + 15},
       class: "metaclass"
     });
 
   mclabels.exit()
     .remove();
+}
 
-  var pgroups = 
+function ObjectInspectorDiagram(div) {
+  this.div = div;
+  this.svg = this.div
+    .append("svg")
+    .attr("class", "inspector");
+}
+
+ObjectInspectorDiagram.prototype.update = function(object) {
+  var countBases = _.has(object.value, "bases") ? object.value.bases.length : 0;
+  var countProps = _.has(object.value, "properties") ? object.value.bases.length : 0;
+  
+  var properties =
+    _.chain(object.value.properties)
+    .map(function(value, pid) { return {pid: {type: vm_prop.id, value:  parseInt(pid)}, value: value}; })
+    .map(function(value, index) { return _.extend(value, {index: index}); })
+    .value();
+
+  var baseObjects = 
+    _.chain(object.value.bases)
+     .map(function (value) { return {type: vm_obj.id, value: value}; })
+    .value();
+
+  function key (data) { return [object.oid.value, data.pid.value]; }
+  function index (data) { return data.index; }
+
+  console.log("Properties: ", properties);
+  console.log("Bases: ", baseObjects);
+
+  // object header
+  var header =
     this.svg
-      .selectAll("g.props")
-      .data(objectSection, key);
-
-  pgroups
-    .enter()
-    .append("g")
-    .attr("class", "props");
-
-  pgroups
-    .exit()
-    .remove();
-
-  var props = pgroups
-    .selectAll("rect.fieldprop")
-    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
-
-  props
+    .selectAll("rect.object")
+    .data([object]);
+  
+  header
     .enter()
     .append("rect")
-    .on("click", function(d) { return vm.updateToContext(d); })
-    .attr(
-      cAttrs(
-        {x: function(d, i) { return (cW + cP) * (2 + (i * 2));  },
-         y: function (d) { return (cH + cP) * d.index; },
-         class: "vm-prop fieldprop"
-        }
-      )
-    );
+    .attr(cAttrs({
+      class: "object vm-obj"
+    }));
 
-  props
-    .exit()
-    .remove();
+  header
+    .on("click", function(d) { return vm.updateToContext(d.oid); })
 
-  var proplabels = pgroups
-    .selectAll("text.fieldprop")
-    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
+  header.exit().remove();
 
-  proplabels
+  var headerlabel = 
+    this.svg
+    .selectAll("text.object")
+    .data([object]);
+
+  headerlabel
     .enter()
     .append("text")
-    .text(function(d) { return vm_prop.render(d.pid); })
-    .attr({
-      x: function(d, i) { return (cW + cP) * (2.5 + (i * 2));  },
-      y: function (d, k) { return (cH + cP) * d.index + 15},
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-weight": "bold",
-      class: function(d) { return "vm-pid fieldprop"; }}
-    );
+    .attr(cAttrs({
+      x: cW / 2, 
+      y: 15,
+      class: "object vm-obj"
+    }));
 
-  proplabels
-    .exit()
-    .remove();
+  headerlabel
+    .text(function(d) { return types[d.oid.type].render(d.oid.value); })
+    .on("click", function(d) { return vm.updateToContext(d.oid); });
 
-  var vals = pgroups
-    .selectAll("rect.fieldval")
-    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
+  headerlabel.exit().remove();
 
-  vals
+  // bases
+  var bases = 
+    this.svg
+    .selectAll("rect.base")
+    .data(baseObjects);
+
+  bases
     .enter()
     .append("rect")
     .attr(
-      cAttrs(
-        {x: function(d, i) { return (cW + cP) * (3 + (i * 2));  },
-         y: function (d) { return (cH + cP) * d.index; },
-         class: function(d) { return "vm-" + types[d.value.type].name + " fieldval"; }
-        }
-      )
-    )
+      cAttrs({
+        class: function(d) { return "base vm-" + types[d.type].name; }
+      }));
+
+  bases
+    .attr("y", function(d, i) { return (cH + cP) * (1 + i); })
     .on("click", function(d) { return vm.updateToContext(d); });
 
-  vals
-    .exit()
-    .remove();
+  bases.exit().remove();
 
+  var baselabels =
+    this.svg
+    .selectAll("text.base")
+    .data(baseObjects);
 
-  var vallabels = pgroups
-    .selectAll("text.fieldval")
-    .data(function (d, k) { return _.map(d.value.properties, function(value, pid) { return {pid: pid, value: value, index: index(k)}; }); });
-
-  vallabels
+  baselabels
     .enter()
     .append("text")
-    .text(function(d) { return types[d.value.type].render(d.value.value); })
     .attr({
-      x: function(d, i) { return (cW + cP) * (3.5 + (i * 2));  },
-      y: function (d, k) { return (cH + cP) * d.index + 15},
-      "text-anchor": "middle",
-      "font-family": "sans-serif",
-      "font-weight": "bold",
-      class: function(d) { return "fieldval"; }}
-    );
+      x: cW / 2,
+      class: function(d) { return "vm-" + types[d.type].name + " base"; }
+    });
 
-  vallabels
-    .exit()
-    .remove();
+  baselabels
+    .on("click", function(d) { return vm.updateToContext(d); })
+    .text(function(d) { return types[d.type].render(d.value); })
+    .attr("y", function (d, i) { return (cH + cP) * (1 + i) + 15});
+
+  baselabels.exit().remove();
+
+  var props = 
+    this.svg
+    .selectAll("rect.prop")
+    .data(properties, key);
+
+  props
+    .enter()
+    .append("rect")
+    .on("click", function(d) { return vm.updateToContext(d.pid); })
+    .attr(
+      cAttrs(
+        {
+          class: function(d) { return "prop vm-" + types[d.pid.type].name; }
+        }));
+
+  props.attr("y", function(d) { return (cH + cP) * (1 + countBases + index(d)); });
+    
+  props
+    .exit().remove();
+
+  var proplabels =
+    this.svg
+    .selectAll("text.prop")
+    .data(properties, key);
+
+  proplabels
+    .enter()
+    .append("text")
+    .on("click", function(d) { return vm.updateToContext(d.pid); })
+    .text(function(d) { return types[d.pid.type].render(d.pid.value) })
+    .attr({
+      x: cW / 2,
+      class: function(d) { return "vm-" + types[d.pid.type].name + " prop"; }
+    });
+
+  proplabels.attr("y", function (d, k) { return (cH + cP) * (1 + countBases + index(d)) + 15});
+
+  proplabels
+    .exit().remove();
+  
+  var propvals = 
+    this.svg
+    .selectAll("rect.propval")
+    .data(properties, key);
+
+  propvals
+    .enter()
+    .append("rect")
+    .on("click", function(d) { return vm.updateToContext(d.value); })
+    .attr(
+      cAttrs(
+        {
+          x: cW + cP,
+          class: function(d) { return "propval vm-" + types[d.value.type].name; }
+        }));
+
+  propvals.attr("y", function(d) { return (cH + cP) * (1 + countBases + index(d)); });
+
+  propvals.exit().remove();
+
+  var propvallabels =
+    this.svg
+    .selectAll("text.propval")
+    .data(properties, key);
+
+  propvallabels
+    .enter()
+    .append("text")
+    .on("click", function(d) { return vm.updateToContext(d.value); })
+    .text(function(d) { return types[d.value.type].render(d.value.value) })
+    .attr({
+      x: cW + cP + cW / 2,
+      class: function(d) { return "vm-" + types[d.pid.type].name + " propval"; }
+    });
+
+  propvallabels.attr("y", function (d, k) { return (cH + cP) * (1 + countBases + index(d)) + 15});
+
+  propvallabels.exit().remove();
+
 }
+
 
 // Pool Diagram (code or const)
 function PoolDiagram(div) {
@@ -542,7 +616,8 @@ PoolDiagram.prototype.update = function(section) {
 var actionPanel;
 var stackDiagram;
 var registerDiagram;
-var objectDiagram;
+var objectPoolDiagram;
+var objectInspectorDiagram;
 var codeDiagram;
 var constDiagram;
 
@@ -683,7 +758,8 @@ var vm = {
       d3.json(detemplatiseUrl(vm._links.objects.href) + '?oid=' + oid + '&count=' + count, function(os) {
         vm._links = os._links;
         vm.objectSection = os['objs'];
-        objectDiagram.update(vm.objectSection, vm.mcld);
+        objectPoolDiagram.update(vm.objectSection, vm.mcld);
+        objectInspectorDiagram.update(vm.objectSection[0]);
       });
     }
   },
@@ -716,6 +792,21 @@ var vm = {
 
   updateToContext: function(typedValue) {
     console.log(typedValue);
+    switch (typedValue.type) {
+      case vm_codeptr.id:
+      case vm_funcptr.id:
+      this.updateCode(typedValue.value, 512);
+      break;
+      case vm_obj.id:
+      case vm_objx.id:
+      this.updateObjects(typedValue.value, 40);
+      break;
+      case vm_list.id:
+      case vm_sstring.id:
+      case vm_dstring.id:
+      this.updateConst(typedValue.value, 512);
+      break;
+    }
   }
 }
 
@@ -724,9 +815,10 @@ function init() {
   actionPanel = new ControlPanel(d3.select("div#controls"));
   stackDiagram = new StackDiagram(d3.select("div.stack"));
   registerDiagram = new RegisterDiagram(d3.select("div.register"));
-  objectDiagram = new ObjectDiagram(d3.select("div.object"));
+  objectPoolDiagram = new ObjectPoolDiagram(d3.select("div.object"));
   codeDiagram = new PoolDiagram(d3.select("div.code"));
   constDiagram = new PoolDiagram(d3.select("div.constant"));
+  objectInspectorDiagram = new ObjectInspectorDiagram(d3.select("div.inspector"));
 
   vm.init();
 }

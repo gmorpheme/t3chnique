@@ -140,7 +140,7 @@
    id
    (vm-actions vm)
    {:id id
-    :mcld (map #(dissoc % :metaclass) (:mcld vm))}))
+    :mcld (map #(dissoc % :metaclass :_prototype) (:mcld vm))}))
 
 (defn represent-vm-fnsd [id vm]
   (add-vm-links
@@ -235,7 +235,8 @@
     [:div {:class "register"}]
     [:div {:class "code"}]
     [:div {:class "constant"}]
-    [:div {:class "object"}]]
+    [:div {:class "object"}]
+    [:div {:class "inspector"}]]
    [:script {:type "text/javascript" :src "/vm.js"}]))
 
 
