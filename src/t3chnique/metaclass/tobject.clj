@@ -3,7 +3,7 @@
             [t3chnique.primitive :as p]
             [t3chnique.metaclass.object :as obj]
             [t3chnique.monad :as m])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
+  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val fetch-state]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]])
   (:import [t3chnique.metaclass MetaClass]))
 
@@ -34,6 +34,14 @@ final instance remains in the sequence."
           (recur seen rest ret)
           (recur (conj seen k) rest (cons one ret)))
         ret))))
+
+(defn obj-chain
+  [state {:keys [bases properties] :as self}]
+  (let [inherited (->> bases
+                       (map #(get (:objs state) %))
+                       (mapcat #(obj-chain state %))
+                       (dedupe-chain-backwards :oid))]
+    (cons self inherited)))
 
 (defn prop-chain
   "Return seq of [defining val] based on inheritance hierarchy."
@@ -97,7 +105,7 @@ final instance remains in the sequence."
       (m/do-vm
        [[obj val] (m/m-apply #(get-prop % self propid))]
 
-       ; eval intrinsic method if argc allows - otherwise return
+                                        ; eval intrinsic method if argc allows - otherwise return
        (if (and (p/vm-native-code? val) (not (nil? argc)))
          ((p/value val) argc)
          [(p/vm-obj (:oid obj)) val]))))
@@ -109,8 +117,16 @@ final instance remains in the sequence."
        [(p/vm-obj (:oid obj)) val])))
 
   (list-like? [self state]
+                                        ;    TODO
     )
-  )
+
+  (is-instance? [self val]
+    (m/do-vm
+     [s (fetch-state)]
+     (not (empty? (filter
+                   #(and (p/vm-obj? val)
+                         (= (p/value val) (:oid %)))
+                   (obj-chain s self)))))))
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))

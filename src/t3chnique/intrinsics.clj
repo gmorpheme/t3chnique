@@ -65,35 +65,35 @@
   (undo [_ argc]))
 
 (def tads-gen (with-meta tads-gen {:id "tads-gen/030008"
-                                   :fns [#'abs
-                                         #'concat
-                                         #'dataType
-                                         #'firstObj
-                                         #'getArg
-                                         #'getFuncParams
-                                         #'getTime
-                                         #'makeList
-                                         #'makeString
-                                         #'max
-                                         #'min
-                                         #'nextObj
-                                         #'rand
-                                         #'randomize
-                                         #'restartGame
-                                         #'restoreGame
-                                         #'rexGroup
-                                         #'rexMatch
-                                         #'rexReplace
-                                         #'rexSearch
-                                         #'rexSearchLast
-                                         #'saveGame
-                                         #'savepoint
-                                         #'sgn
-                                         #'sprintf
-                                         #'toInteger
-                                         #'toNumber
-                                         #'toString
-                                         #'undo]}))
+                                   :fns [#'dataType,
+                                         #'getArg,
+                                         #'firstObj,
+                                         #'nextObj,
+                                         #'randomize,
+                                         #'rand,
+                                         #'toString,
+                                         #'toInteger,
+                                         #'getTime,
+                                         #'rexMatch,
+                                         #'rexSearch,
+                                         #'rexGroup,
+                                         #'rexReplace,
+                                         #'savepoint,
+                                         #'undo,
+                                         #'saveGame,
+                                         #'restoreGame,
+                                         #'restartGame,
+                                         #'max,
+                                         #'min,
+                                         #'makeString,
+                                         #'getFuncParams,
+                                         #'toNumber,
+                                         #'sprintf,
+                                         #'makeList,
+                                         #'abs,
+                                         #'sgn,
+                                         #'concat,
+                                         #'rexSearchLast]}))
 
 (defprotocol tads-io
   "Interactive / Real Time IO"

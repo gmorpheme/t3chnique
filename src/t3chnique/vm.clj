@@ -1000,6 +1000,7 @@ arguments from stack, evaluates the result."
   (do-vm
    [proto (m-apply #(mc/prototype % metaclass_id))
     obj (mc/load-from-stack proto arg_count)
+    :let [obj (assoc obj :metaclass metaclass_id)]
     id (new-obj-id)
     _ (obj-store id obj)
     _ (reg-set :r0 (vm-obj id))]
@@ -1125,7 +1126,8 @@ arguments from stack, evaluates the result."
           _ (setlcl local_number v)]
          nil))
 
-(defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val])
+(defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val]
+  )
 
 ;; TODO debugger
 (defop bp 0xF1 [])
@@ -1135,6 +1137,27 @@ arguments from stack, evaluates the result."
 ;;;;;;;; intrinsic impls
 
 (deftype Host [])
+
+(defn enum-objects [argc start-obj]
+  (do-vm
+   [args (m-seq (repeat argc (stack-pop)))
+    :let [sc (or (first (filter args vm-int?)) (vm-obj? nil))
+          flags (or (first (filter args vm-obj?)) 1)
+          include-classes (bit-and flags 2)
+          include-instances (bit-and flags 1)]
+    objs (fetch-state :objs)]
+   (or
+    (filter
+     (fn [k v] (and (>= k (value start-obj))
+                   (not false) ; TODO intrinsic class mods
+                   (not false) ; list or string classes also ignored
+                   (or
+                    (and (:is-class v) include-classes)
+                    (and (not :is-class v) include-instances))
+                   (or (not (valid? sc))
+                       (mc/is-instance v sc))))
+     objs)
+    (vm-nil))))
 
 ;; TODO check argc - exceptions
 (extend-type Host
@@ -1188,7 +1211,10 @@ arguments from stack, evaluates the result."
       _ (reg-set :r0 (vm-int (typeid val)))]
      nil))
   
-  (firstObj [_ argc])
+  (firstObj [_ argc]
+
+    )
+  
   (getArg [_ argc])
   (getFuncParams [_ argc])
   (getTime [_ argc])

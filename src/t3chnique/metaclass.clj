@@ -27,7 +27,10 @@ value may be returned to indicate that an intrinsic method would have
 been invoked.")
 
   (list-like? [self vm]
-    "Whether the object is list like"))
+    "Whether the object is list like")
+
+  (is-instance? [self val]
+    "Monadic value to determine whether self is a subclass of val."))
 
 (defrecord Unimplemented []
   MetaClass

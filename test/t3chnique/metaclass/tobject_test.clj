@@ -88,3 +88,20 @@
   (facts "VM property access helpers with tads-objects"
     (:r0 (second ((vm/generic-get-prop (p/vm-obj 2) 1 0) vm))) => (p/vm-int 11)
     (:r0 (second ((vm/generic-inherit-prop (p/vm-obj 2) 1 0) vm))) => (p/vm-int 1)))
+
+(facts "Test is instance"
+  (let [vm (vm/vm-state)
+        [[o1 o2 o3 o4] vm] ((m/do-vm
+                             [_ (m-seq [(obj 1 [] {1 :a 2 :b 3 :c})
+                                        (obj 2 [1] {2 :d 4 :e})
+                                        (obj 3 [1] {3 :x 4 :y})
+                                        (obj 4 [2 3] {1 :d 5 :z})])
+                              os (m-map vm/obj-retrieve [1 2 3 4])]
+                             os) vm)]
+    (obj-chain vm o4) => [o4 o2 o3 o1]
+    (first ((mc/is-instance? o4 (p/vm-obj 1)) vm)) => true
+    (first ((mc/is-instance? o4 (p/vm-obj 2)) vm)) => true
+    (first ((mc/is-instance? o4 (p/vm-obj 3)) vm)) => true
+    (first ((mc/is-instance? o4 (p/vm-obj 4)) vm)) => true
+
+    (first ((mc/is-instance? o4 (p/vm-obj 23)) vm)) => false))
