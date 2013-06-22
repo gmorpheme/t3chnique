@@ -4,6 +4,8 @@
             [t3chnique.parse :as parse]
             [t3chnique.primitive :as p]
             [t3chnique.monad :as m]
+            [t3chnique.metaclass :as mc]
+            [t3chnique.all]
             [clojure.pprint :refer (pprint pp)]
             [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer (refresh refresh-all)]

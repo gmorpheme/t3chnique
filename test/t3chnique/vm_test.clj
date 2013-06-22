@@ -2,35 +2,12 @@
   (:use [clojure.algo.monads]
         [t3chnique.vm]
         [t3chnique.primitive]
+        [t3chnique.util]
         [midje.sweet])
   (:require [t3chnique.intrinsics :as bif]
             [t3chnique.monad :as m]))
 
 ;; helpers
-
-(defn st [& xs]
-  (vec (map #(cond
-              (number? %) (vm-int %)
-              (string? %) (vm-sstring %)
-              (nil? %) (vm-nil)
-              (= % true) (vm-true)
-              :else %)
-            xs)))
-
-(defn stack-after [& ops]
-  (with-monad state-m
-    (:stack (second ((m-seq ops) (vm-state))))))
-
-(defn apply-ops [init ops]
-  (with-monad state-m
-    (second ((m-seq ops) init))))
-
-(defn apply-with-stack [stack ops]
-  (:stack (apply-ops (merge (vm-state) {:stack stack :sp (count stack)}) ops)))
-
-(defn vm-state-with [& args]
-  (let [vm (apply assoc (vm-state) args)]
-    (assoc vm :sp (count (:stack vm)))))
 
 (facts "Simple pushes"
   (tabular
@@ -242,54 +219,4 @@
                                   (vm-codeofs 0x10)
                                   2 0 nil nil))]
     (fact (apply-ops vm [(op-setlcl1r0 0) (op-setlcl1r0 1)]) => (contains {:stack (has-suffix (st 727 727))}))))
-
-(fact "t3SetSay sets method"
-  (:say-method (apply-ops
-                (vm-state-with :stack [(vm-prop 0x10)])
-                [(bif/t3SetSay (host) 1)]))
-  => (vm-prop 0x10))
-
-(fact "t3SetSay sets function"
-  (:say-function (apply-ops
-                  (vm-state-with :stack [(vm-funcptr 0x20)])
-                  [(bif/t3SetSay (host) 1)]))
-  => (vm-funcptr 0x20))
-
-(fact "t3SetSay returns existing method"
-  (:r0 (apply-ops
-        (vm-state-with :say-method (vm-prop 0x30) :stack [(vm-prop 0x50)])
-        [(bif/t3SetSay (host) 1)]))
-
-  => (vm-prop 0x30))
-
-(fact "t3SetSay returns existing function"
-  (:r0 (apply-ops
-        (vm-state-with :say-function (vm-funcptr 0x30) :stack [(vm-funcptr 0x50)])
-        [(bif/t3SetSay (host) 1)]))
-
-  => (vm-funcptr 0x30))
-
-(fact "t3SetSay can blank method"
-  (:say-method (apply-ops
-                (vm-state-with :say-method (vm-prop 0x30) :stack [(vm-int 2)])
-                [(bif/t3SetSay (host) 1)]))
-  => (vm-prop 0))
-
-(fact "t3SetSay can blank function"
-  (:say-function (apply-ops
-                  (vm-state-with :say-function (vm-funcptr 0x30) :stack [(vm-int 1)])
-                  [(bif/t3SetSay (host) 1)]))
-  => (vm-nil))
-
-(fact "dataType returns 1 for nil"
-  (:r0 (apply-ops
-        (vm-state-with :stack [(vm-nil)])
-        [(bif/dataType (host) 1)]))
-  => (vm-int 1))
-
-(fact "dataType returns 7 for int"
-  (:r0 (apply-ops
-        (vm-state-with :stack [(vm-int 0)])
-        [(bif/dataType (host) 1)]))
-  => (vm-int 7))
 

@@ -19,7 +19,8 @@
             [t3chnique.vm :as t3vm]
             [t3chnique.primitive :as p]
             [t3chnique.parse :as parse]
-            [clojure.stacktrace :as st]))
+            [clojure.stacktrace :as st]
+            [t3chnique.all]))
 
 (defn vm-actions
   "Return the actions available for the vm at its current state"

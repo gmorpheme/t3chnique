@@ -1,23 +1,33 @@
 (ns t3chnique.monad
-  (:use [clojure.algo.monads]))
+  (:require [clojure.algo.monads :as monads]))
 
-(def vm-m state-m)
+(def vm-m monads/state-m)
 
 (defmacro do-vm
   "Sugar: 'do'-syntax for running monadic values in the vm monad."
   [bindings val]
-  `(domonad vm-m ~bindings ~val))
+  `(monads/domonad vm-m ~bindings ~val))
 
 (defmacro in-vm
   "Sugar: run mv in the vm monad."
   [mv]
-  `(with-monad vm-m ~mv))
+  `(monads/with-monad vm-m ~mv))
 
 (defn m-apply
   "Return result of applying f to state, do not evolve state."
   [f & args]
   {:pre [f]}
   (fn [s] {:pre [s]} [(apply f s args) s]))
+
+(defn eval-vm
+  "Eval monadic value against vm state and return value"
+  [mv vm]
+  (first (mv vm)))
+
+(defn exec-vm
+  "Eval monadic value against vm state and return new state"
+  [mv vm]
+  (second (mv vm)))
 
 (defn abort
   "For now, throw - incorporate into monad later."

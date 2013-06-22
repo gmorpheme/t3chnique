@@ -49,8 +49,8 @@
                          (contains? v :value)))
 (defn valid? [v]
   (cond
-   (vm-obj? v) (pos? (value v))
-   (vm-prop? v) (pos? (value v))
-   (vm-objx? v) (pos? (value v))
-   (vm-funcptr? v) (pos? (value v))
+   (vm-obj? v) (and (value v) (pos? (value v)))
+   (vm-prop? v) (and (value v) (pos? (value v)))
+   (vm-objx? v) (and (value v) (pos? (value v)))
+   (vm-funcptr? v) (and (value v) (pos? (value v)))
    :else true))
