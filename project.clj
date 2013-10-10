@@ -17,6 +17,9 @@
                  [hiccup "1.0.3"]]
   :jvm-opts ["-Xms48m" "-Xmx1g" "-XX:MaxPermSize=512M"]
 
+  :repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot"}]]
+  :deploy-repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot-local"}]]
+  
   ; add t3 tests to resources for 
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["t3"]
