@@ -129,9 +129,44 @@
   (statusRight [_ argc])
   (systemInfo [_ argc])
   (tadsSay [_ argc])
-  (timeDelay [_ argc]))
+  (timeDelay [_ argc])
+  (logInputEvent [_ argc]))
 
-(def tads-io (with-meta tads-io {:id "tads-io/030007"}))
+(def tads-io (with-meta tads-io {:id "tads-io/030007"
+                                 :fns [#'tadsSay
+                                       #'setLogFile
+                                       #'clearScreen
+                                       #'morePrompt
+                                       #'inputLine
+                                       #'inputKey
+                                       #'inputEvent
+                                       #'inputDialog
+                                       #'inputFile
+                                       #'timeDelay
+                                       #'systemInfo
+                                       #'statusMode
+                                       #'statusRight
+                                       #'resExists
+                                       #'setScriptFile
+                                       #'getLocalCharSet
+                                       #'flushOutput
+                                       #'inputLineTimeout
+                                       #'inputLineCancel
+                                       #'bannerCreate
+                                       #'bannerDelete
+                                       #'bannerClear
+                                       #'bannerSay
+                                       #'bannerFlush
+                                       #'bannerSizeToContents
+                                       #'bannerGoTo
+                                       #'bannerSetTextColor
+                                       #'bannerSetScreenColor
+                                       #'bannerGetInfo
+                                       #'bannerSetSize
+                                       #'logConsoleCreate
+                                       #'logConsoleClose
+                                       #'logConsoleSay
+                                       #'logInputEvent]}))
 
 (defprotocol tads-net
   "Access to network features."

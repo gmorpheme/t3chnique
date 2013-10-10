@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :resources-path "resources"
   :main t3chnique.main
-  :dependencies [[org.clojure/clojure "1.5.0"]
+  :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/algo.monads "0.1.0"]
                  [org.clojure/tools.cli "0.2.2"]
                  [org.clojure/java.classpath "0.2.0"]
