@@ -4,8 +4,7 @@
             [t3chnique.metaclass.object :as obj]
             [t3chnique.monad :as m])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val fetch-state]]
-        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]])
-  (:import [t3chnique.metaclass MetaClass]))
+        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
 (def tobj-table
   [
@@ -81,9 +80,9 @@ final instance remains in the sequence."
 
 (defrecord TadsObject [is-class bases properties]
 
-  MetaClass
+  mc/MetaClass
 
-  (load-from-image [self buf o]
+  (mc/load-from-image [self buf o]
     (first
      ((domonad byteparser-m
 
@@ -100,7 +99,7 @@ final instance remains in the sequence."
            (apply assoc {} (flatten properties))
            {}))) [buf o])))
 
-  (get-property [self propid argc]
+  (mc/get-property [self propid argc]
     (let [metaclass-index (:metaclass self)]
       (m/do-vm
        [[obj val] (m/m-apply #(get-prop % self propid))]
@@ -110,17 +109,17 @@ final instance remains in the sequence."
          ((p/value val) argc)
          [(p/vm-obj (:oid obj)) val]))))
 
-  (inherit-property [self propid argc]
+  (mc/inherit-property [self propid argc]
     (m/do-vm
      [[obj val] (m/m-apply #(inh-prop-from-chain % self propid))]
      (when obj
        [(p/vm-obj (:oid obj)) val])))
 
-  (list-like? [self state]
+  (mc/list-like? [self state]
                                         ;    TODO
     )
 
-  (is-instance? [self val]
+  (mc/is-instance? [self val]
     (m/do-vm
      [s (fetch-state)]
      (not (empty? (filter

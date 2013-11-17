@@ -1,8 +1,7 @@
 (ns t3chnique.metaclass.string
   (:require [t3chnique.metaclass :as mc]
             [clojure.algo.monads :refer [domonad with-monad m-seq fetch-val]]
-            [t3chnique.parse :refer [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]])
-  (:import [t3chnique.metaclass MetaClass]))
+            [t3chnique.parse :refer [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
 (def fn-table
   [
@@ -38,7 +37,7 @@
    ])
 
 (defrecord TadsString [text]
-  MetaClass
+  mc/MetaClass
   (load-from-image [self buf o]
     (with-monad byteparser-m
       (TadsString. (first ((prefixed-utf8) [buf o]))))))

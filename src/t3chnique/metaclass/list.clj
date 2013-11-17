@@ -1,11 +1,10 @@
 (ns t3chnique.metaclass.list
   (:require [t3chnique.metaclass :as mc])
   (:use [clojure.algo.monads :only [domonad]]
-        [t3chnique.parse :only [uint2 byteparser-m data-holder times]])
-  (:import [t3chnique.metaclass MetaClass]))
+        [t3chnique.parse :only [uint2 byteparser-m data-holder times]]))
 
 (defrecord TadsList [val]
-  MetaClass
+  mc/MetaClass
   (load-from-image [self buf o]
     (first ((domonad byteparser-m
               [n (uint2)

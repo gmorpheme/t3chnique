@@ -1,7 +1,6 @@
 (ns t3chnique.metaclass.object
   (:require [t3chnique.metaclass :as mc])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]])
-  (:import [t3chnique.metaclass MetaClass]))
+  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]))
 
 
 (def obj-table
