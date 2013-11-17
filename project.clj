@@ -26,4 +26,5 @@
                    :resource-paths ["t3"]
                    :dependencies [[org.clojure/tools.trace "0.7.6"]
                                   [org.clojure/tools.namespace "0.2.4"]
-                                  [midje "1.5.1"]]}})
+                                  [midje "1.5.1"]]
+                   :plugins [[lein-midje "3.0.0"]]}})
