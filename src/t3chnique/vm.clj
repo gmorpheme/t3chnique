@@ -547,57 +547,43 @@ exec-mf to handle the results. mc-mf has signature of Metaclass
 get-property or inherit-property. exec-mf accepts target-val
 as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   [mc-mf exec-mf]
-  (fn access [target-val pid argc]
-    {:pre [(vm-obj-or-nil? target-val)
+  (fn access [target-object pid argc]
+    {:pre [(vm-obj-or-nil? target-object)
            (number? pid)]}
     (do-vm
-     [target (obj-retrieve (value target-val))
+     [target (obj-retrieve (value target-object))
       [defobj prop-val] (mc-mf target pid argc)
-      r (exec-mf target-val defobj pid prop-val argc)]
+      r (exec-mf target-object defobj target-object pid prop-val argc)]
      r)))
 
-(def generic-get-prop
-  "[target-val pid argc] - get property pid of target-val using argc
-arguments from stack, evaluates the result."
-  (property-accessor
-   mc/get-property
-   (fn [target-val defobj pid prop-val argc]
-     (if prop-val
-       (cond
-        (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
-        (vm-dstring? prop-val) (abort "not implemented (say)")
-        (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
-                                              target-val
-                                              defobj
-                                              target-val
-                                              (value prop-val)
-                                              argc))
-       (abort "not implemented propNotDefined")))))
+(defn call-or-return
+  "Property handler which calls a method if appropriate or returns
+property value directly."
+  [target defining self pid prop-val argc]
+  (if prop-val
+    (cond
+     (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+     (vm-dstring? prop-val) (abort "not implemented (say)")
+     (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
+                                           target
+                                           defining
+                                           self
+                                           (value prop-val)
+                                           argc))
+    (abort "not implemented propNotDefined")))
 
-(def generic-inherit-prop
-  (property-accessor
-   mc/inherit-property
-   (fn [target-val defobj pid prop-val argc]
-     (if prop-val
-       (cond
-        (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
-        (vm-dstring? prop-val) (abort "not implemented (say)")
-        (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
-                                              target-val
-                                              defobj
-                                              target-val
-                                              (value prop-val)
-                                              argc))
-       (abort "not implemented propNotDefined")))))
+(defn data-only
+  "Property handler which won't call methods but only returns data
+items if available."
+  [target defining self pid prop-val argc]
+  (if prop-val
+    (cond
+     (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+     :else (abort "BAD_SPEC_EVAL"))))
 
-(def generic-get-prop-data
-  (property-accessor
-   mc/get-property
-   (fn [target-val defobj pid prop-val argc]
-     (if prop-val
-       (cond
-        (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
-        :else (abort "BAD_SPEC_EVAL"))))))
+(def generic-get-prop (property-accessor mc/get-property call-or-return))
+(def generic-inherit-prop (property-accessor mc/inherit-property call-or-return))
+(def generic-get-prop-data (property-accessor mc/get-property data-only))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
   (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count))
