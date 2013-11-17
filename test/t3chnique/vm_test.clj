@@ -104,10 +104,10 @@
     (assoc vm
       :ep 0x1234
       :ip 0x123e
-      :fp 10
-      :sp 14
+      :fp 12
+      :sp 16
       :sequence 1
-      :stack (st 1 2 (vm-prop 0) nil nil nil
+      :stack (st 1 2 (vm-prop 0) nil nil nil nil nil
                  (vm-codeofs 0x20)
                  (vm-codeofs 0x10)
                  2 (vm-stack 0) nil nil nil nil))
@@ -116,18 +116,30 @@
       (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))))
 
 (facts "Returns"
+
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
-                          :fp 10
-                          :stack (st 1 2 nil nil nil nil 
-                                     (vm-codeofs 0x20)
-                                     (vm-codeofs 0x10)
-                                     2 0 nil nil nil nil 99))]
+                          :fp 12
+                          :stack (st 1 ;arg
+                                     2 ;arg
+                                     nil ;pid
+                                     nil ;tgt
+                                     nil ;def
+                                     nil ;slf
+                                     nil ;ivk
+                                     nil ;sfr
+                                     (vm-codeofs 0x20) ;pc
+                                     (vm-codeofs 0x10) ;ep
+                                     2 ;args
+                                     0 ;fp
+                                     nil ;sp
+                                     nil nil nil 99))]
     (fact (apply-ops vm [(op-retval)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 99) :sequence 1)))
+
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
-                          :fp 10
-                          :stack (st 1 2 nil nil nil nil 
+                          :fp 12
+                          :stack (st 1 2 nil nil nil nil nil nil
                                      (vm-codeofs 0x20)
                                      (vm-codeofs 0x10)
                                      2 0 nil nil nil nil))]

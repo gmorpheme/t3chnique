@@ -467,7 +467,7 @@ on block type."
     ac (stack-pop)
     of (stack-pop)
     ep (stack-pop)
-    _ (m-seq (repeat (+ 4 (value ac)) (stack-pop)))
+    _ (m-seq (repeat (+ 6 (value ac)) (stack-pop)))
     _ (reg-set :fp (value fp))
     _ (reg-set :ep (value ep))
     _ (set-pc (+ (value ep) (value of)))]
@@ -519,10 +519,12 @@ on block type."
          (number? func-offset)
          (number? argc)]}
   (do-vm
-   [_ (stack-push target-pid)
-    _ (stack-push target-obj)
-    _ (stack-push defining-obj)
-    _ (stack-push self-obj)
+   [_ (stack-push target-pid) 
+    _ (stack-push target-obj) ; object whose method is called
+    _ (stack-push defining-obj) ; defining obj (may be superclass of target)
+    _ (stack-push self-obj) ; self (method may belong to delegate)
+    _ (stack-push (vm-nil)) ; TODO: "invokee"
+    _ (stack-push (vm-nil)) ; TODO: "stack frame references"
     ep (reg-get :ep)
     p (pc)
     fp (reg-get :fp)

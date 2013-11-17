@@ -3,7 +3,8 @@
   (:use [clojure.tools.cli :only [cli]]
         [clojure.algo.monads :only [domonad fetch-state]]
         [clojure.main :only [repl]])
-  (:require [t3chnique.vm :as vm]
+  (:require [t3chnique.all]
+            [t3chnique.vm :as vm]
             [t3chnique.parse :as parse]
             [clojure.java.io :as io]
             [clojure.pprint :as pp])

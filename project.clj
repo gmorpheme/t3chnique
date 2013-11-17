@@ -1,8 +1,6 @@
 (defproject t3chnique "0.0.1-SNAPSHOT"
   :description "TADS 3 implementation"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :url "http://dev.gmorpheme.net/t3chnique"
   :resources-path "resources"
   :main t3chnique.main
   :dependencies [[org.clojure/clojure "1.5.1"]
@@ -15,7 +13,7 @@
                  [ring-middleware-format "0.3.1"]
                  [nio "1.0.1"]
                  [hiccup "1.0.4"]]
-  :jvm-opts ["-Xms48m" "-Xmx1g" "-XX:MaxPermSize=512M"]
+  :jvm-opts ["-Xms48m" "-Xmx1g" "-XX:MaxPermSize=512M" "-server"]
 
   :repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot"}]]
   :deploy-repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot-local"}]]
