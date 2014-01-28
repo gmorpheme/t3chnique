@@ -106,7 +106,8 @@
   (let [system (sv/system)]
     (do
       (println "Running REST server...")
-      (.addShutdownHook (Runtime/getRuntime) (Thread. #(sv/stop system)))
+      (.addShutdownHook (Runtime/getRuntime) (Thread. #(do (println "Stopping server")
+                                                           (sv/stop system))))
       (sv/start system))))
 
 (defn vm-repl 
