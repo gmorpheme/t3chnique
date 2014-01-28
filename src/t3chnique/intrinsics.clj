@@ -3,182 +3,113 @@
   (:require [clojure.string :as string]
             [t3chnique.monad :as m]))
 
-(defprotocol t3vm
+(defmacro def-function-set
+  "Generate a protocol definition for a function set but also add
+metadata to support call by index."
+  [name version-string desc & fs]
+  `(do
+     (defprotocol ~name
+       ~desc
+       ~@(map (fn [f] (list f '[_ argc])) fs))
+
+     (def ~name (with-meta ~name {:id ~(str name "/" version-string)
+                                  :fns ~(vec (map
+                                              (fn [f] `(var ~f))
+                                              fs))}))))
+
+(def-function-set t3vm "010006"
   "Internal VM operations"
-  (t3RunGC [_ argc])
-  (t3SetSay [_ argc])
-  (t3GetVMVsn [_ argc])
-  (t3GetVMID [_ argc])
-  (t3GetVMBanner [_ argc])
-  (t3GetVMPreinitMode [_ argc])
-  (t3DebugTrace [_ argc])
-  (t3GetGlobalSymbols [_ argc])
-  (t3AllocProp [_ argc])
-  (t3GetStackTrace [_ argc])
-  (t3GetNamedArg [_ argc])
-  (t3GetNamedArgList [_ argc]))
+  t3RunGC
+  t3SetSay
+  t3GetVMVsn
+  t3GetVMID
+  t3GetVMBanner
+  t3GetVMPreinitMode
+  t3DebugTrace
+  t3GetGlobalSymbols
+  t3AllocProp
+  t3GetStackTrace
+  t3GetNamedArg
+  t3GetNamedArgList)
 
-(def t3vm (with-meta t3vm {:id "t3vm/010006"
-                           :fns [#'t3RunGC
-                                 #'t3SetSay
-                                 #'t3GetVMVsn
-                                 #'t3GetVMID
-                                 #'t3GetVMBanner
-                                 #'t3GetVMPreinitMode
-                                 #'t3DebugTrace
-                                 #'t3GetGlobalSymbols
-                                 #'t3AllocProp
-                                 #'t3GetStackTrace
-                                 #'t3GetNamedArg
-                                 #'t3GetNamedArgList]}))
-
-(defprotocol tads-gen
+(def-function-set tads-gen "030008"
   "General utility and data manipulation functions"
-  (abs [_ argc])
-  (concat [_ argc])
-  (dataType [_ argc])
-  (firstObj [_ argc])
-  (getArg [_ argc])
-  (getFuncParams [_ argc])
-  (getTime [_ argc])
-  (makeList [_ argc])
-  (makeString [_ argc])
-  (max [_ argc])
-  (min [_ argc])
-  (nextObj [_ argc])
-  (rand [_ argc])
-  (randomize [_ argc])
-  (restartGame [_ argc])
-  (restoreGame [_ argc])
-  (rexGroup [_ argc])
-  (rexMatch [_ argc])
-  (rexReplace [_ argc])
-  (rexSearch [_ argc])
-  (rexSearchLast [_ argc])
-  (saveGame [_ argc])
-  (savepoint [_ argc])
-  (sgn [_ argc])
-  (sprintf [_ argc])
-  (toInteger [_ argc])
-  (toNumber [_ argc])
-  (toString [_ argc])
-  (undo [_ argc]))
+  dataType
+  getArg
+  firstObj
+  nextObj
+  randomize
+  rand
+  toString
+  toInteger
+  getTime
+  rexMatch
+  rexSearch
+  rexGroup
+  rexReplace
+  savepoint
+  undo
+  saveGame
+  restoreGame
+  restartGame
+  max
+  min
+  makeString
+  getFuncParams
+  toNumber
+  sprintf
+  makeList
+  abs
+  sgn
+  concat
+  rexSearchLast)
 
-(def tads-gen (with-meta tads-gen {:id "tads-gen/030008"
-                                   :fns [#'dataType,
-                                         #'getArg,
-                                         #'firstObj,
-                                         #'nextObj,
-                                         #'randomize,
-                                         #'rand,
-                                         #'toString,
-                                         #'toInteger,
-                                         #'getTime,
-                                         #'rexMatch,
-                                         #'rexSearch,
-                                         #'rexGroup,
-                                         #'rexReplace,
-                                         #'savepoint,
-                                         #'undo,
-                                         #'saveGame,
-                                         #'restoreGame,
-                                         #'restartGame,
-                                         #'max,
-                                         #'min,
-                                         #'makeString,
-                                         #'getFuncParams,
-                                         #'toNumber,
-                                         #'sprintf,
-                                         #'makeList,
-                                         #'abs,
-                                         #'sgn,
-                                         #'concat,
-                                         #'rexSearchLast]}))
-
-(defprotocol tads-io
+(def-function-set tads-io "030007"
   "Interactive / Real Time IO"
-  (bannerClear [_ argc])
-  (bannerCreate [_ argc])
-  (bannerDelete [_ argc])
-  (bannerFlush [_ argc])
-  (bannerGetInfo [_ argc])
-  (bannerGoTo [_ argc])
-  (bannerSay [_ argc])
-  (bannerSetScreenColor [_ argc])
-  (bannerSetSize [_ argc])
-  (bannerSetTextColor [_ argc])
-  (bannerSizeToContents [_ argc])
-  (clearScreen [_ argc])
-  (flushOutput [_ argc])
-  (getLocalCharSet [_ argc])
-  (inputDialog [_ argc])
-  (inputEvent [_ argc])
-  (inputFile [_ argc])
-  (inputKey [_ argc])
-  (inputLine [_ argc])
-  (inputLineCancel [_ argc])
-  (inputLineTimeout [_ argc])
-  (logConsoleClose [_ argc])
-  (logConsoleCreate [_ argc])
-  (logConsoleSay [_ argc])
-  (morePrompt [_ argc])
-  (resExists [_ argc])
-  (setLogFile [_ argc])
-  (setScriptFile [_ argc])
-  (statusMode [_ argc])
-  (statusRight [_ argc])
-  (systemInfo [_ argc])
-  (tadsSay [_ argc])
-  (timeDelay [_ argc])
-  (logInputEvent [_ argc]))
+  tadsSay
+  setLogFile
+  clearScreen
+  morePrompt
+  inputLine
+  inputKey
+  inputEvent
+  inputDialog
+  inputFile
+  timeDelay
+  systemInfo
+  statusMode
+  statusRight
+  resExists
+  setScriptFile
+  getLocalCharSet
+  flushOutput
+  inputLineTimeout
+  inputLineCancel
+  bannerCreate
+  bannerDelete
+  bannerClear
+  bannerSay
+  bannerFlush
+  bannerSizeToContents
+  bannerGoTo
+  bannerSetTextColor
+  bannerSetScreenColor
+  bannerGetInfo
+  bannerSetSize
+  logConsoleCreate
+  logConsoleClose
+  logConsoleSay
+  logInputEvent)
 
-(def tads-io (with-meta tads-io {:id "tads-io/030007"
-                                 :fns [#'tadsSay
-                                       #'setLogFile
-                                       #'clearScreen
-                                       #'morePrompt
-                                       #'inputLine
-                                       #'inputKey
-                                       #'inputEvent
-                                       #'inputDialog
-                                       #'inputFile
-                                       #'timeDelay
-                                       #'systemInfo
-                                       #'statusMode
-                                       #'statusRight
-                                       #'resExists
-                                       #'setScriptFile
-                                       #'getLocalCharSet
-                                       #'flushOutput
-                                       #'inputLineTimeout
-                                       #'inputLineCancel
-                                       #'bannerCreate
-                                       #'bannerDelete
-                                       #'bannerClear
-                                       #'bannerSay
-                                       #'bannerFlush
-                                       #'bannerSizeToContents
-                                       #'bannerGoTo
-                                       #'bannerSetTextColor
-                                       #'bannerSetScreenColor
-                                       #'bannerGetInfo
-                                       #'bannerSetSize
-                                       #'logConsoleCreate
-                                       #'logConsoleClose
-                                       #'logConsoleSay
-                                       #'logInputEvent]}))
-
-(defprotocol tads-net
-  "Access to network features."
-  (connectWebUI [_ argc])
-  (getHostName [_ argc])
-  (getLaunchHostAddr [_ argc])
-  (getLocalIP [_ argc])
-  (getNetEvent [_ argc])
-  (getNetStorageURL [_ argc])
-  (sendNetRequest [_ argc]))
-
-(def tads-net (with-meta tads-net {:id "tads-net/030001"}))
+(def-function-set tads-net "030001"
+  "Access to network features"
+  connectWebUI
+  getNetEvent
+  getHostName
+  getLocalIP
+  getNetStorageURL
+  getLaunchHostAddr
+  sendNetRequest)
 
 (defn parse-id
   "Parse a function set id into name and version."
@@ -200,7 +131,7 @@ set identified by provided."
   (let [protocols [t3vm tads-gen tads-io tads-net]]
     (first (filter #(match fsid (:id (meta %))) protocols))))
 
-(defn invoke-by-index 
+(defn invoke-by-index
   "Assuming host implements the required function sets, invoke the
 method in the function set identified by fsid at index n, passing
 specified args."
