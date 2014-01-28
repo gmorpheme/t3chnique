@@ -4,13 +4,14 @@
         [clojure.algo.monads :only [domonad fetch-state]]
         [clojure.main :only [repl]])
   (:require [t3chnique.all]
+            [t3chnique.server :as sv]
             [t3chnique.vm :as vm]
             [t3chnique.parse :as parse]
             [clojure.java.io :as io]
             [clojure.pprint :as pp])
   (:import [java.nio Buffer]))
 
-(declare entp dis object constant-string constant-list output vm-repl)
+(declare entp dis object constant-string constant-list output vm-repl run-rest-server)
 
 (defn -main [& args]
   (time
@@ -24,10 +25,10 @@
                             ["-o" "--object" "Output object information for specified object id" :parse-fn #(Integer. %)]
                             ["-h" "--help" "Output this help text." :flag true])
          game (first args)
-         image (if (:resource opts)
-                 (parse/parse-resource game)
-                 (parse/parse-file game))
-         state (vm/vm-from-image image)]
+         image (when game (if (:resource opts)
+                            (parse/parse-resource game)
+                            (parse/parse-file game)))
+         state (when image (vm/vm-from-image image))]
      (cond
       (:entp opts) (entp image)
       (:state opts) (output "Initial VM State" state)
@@ -35,7 +36,7 @@
       (:object opts) (object (:object opts) state)
       (:constant-string opts) (constant-string (:constant-string opts) state)
       (:constant-list opts) (constant-list (:constant-list opts) state)
-      :else (vm-repl state)))))
+      :else (run-rest-server)))))
 
 (defn output [title m]
   (println "=======================================")
@@ -100,6 +101,13 @@
   (let [[b o] (vm/const-offset state addr)]
     (println (format "List @ %d\n" addr))
     (println (first ((parse/lst) [b o])))))
+
+(defn run-rest-server []
+  (let [system (sv/system)]
+    (do
+      (println "Running REST server...")
+      (.addShutdownHook (Runtime/getRuntime) (Thread. #(sv/stop system)))
+      (sv/start system))))
 
 (defn vm-repl 
   "Run a REPL which applies the read fn to the state s."
