@@ -20,7 +20,7 @@
             [t3chnique.primitive :as p]
             [t3chnique.parse :as parse]
             [clojure.stacktrace :as st]
-            [t3chnique.all]))
+            [t3chnique.all :refer [default-host]]))
 
 (defn vm-actions
   "Return the actions available for the vm at its current state"
@@ -275,7 +275,13 @@
 
 (defn vm-get
   "Return a VM by id"
-  [system id] (peek (get @(:vm-histories system) id)))
+  [system id]
+  (peek (get @(:vm-histories system) id)))
+
+(defn vm-host
+  "Find the current host for the VM by id"
+  [system id]
+  (get @(:hosts system) id))
 
 (defn vm-new!
   "Create a new VM for the game specified"
@@ -283,9 +289,12 @@
   (let [name (:name (game-get system game-id))
         prefix (first (string/split name #"\W"))
         histories (:vm-histories system)
+        hosts (:hosts system)
         id (first (remove (partial contains? @histories) (repeatedly #(new-id prefix))))
-        vm (assoc (t3vm/vm-from-image (parse/parse-resource name)) :id id)]
+        vm (assoc (t3vm/vm-from-image (parse/parse-resource name)) :id id)
+        host (default-host)]
     (swap! histories assoc id [vm])
+    (swap! hosts assoc id host)
     vm))
 
 (defn vm-destroy!
@@ -297,16 +306,18 @@
 (defn vm-enter!
   "Enter the VM with specified id."
   [system id]
-  (let [[r s] ((t3vm/enter) (vm-get system id))]
+  (let [host (vm-host system id)
+        [r s] ((t3vm/enter host) (vm-get system id))]
     (swap! (:vm-histories system) update-in [id] conj s)
     (vm-get system id)))
 
 (defn vm-step!
   "Single-step the VM with specified id."
   [system id]
-  (let [initial-state (vm-get system id)]
+  (let [initial-state (vm-get system id)
+        host (vm-host system id)]
     (try
-      (let [[e s] ((t3vm/step) initial-state)]
+      (let [[e s] ((t3vm/step host) initial-state)]
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
         (swap! (:vm-histories system)
@@ -322,9 +333,10 @@
 (defn vm-run!
   "Run VM until an error is hit or input is required."
   [system id]
-  (let [initial-state (vm-get system id)]
+  (let [initial-state (vm-get system id)
+        host (vm-host system id)]
     (try
-      (let [[e s] ((t3vm/run-state) (vm-get system id))]
+      (let [[e s] ((t3vm/run-state host) (vm-get system id))]
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
         (swap! (:vm-histories system) update-in [id] conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t))))))
@@ -462,12 +474,13 @@
 
 (defn system 
   "Initialise a new instance of the whole application."
-  []
-  (let [t3s (scan-for-t3)
-        game-catalogue (map (fn [id name] {:id id :name name}) (range (count t3s)) t3s)]
-    {:game-catalogue game-catalogue
-     :vm-histories (atom {})
-     :server (atom nil)}))
+  ([]
+     (let [t3s (scan-for-t3)
+           game-catalogue (map (fn [id name] {:id id :name name}) (range (count t3s)) t3s)]
+       {:game-catalogue game-catalogue
+        :vm-histories (atom {})
+        :server (atom nil)
+        :hosts (atom {})})))
 
 (defn start
   "Start an instance of the application."

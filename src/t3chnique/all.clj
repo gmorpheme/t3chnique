@@ -1,18 +1,19 @@
 (ns ^{:doc "Require VM together with implementations of all the standard metaclasses
 and intrinstic function sets."}
   t3chnique.all
-  (:require [t3chnique.vm :as vm]
-            [t3chnique.intrinsics :as bif]
+  (:require t3chnique.vm
             t3chnique.metaclass.object
             t3chnique.metaclass.tobject
             t3chnique.metaclass.string
             t3chnique.metaclass.vector
             t3chnique.metaclass.list
+            [t3chnique.intrinsics :as bif]
             [t3chnique.intrinsics.t3vm :as t3vm]
-            [t3chnique.intrinsics.gen :as gen])
-  (:import [t3chnique.vm Host]))
+            [t3chnique.intrinsics.gen :as gen]))
 
 ;; wire in BIF implementations to the default host
+
+(defrecord Host [])
 
 (extend Host
   
@@ -29,3 +30,6 @@ and intrinstic function sets."}
   {:dataType gen/dataType
    :firstObj gen/firstObj
    :nextObj  gen/nextObj})
+
+(defn default-host []
+  (Host.))

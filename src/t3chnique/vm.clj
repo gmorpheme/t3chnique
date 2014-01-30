@@ -101,11 +101,15 @@ on block type."
 (declare runop)
 
 (defmacro defop
-  "Define a bytecode instruction"
+  "Define a bytecode instruction. This consists of an execution
+function op-xxx which accepts the declared parameters (in addition to
+a host argument) and the recording of operation metadata for use by
+the VM execution."
+
   [op cd plist & exprs]
   (let [param-defs (partition 2 plist)
         param-types (vec (map first param-defs))
-        param-syms (vec (map second param-defs))
+        param-syms (vec (cons 'host (map second param-defs)))
         spec (vec (apply concat (for [[t s] param-defs] [t (keyword s)])))
         op-fn-name (symbol (str "op-" op))]
     `(do
@@ -932,23 +936,23 @@ items if available."
 
 (defn- bif
   "Call intrinsic function with index in set using argc arguments from stack. "
-  [set index argc]
+  [host set index argc]
   (do-vm
     [fnsd (fetch-val :fnsd)
-     _ (bif/invoke-by-index (host) (nth fnsd set) index argc)]
+     _ (bif/invoke-by-index host (nth fnsd set) index argc)]
     nil))
 
 (defop builtin_a 0xB1 [:ubyte argc :ubyte func_index]
-  (bif 0 func_index argc))
+  (bif host 0 func_index argc))
 
 (defop builtin_b 0xB2 [:ubyte argc :ubyte func_index]
-  (bif 1 func_index argc))
+  (bif host 1 func_index argc))
 
 (defop builtin_c 0xB3 [:ubyte argc :ubyte func_index]
-  (bif 2 func_index argc))
+  (bif host 2 func_index argc))
 
 (defop builtin_d 0xB4 [:ubyte argc :ubyte func_index]
-  (bif 3 func_index argc))
+  (bif host 3 func_index argc))
 
 (defop builtin1 0xB5 [:ubyte argc :ubyte func_index :ubyte set_index]
   (bif set_index func_index argc))
@@ -1122,44 +1126,36 @@ items if available."
 
 (defop nop 0xF2 [])
 
-
-(deftype Host [])
-
-(defn host
-  "Allow the VM access to a host - this may become dynamic or be associated
-with the vm map."
-  [] (Host.))
-
 ;; control
 
 (defn enter
   "Set up vm at initial entry point."
-  []
+  [host]
   (do-vm
     [entp (fetch-val :entry-point-offset)
-     _ (op-pushlst 0)
-     _ (op-call 1 entp)]
+     _ (op-pushlst host 0)
+     _ (op-call host 1 entp)]
     nil))
 
 (defn step
   "Execute the op code referenced by the ip register."
-  []
+  [host]
   (do-vm
     [ip (fetch-val :ip)
      [b i] (m-apply offset ip)
      :let [[[op args] [_ i']] ((parse-op) [b i])
            f (:run-fn op)]
      _ (update-val :ip #(+ % (- i' i)))
-     r (apply f (vals args))]
+     r (apply f (cons host (vals args)))]
     r))
 
 (defn run-state
   "Run until an error occurs. Explicitly in the state monad!"
-  []
+  [host]
   (fn [s]
     (loop [state s]
       (assert state)
-      (let [[newr new-state] ((step) state)]
+      (let [[newr new-state] ((step host) state)]
         (assert new-state)
         (if-let [e (or newr (:exc new-state))]
           [e new-state]
