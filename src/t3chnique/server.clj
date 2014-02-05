@@ -12,7 +12,6 @@
             [clj-yaml.core :as yaml]
             [hiccup.core :as h]
             [hiccup.page :as hp]
-            [clojure.tools.trace :as t]
             [clojure.string :as string]
             [clojure.java.classpath :as cp]
             [compojure.route :as route]
