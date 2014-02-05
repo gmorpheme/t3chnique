@@ -111,6 +111,10 @@ metadata to support call by index."
   getLaunchHostAddr
   sendNetRequest)
 
+(defprotocol IAsyncHost
+  (input-channel [_])
+  (output-channel [_]))
+
 (defn parse-id
   "Parse a function set id into name and version."
   [fsid]
