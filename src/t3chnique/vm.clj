@@ -207,6 +207,7 @@ the VM execution."
 
 (def reg-get fetch-val)
 (def reg-set set-val)
+(def return (partial reg-set :r0))
 
 (defn symbol-value [sym]
   (do-vm
@@ -487,19 +488,19 @@ the VM execution."
 (defop retval 0x50 []
   (do-vm
    [rv (stack-pop)
-    _ (reg-set :r0 rv)
+    _ (return rv)
     _ (unwind)]
    nil))
 
 (defop retnil 0x51 []
   (do-vm
-   [_ (reg-set :r0 (vm-nil))
+   [_ (return (vm-nil))
     _ (unwind)]
    nil))
 
 (defop rettrue 0x52 []
   (do-vm
-   [_ (reg-set :r0 (vm-true))
+   [_ (return (vm-true))
     _ (unwind)]
    nil))
 
@@ -573,7 +574,7 @@ property value directly."
   [target defining self pid prop-val argc]
   (if prop-val
     (cond
-     (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+     (not (vm-auto-eval? prop-val)) (return prop-val)
      (vm-dstring? prop-val) (abort "not implemented (say)")
      (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
                                            target
@@ -589,7 +590,7 @@ items if available."
   [target defining self pid prop-val argc]
   (if prop-val
     (cond
-     (not (vm-auto-eval? prop-val)) (reg-set :r0 prop-val)
+     (not (vm-auto-eval? prop-val)) (return prop-val)
      :else (abort "BAD_SPEC_EVAL"))))
 
 (def generic-get-prop (property-accessor mc/get-property call-or-return))
@@ -1002,7 +1003,7 @@ items if available."
     :let [obj (assoc obj :metaclass metaclass_id)]
     id (new-obj-id)
     _ (obj-store id obj)
-    _ (reg-set :r0 (vm-obj id))]
+    _ (return (vm-obj id))]
    nil))
 
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id]
