@@ -253,13 +253,20 @@ the VM execution."
 
 ;; Operations on primitives / op overloads
 
+(defn load-string-constant
+  "Read a string (prefixed utf-8) from the constant pool."
+  [state address]
+  (let [[buf idx] (const-offset state address)]
+    (first ((parse/prefixed-utf8) [buf idx]))))
+
 ; TODO other types
-(defn- convert-to-string [x]
+(defn convert-to-string [x]
   (cond
-    vm-nil? "nil"
-    vm-true? "true"
-    vm-int? (str (value x))
-    vm-sstring? (value x)
+   (vm-nil? x) "nil"
+   (vm-true? x) "true"
+   (vm-int? x) (str (value x))
+   (vm-sstring? x) (load-string-constant (value x))
+
     :else (abort "other types")))
 
 ; TODO non-numerics
