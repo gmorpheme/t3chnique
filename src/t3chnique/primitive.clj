@@ -49,6 +49,7 @@
                          (contains? v :value)))
 (defn valid? [v]
   (cond
+   (vm-nil? v) false
    (vm-obj? v) (and (value v) (pos? (value v)))
    (vm-prop? v) (and (value v) (pos? (value v)))
    (vm-objx? v) (and (value v) (pos? (value v)))
