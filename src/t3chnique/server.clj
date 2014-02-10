@@ -35,8 +35,7 @@
 
 (defn render-edn [data]
   (trace "render-edn")
-  (binding [*print-dup* true]
-    (pr-str data)))
+  (pr-str data))
 
 ;; middleware for returning json, edn or html based on accept header
 (defn wrap-response [handler]
