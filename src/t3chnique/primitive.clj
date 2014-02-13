@@ -65,8 +65,8 @@
     vm-true-id "t"
     vm-stack-id (str "st" (value val))
     vm-codeptr-id (str "#" (value val))
-    vm-obj-id (str "o" (value val))
-    vm-prop-id (str "p" (value val))
+    vm-obj-id (str "o" (or (value val) "-"))
+    vm-prop-id (str "p" (or (value val) "-"))
     vm-int-id (str (value val))
     vm-sstring-id (str "'" (value val))
     vm-dstring-id (str \" (value val))

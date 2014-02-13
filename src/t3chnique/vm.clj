@@ -128,9 +128,10 @@ the VM execution."
 
 (defn offset
   "Translate code pointer to buffer / offset pair."
-  [{:keys [code-page-size code-pages ip]} & ptr]
-  (let [p (or (first ptr) ip)]
-    [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
+  ([{:keys [ip] :as vm}]
+     (offset vm ip))
+  ([{:keys [code-page-size code-pages]} p]
+     [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
 
 (defn const-offset
   "Translate const pointer to buffer / offset pair."
@@ -486,7 +487,7 @@ the VM execution."
     fp (stack-pop)
     ac (stack-pop)
     of (stack-pop)
-    ep (stack-pop)
+    ep (stack-pop) ;; TODO recursive call descriptor too
     _ (m-seq (repeat (+ 6 (value ac)) (stack-pop)))
     _ (reg-set :fp (value fp))
     _ (reg-set :ep (value ep))
@@ -548,6 +549,7 @@ the VM execution."
     ep (reg-get :ep)
     p (pc)
     fp (reg-get :fp)
+    ;; TODO seems that recursive call descriptor should go here too
     _ (stack-push (vm-codeofs (- p ep)))
     _ (stack-push (vm-codeofs ep))
     _ (stack-push (vm-int argc))

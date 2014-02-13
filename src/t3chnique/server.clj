@@ -86,8 +86,9 @@ start with a /. Use / for the root context."
                :fnsd {:href (url context "vms" id "fnsd")}
                :symd {:href (url context "vms" id "symd")}
                :exc {:href (url context "vms" id "exc")}
-               :dis1 {:href (url context "vms" id "dis1" "{address}") :templated true}}
-        action-links (map (fn [x] {x {:href (url context "vms" id (name x))
+               :dis1 {:href (url context "vms" id "dis1" "{address}") :templated true}
+               :inspect-state {:href (url context "vms" id "inspect-state")}}
+                action-links (map (fn [x] {x {:href (url context "vms" id (name x))
                                      :name (string/capitalize (name x))}})
                           actions)
         links (reduce merge basic action-links)]
@@ -197,9 +198,9 @@ useful information for tooling UIs."
         add-links (partial add-vm-links context id (vm-actions vm))]
     (-> vm
         (promote-types)
-        (select-keys [:r0 :ip :ep :sp :fp :say-function :say-method :stack])
         (annotate-registers)
         (annotate-stack)
+        (select-keys [:r0 :ip :ep :sp :fp :say-function :say-method :stack])
         (add-links))))
 
 (defn respond
@@ -395,10 +396,7 @@ useful information for tooling UIs."
   "Disassemble instruction at addr and return {:op {...} :args {...}}"
   [system id addr]
   (let [vm (vm-get system id)]
-    (-> (t3vm/offset vm addr)
-        ((t3vm/parse-op))
-        (first)
-        ((fn [[op args]] {:op op :args args})))))
+    (i/dis1 vm addr)))
 
 (defn make-routes
   "Make routes for system"

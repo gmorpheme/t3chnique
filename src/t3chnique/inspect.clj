@@ -7,6 +7,14 @@ structures for human inspection"}
 
 (declare inspect-shallow)
 
+(defn dis1
+  "Disassemble instruction at addr and return {:op {...} :args {...}}"
+  [vm addr]
+  (-> (vm/offset vm addr)
+      ((vm/parse-op))
+      (first)
+      ((fn [[op args]] {:op (dissoc op :run-fn) :args args}))))
+
 (defn annotate-primitive
   "Annotate a primitive value with human-friendly information if possible."
   [vm val]
@@ -20,7 +28,7 @@ information about its value or referent."
   (fn [vm val] (p/typeid val)))
 
 (defmethod inspect-shallow p/vm-nil-id [vm val]
-  ["nil"])
+  [])
 
 (defmethod inspect-shallow p/vm-true-id [vm val]
   ["true"])
@@ -28,7 +36,8 @@ information about its value or referent."
 (defmethod inspect-shallow p/vm-stack-id [vm val]
   (let [idx (p/value val)
         item (get-in vm [:stack idx])]
-    [item (inspect-shallow vm item)]))
+    (when item
+      [(annotate-primitive vm item) (inspect-shallow vm item)])))
 
 (defmethod inspect-shallow p/vm-obj-id [vm val]
   (let [oid (p/value val)
@@ -59,5 +68,11 @@ information about its value or referent."
         set-name (nth (:fnsd vm) set)]
     [(str set-name ":" idx)]))
 
+;; codeptr are meant to be native and therefore opaque but we
+;; don't use any native representation 
+(defmethod inspect-shallow p/vm-codeptr-id [vm val]
+  [(dis1 vm (p/value val))])
+  
 (defmethod inspect-shallow :default [vm val]
   ["(unknown)"])
+
