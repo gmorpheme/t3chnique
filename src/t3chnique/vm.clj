@@ -260,6 +260,14 @@ the VM execution."
   (let [[buf idx] (const-offset state address)]
     (first ((parse/prefixed-utf8) [buf idx]))))
 
+(defn load-list-constant
+  "Read a list (prefixed) from the constant pool."
+  [state address]
+  (when (not (zero? address))
+    (let [[buf idx] (const-offset state address)]
+      (first ((parse/lst) [buf idx])))
+    ))
+
 ; TODO other types
 (defn convert-to-string [x]
   (cond

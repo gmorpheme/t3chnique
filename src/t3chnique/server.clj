@@ -18,6 +18,7 @@
             [t3chnique.vm :as t3vm]
             [t3chnique.primitive :as p]
             [t3chnique.parse :as parse]
+            [t3chnique.inspect :as i]
             [clojure.stacktrace :as st]
             [clojure.tools.logging :refer (info debug trace)]
             [t3chnique.all :refer [default-host]]))
@@ -180,6 +181,26 @@ start with a /. Use / for the root context."
    (vm-actions vm)
    {:id id
     :exc (or (:exc vm) nil)}))
+
+(defn represent-vm-annotated-state
+  "Represent the VM as its registers and stack, annotated with
+useful information for tooling UIs."
+  [context id vm]
+  (let [annotate-registers #(reduce
+                             (fn [s k] (update-in s [k] (partial i/annotate-primitive %)))
+                             %
+                             [:r0 :ip :ep :sp :fp :say-function :say-method])
+        annotate-stack  #(reduce
+                          (fn [s i] (update-in s [:stack i] (partial i/annotate-primitive %)))
+                          %
+                          (range (p/value (:sp %))))
+        add-links (partial add-vm-links context id (vm-actions vm))]
+    (-> vm
+        (promote-types)
+        (select-keys [:r0 :ip :ep :sp :fp :say-function :say-method :stack])
+        (annotate-registers)
+        (annotate-stack)
+        (add-links))))
 
 (defn respond
   ([context data]
@@ -475,8 +496,14 @@ start with a /. Use / for the root context."
    (GET ["/vms/:id/dis1/:addr"] [id addr]
      (let [addr (Integer/parseInt addr)]
        (if-let [vm (vm-get system id)]
-         (respond context (represent-vm-assembly context id (vm-get system id) addr (dis1 system id addr)))
+         (respond context (represent-vm-assembly context id vm addr (dis1 system id addr)))
          (response/not-found "Nonesuch"))))
+
+   ;; register and stack state annotated with debug / tooling info
+   (GET ["/vms/:id/inspect-state"] [id]
+     (if-let [vm (vm-get system id)]
+       (respond context (represent-vm-annotated-state context id vm))
+       (response/not-found "Nonesuch")))
    
    (GET ["/exec/:id"] [id]
      (if-let [vm (vm-get system id)]

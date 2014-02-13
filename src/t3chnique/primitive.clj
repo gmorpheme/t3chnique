@@ -55,3 +55,32 @@
    (vm-objx? v) (and (value v) (pos? (value v)))
    (vm-funcptr? v) (and (value v) (pos? (value v)))
    :else true))
+
+(defn mnemonise
+  "Return a short string representation of the primitive for use in tooling
+/ debugging interfaces."
+  [val]
+  (condp = (typeid val)
+    vm-nil-id "nil"
+    vm-true-id "t"
+    vm-stack-id (str "st" (value val))
+    vm-codeptr-id (str "#" (value val))
+    vm-obj-id (str "o" (value val))
+    vm-prop-id (str "p" (value val))
+    vm-int-id (str (value val))
+    vm-sstring-id (str "'" (value val))
+    vm-dstring-id (str \" (value val))
+    vm-list-id (str "[]" (value val))
+    vm-codeofs-id (str "x" (value val))
+    vm-funcptr-id (str "f" (value val))
+    vm-empty-id "?0"
+    vm-native-code-id "?x"
+    vm-enum-id (str "e{}" (value val))
+    vm-bifptr-id (str "b" (value val))
+    vm-objx-id (str "ox" (value val))))
+
+(defn bif-set-and-index
+  "Parse the function set and function index out of a bif pointer."
+  [{v :value :as p}]
+  {:pre [(vm-bifptr? p)]}
+  [(bit-and 0xffff0000 v) (bit-and 0xffff v)])

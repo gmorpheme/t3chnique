@@ -80,7 +80,11 @@ been invoked.")
   (let [mcld-entry (nth mcld index)]
     (or (:_prototype mcld-entry) ((:metaclass mcld-entry)))))
 
-(defn read-object-block [mcld oblock]
+(defn read-object-block
+  "Read an image object block and represent as map of oid to obj
+  map (as returned by metaclass load-from-image) together with
+  metaclass and oid keys."
+  [mcld oblock]
   (let [mcld-index (:mcld-index oblock)
         mclass-ctor (:metaclass (nth mcld mcld-index))
         prototype (mclass-ctor)]
