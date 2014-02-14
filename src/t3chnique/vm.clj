@@ -147,6 +147,17 @@ the VM execution."
      args (parse/spec (:parse-spec op))]
     [op args]))
 
+(defn read-op
+  "Read the operation in the supplied buffer position.
+Return opcode map, args map and byte length of compete instruction."
+  [[b i]]
+  (let [[[op args] [b' i']] ((parse-op) [b i])]
+    [op args (- i' i)]))
+
+(defn parse-op-at-ip []
+  (fn [s]
+    [(read-op (offset s (:ip s))) s]))
+
 (defn fresh-pc []
   (do-vm
     [ip (fetch-val :ip)
@@ -1159,13 +1170,10 @@ items if available."
   "Execute the op code referenced by the ip register."
   [host]
   (do-vm
-    [ip (fetch-val :ip)
-     [b i] (m-apply offset ip)
-     :let [[[op args] [_ i']] ((parse-op) [b i])
-           f (:run-fn op)]
-     _ (update-val :ip #(+ % (- i' i)))
-     r (apply f (cons host (vals args)))]
-    r))
+   [[op args len] (parse-op-at-ip)
+    _ (update-val :ip (partial + len))
+    ret (apply (:run-fn op) (cons host (vals args)))]
+   ret))
 
 (defn run-state
   "Run until an error occurs. Explicitly in the state monad!"
