@@ -1,0 +1,8 @@
+[...x0 x0 1 st0 nil] ip:428 pushfnptr code_offset: 373
+[...x0 1 st0 nil f373] ip:433 builtin_a argc: 1 func_index: 1
+[...x0 x0 1 st0 nil] ip:436 objgetprop obj_id: 8 prop_id: 39
+return: nil
+
+stack: []0 p0 nil nil nil nil nil x0 x0 1 st0 nil
+
+output: 

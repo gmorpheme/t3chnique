@@ -13,6 +13,12 @@ and function set protocols."}
 
 (declare host)
 
+;; The VM has an awkward circular relationship with string and list
+;; metaclasses. This is a temporary workaround for the circular dependencies
+(do (in-ns 't3chnique.metaclass.string)
+    (clojure.core/declare add-to-str)
+    (in-ns 't3chnique.vm))
+
 ;; vm-m implementation
 ;;
 ;; vm state:
@@ -272,6 +278,13 @@ Return opcode map, args map and byte length of compete instruction."
   (let [[buf idx] (const-offset state address)]
     (first ((parse/prefixed-utf8) [buf idx]))))
 
+(defn as-string
+  "Get actual string from sstring or object string."
+  [v]
+  (cond
+   (vm-sstring? v) (fn [s] [(load-string-constant s (value v)) s])
+   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-string obj))))
+
 (defn load-list-constant
   "Read a list (prefixed) from the constant pool."
   [state address]
@@ -281,14 +294,11 @@ Return opcode map, args map and byte length of compete instruction."
     ))
 
 ; TODO other types
-(defn convert-to-string [x]
+(defn convert-to-string [v]
   (cond
-   (vm-nil? x) "nil"
-   (vm-true? x) "true"
-   (vm-int? x) (str (value x))
-   (vm-sstring? x) (load-string-constant (value x))
-
-    :else (abort "other types")))
+   (vm-sstring? v) (fn [s] [(load-string-constant s (value v)) s])
+   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-string obj))
+   :else (abort (str "TODO other string conversions: value: " (mnemonise v)))))
 
 ; TODO non-numerics
 (defn- vm-lift2
@@ -323,14 +333,6 @@ Return opcode map, args map and byte length of compete instruction."
 
 ;; operations operating on type values and returing typed values
 
-; TODO non numerics
-(defn- vm-+ [a b]
-  (cond
-   (vm-int? a) (if (vm-int? b)
-                (vm-int (+ (value a) (value b)))
-                (abort "NUM_VAL_REQD"))
-   (vm-sstring? a) (str (value a) (convert-to-string b))
-   :else (abort "BAD_TYPE_ADD")))
 
 ;; TODO non numerics
 
@@ -431,8 +433,22 @@ Return opcode map, args map and byte length of compete instruction."
 (defn- stack-op2 [op]
   (with-stack [a b] [(op a b)]))
 
+(defn- vm-+ [a b]
+  (in-vm
+   (cond
+    (vm-int? a) (if (vm-int? b)
+                  (m-result (vm-int (+ (value a) (value b))))
+                  (abort "NUM_VAL_REQD"))
+    (vm-sstring? a) (t3chnique.metaclass.string/add-to-str a b)
+    ;; create string
+    :else (abort "BAD_TYPE_ADD"))))
+
 (defop add 0x22 []
-  (stack-op2 vm-+))
+  (do-vm
+   [[right left] (m-seq (repeat 2 (stack-pop)))
+    ret (vm-+ left right)
+    _ (stack-push ret)]
+   nil))
 
 (defop sub 0x23 []
   (stack-op2 vm--))
@@ -539,6 +555,8 @@ Return opcode map, args map and byte length of compete instruction."
     (if varags
       (>= ac varmin)
       (= ac param-count))))
+
+(def FRAME-SIZE 11)
 
 (defn prepare-frame
   "Prepare stack frame for call. target-pid is (vm-prop), objs are
@@ -783,25 +801,25 @@ items if available."
   (copy :fp (partial + local_number)))
 
 (defop getarg1 0x82 [:ubyte param_number]
-  (copy :fp #(- % (+ 9 param_number))))
+  (copy :fp #(- % (+ FRAME-SIZE param_number))))
 
 (defop getarg2 0x83 [:uint2 param_number]
-  (copy :fp #(- % (+ 9 param_number))))
+  (copy :fp #(- % (+ FRAME-SIZE param_number))))
 
 (defop getargn0 0x7C []
-  (copy :fp #(- % 9)))
+  (copy :fp #(- % FRAME-SIZE)))
 
 (defop getargn1 0x7D []
-  (copy :fp #(- % 10)))
+  (copy :fp #(- % (inc FRAME-SIZE))))
 
 (defop getargn2 0x7E []
-  (copy :fp #(- % 11)))
+  (copy :fp #(- % (+ 2 FRAME-SIZE))))
 
 (defop getargn3 0x7F []
-  (copy :fp #(- % 12)))
+  (copy :fp #(- % (+ 3 FRAME-SIZE))))
 
 (defop pushself 0x84 []
-  (copy :fp #(- % 5)))
+  (copy :fp #(- % (- FRAME-SIZE 3))))
 
 ; TODO debugger
 (defop getdblcl 0x85 [:uint2 local_number]
@@ -827,7 +845,10 @@ items if available."
   (with-monad vm-m (m-seq (repeat count (stack-pop)))))
 
 (defop getr0 0x8B []
-  (reg-get :r0))
+  (do-vm
+   [r0 (reg-get :r0)
+    _ (stack-push r0)]
+   nil))
 
 ; TODO debugger
 (defop getdbargc 0x8C [])
@@ -852,17 +873,17 @@ items if available."
 (defn- jump-cond1
   [jumpif? branch_offset]
   (do-vm
-           [v (stack-pop)
-            _ (m-when (jumpif? v) (jump branch_offset))]
-           nil))
+   [v (stack-pop)
+    _ (m-when (jumpif? v) (jump branch_offset))]
+   nil))
 
 (defn- jump-cond2
   [jumpif? branch_offset]
-   (do-vm
-            [v2 (stack-pop)
-             v1 (stack-pop)
-             _ (m-when (jumpif? v1 v2) (jump branch_offset))]
-            nil))
+  (do-vm
+   [v2 (stack-pop)
+    v1 (stack-pop)
+    _ (m-when (jumpif? v1 v2) (jump branch_offset))]
+   nil))
 
 (defop jt 0x92 [:int2 branch_offset]
   (jump-cond1 (complement vm-falsey?) branch_offset))

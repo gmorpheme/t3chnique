@@ -125,7 +125,9 @@ final instance remains in the sequence."
      (not (empty? (filter
                    #(and (p/vm-obj? val)
                          (= (p/value val) (:oid %)))
-                   (obj-chain s self)))))))
+                   (obj-chain s self))))))
+
+  (mc/get-as-string [self] nil))
 
 (defn tads-object
   ([] (TadsObject. nil nil nil))

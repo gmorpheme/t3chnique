@@ -7,11 +7,13 @@
             [t3chnique.intrinsics :as bif]
             [t3chnique.intrinsics.t3vm :as t3vm]
             [t3chnique.intrinsics.gen :as gen]
-            [clojure.algo.monads :refer (update-val)]
-            [clojure.pprint :refer (pprint)])
+            [clojure.algo.monads :refer (update-val fetch-val m-seq)]
+            [clojure.pprint :refer (pprint)]
+            [clojure.string :as string])
   (:use [midje.sweet]))
 
 (defrecord TraceHost [])
+
 (extend TraceHost
     
   bif/t3vm
@@ -29,6 +31,13 @@
    :nextObj  gen/nextObj}
 
   bif/tads-io
+  {:tadsSay (fn [_ argc]
+              (m/do-vm
+               [args (m-seq (repeat argc (vm/stack-pop)))
+                _ (update-val :_output #(concat % args))
+                _ (vm/reg-set :r0 (p/vm-nil))]
+               nil))}
+
   bif/tads-net)
 
 (defn trace-host []
@@ -38,11 +47,36 @@
   "Execute the op code referenced by the ip register."
   [host]
   (m/do-vm
-   [[op args len] (vm/parse-op-at-ip)
+   [ip (vm/reg-get :ip)
+    [op args len] (vm/parse-op-at-ip)
     _ (update-val :ip (partial + len))
-    _ (update-val :_trace #(conj % [op args]))
+    stack (fetch-val :stack)
+    _ (update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))
     ret (apply (:run-fn op) (cons host (vals args)))]
    ret))
+
+(defn format-stack
+  ([stack]
+     (format-stack stack nil))
+  ([stack n]
+     (let [stack-vals (if n (take-last n stack) stack)]
+       (apply str (interpose " " (map p/mnemonise stack-vals))))))
+
+(defn format-trace [{trc :_trace :as s}]
+  (let [instructions (->> trc
+                          (map (fn [{:keys [op args pre ip]}]
+                                 (str "[..."
+                                      (format-stack pre 5)
+                                      "] ip:"
+                                      ip
+                                      " "
+                                      (:mnemonic op)
+                                      " "
+                                      (apply str (interpose " " (map (fn [[k v]] (str (name k) ": " v)) args)))))))]
+    (apply str (concat (interpose "\n" instructions)
+                       ["\n\nstack: " (format-stack (:stack s))
+                        "\n\noutput: " (apply str (:_output s))]))))
+
 
 (defn trace-execution [name]
   (let [m0 (vm/vm-from-image (parse/parse-resource name))]
@@ -52,23 +86,37 @@
           stepper (trace-step host)]
 
       (loop [s m1]
-        (let [[r s+] (m/run-vm stepper s)]
+        (let [[r s+] (try
+                       (m/run-vm stepper s)
+                       (catch Exception e
+                         (spit (str "test/t3chnique/out/" name ".err")
+                               (str (format-trace s) "\nexception: " e))
+                         (throw e)))]
           (if r
-            [(:_trace s+) r]
+            [r s+]
             (recur s+)))))))
 
-(defn format-trace [[trc ret]]
-  (let [instructions (->> trc
-                          (map (fn [[op args]]
-                                 (str (:mnemonic op)
-                                      " "
-                                      (apply str (interpose " " (map (fn [[k v]] (str (name k) ": " v)) args)))))))]
-    (apply str (concat (interpose "\n" instructions) ["\nreturn: " (p/mnemonise ret)]))))
+(defn test [name]
+  (let [resource-name (str name ".t3")
+        [r s] (trace-execution resource-name)
+        _ (println "Return was " r)
+        trc (str (format-trace s)
+                 (when r (str "\nreturn " (p/mnemonise r))))]
+    (spit (str "test/t3chnique/out/" resource-name ".trc") trc)))
+
+(defn compare-trace [name]
+  (let [new (str "test/t3chnique/out/" name ".t3.trc")
+        old (str "test/t3chnique/out/" name ".t3.good")]
+    (= (string/trim (slurp new)) (string/trim (slurp old)))))
+
 
 (fact
-  (format-trace (trace-execution "arith.t3")) =>
-  "objgetprop obj_id: 8 prop_id: 39
-builtin_a argc: 1 func_index: 1
-pushfnptr code_offset: 373
-return: nil")
+  (let [s (test "arith")]
+    (compare-trace "arith") => true
+    ))
+
+(fact
+  (let [s (test "basic")]
+    (compare-trace "basic") => true
+    ))
 

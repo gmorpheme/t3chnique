@@ -79,7 +79,9 @@
         r (f argc)]
        r)))
   
-  (list-like? [_ _] true))
+  (list-like? [_ _] true)
+
+  (get-as-string [_] nil))
 
 (defn tads-vector
   ([] (Vector. []))

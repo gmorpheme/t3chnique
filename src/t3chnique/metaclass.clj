@@ -30,7 +30,10 @@ been invoked.")
     "Whether the object is list like")
 
   (is-instance? [self val]
-    "Monadic value to determine whether self is a subclass of val."))
+    "Monadic value to determine whether self is a subclass of val.")
+
+  (get-as-string [self]
+    "Expose internal string if appropriate or nil otherwise. (Non-monadic)"))
 
 (defrecord Unimplemented []
   MetaClass

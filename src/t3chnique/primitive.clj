@@ -77,7 +77,8 @@
     vm-native-code-id "?x"
     vm-enum-id (str "e{}" (value val))
     vm-bifptr-id (str "b" (value val))
-    vm-objx-id (str "ox" (value val))))
+    vm-objx-id (str "ox" (value val))
+    (str "?: " val)))
 
 (defn bif-set-and-index
   "Parse the function set and function index out of a bif pointer."

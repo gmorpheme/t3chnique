@@ -1,5 +1,8 @@
 (ns t3chnique.metaclass.string
   (:require [t3chnique.metaclass :as mc]
+            [t3chnique.monad :as m]
+            [t3chnique.vm :as vm]
+            [t3chnique.primitive :as p]
             [clojure.algo.monads :refer [domonad with-monad m-seq fetch-val]]
             [t3chnique.parse :refer [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
@@ -38,11 +41,41 @@
 
 (defrecord TadsString [text]
   mc/MetaClass
+  
   (load-from-image [self buf o]
     (with-monad byteparser-m
-      (TadsString. (first ((prefixed-utf8) [buf o]))))))
+      (TadsString. (first ((prefixed-utf8) [buf o])))))
 
-(defn tads-string [] (TadsString. nil))
+  (get-as-string [_] text))
 
+(defn tads-string
+  "Create a TadsString."
+  ([] (TadsString. nil))
+  ([text] (TadsString. text)))
 
 (mc/register-metaclass! "string/030008" tads-string)
+
+(defn create [text]
+  (m/do-vm
+   [oid (vm/new-obj-id)
+    _ (vm/obj-store oid (tads-string text))]
+   (p/vm-obj oid)))
+
+(defn- shortcut-add
+  "Potentially we can shortcut a string addition if one is empty."
+  [left left-text right right-text]
+  (cond
+   (or (p/vm-nil? right) (empty? right-text)) left
+   (and (empty? left) (vm/as-string right)) right
+   :else nil))
+
+(defn add-to-str
+  "Concatenate left and right into a newly allocated string."
+  [left right]
+  (m/do-vm
+   [left-text (vm/as-string left)
+    right-text (vm/convert-to-string right)
+    ret (if-let [val (shortcut-add left left-text right right-text)]
+          (m-result val)
+          (create (str left-text right-text)))]
+   ret))
