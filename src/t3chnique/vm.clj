@@ -436,16 +436,19 @@ instruction is complete."
   (with-stack [val]
     [(if (vm-int? val) (vm-int (- (value val))) (abort "non-numerics"))]))
 
-; TODO make this work properly
-(defop bnot 0x21 []
-  (with-stack [val]
-    [(if (vm-int? val) (vm-int (bit-not (value val))) (abort "non-numerics"))]))
+(defn vm-bnot [val]
+  (if (vm-int? val)
+    (vm-int (bit-and 0xffffffff (bit-not (value val))))
+    (abort "bnot non-numberics")))
 
 (defn- stack-op1 [op]
   (with-stack [val] [(op val)]))
 
 (defn- stack-op2 [op]
   (with-stack [a b] [(op a b)]))
+
+(defop bnot 0x21 []
+  (stack-op1 vm-bnot))
 
 (defn- compute-sum [a b]
   (in-vm

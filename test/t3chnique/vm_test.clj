@@ -101,8 +101,8 @@
    [(op pushint 0) (op not)]    (st true)
    [(op pushint 1) (op not)]    (st nil)))
 
-(future-fact "bnot"
-             (stack-after (op pushint 0xffffffff) (op bnot)) => (st 0))
+(fact "bnot"
+  (stack-after (op pushint 0xffffffff) (op bnot)) => (st 0))
 
 (fact "Call stack construction"
   (let [vm (vm-state-with :ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)])]
