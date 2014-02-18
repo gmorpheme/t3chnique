@@ -10,3 +10,6 @@ pom.xml
 .lein-plugins
 /t3/empty/obj
 /t3/suite/obj
+/test/t3chnique/out/arith.t3.trc
+/test/t3chnique/out/basic.t3.err
+/test/t3chnique/out/basic.t3.trc

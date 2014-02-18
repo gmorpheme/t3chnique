@@ -15,11 +15,12 @@
      (defn ~(symbol (str name "?")) [entry#] (= (:type entry#) ~typeid))
      (def ~(symbol (str name "-id")) ~typeid)))
 
-(defn primitive [typeid] (get @primitives typeid))
+(defn primitive [typeid] (or (get @primitives typeid)
+                             (throw (IllegalArgumentException. (str "unknown type: " typeid)))))
 (defn typed-value [typeid value] (TypedValue. typeid value))
 
-(defprimitive vm-nil 1 "nil (boolean \"false\" or null pointer)" nil)
-(defprimitive vm-true 2 "boolean \"true\"" nil)
+(defprimitive vm-nil 1 "nil (boolean \"false\" or null pointer)" :nil)
+(defprimitive vm-true 2 "boolean \"true\"" :nil)
 (defprimitive vm-stack 3 "Reserved for implementation use for storing native machine pointers to stack frames (see note below)" nil)
 (defprimitive vm-codeptr 4 "Reserved for implementation use for storing native machine pointers to code (see note below)" nil)
 (defprimitive vm-obj 5 "object reference as a 32-bit unsigned object ID number" :uint4)

@@ -33,7 +33,14 @@ been invoked.")
     "Monadic value to determine whether self is a subclass of val.")
 
   (get-as-string [self]
-    "Expose internal string if appropriate or nil otherwise. (Non-monadic)"))
+    "Expose internal String if appropriate or nil otherwise. (Non-monadic)")
+
+  (cast-to-string [self]
+    "Cast to String if possible or nil otherwise. (Monadic)")
+
+  (add [self val]
+    "Monadic value to add val to self and return the sum. Returns nil if not possible
+and alternative strategies should be attempted (op overloading)."))
 
 (defrecord Unimplemented []
   MetaClass

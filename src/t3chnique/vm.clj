@@ -6,7 +6,7 @@ and function set protocols."}
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc])
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until]])
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until m-result m-chain]])
   (:import [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
@@ -164,23 +164,26 @@ Return opcode map, args map and byte length of compete instruction."
   (fn [s]
     [(read-op (offset s (:ip s))) s]))
 
-(defn fresh-pc []
-  (do-vm
-    [ip (fetch-val :ip)
-     _ (set-val :pc ip)]
-    nil))
+;; We leave :ip pointing at the current instruction during processing.
+;; Should opcodes need to jump, they set :pc instead and this will be
+;; committed to :ip at the end of the step.
 
 (def set-pc (partial set-val :pc))
-(defn pc [] (fetch-val :pc))
+(defn pc []
+  (fn [s]
+    [(or (:pc s) (:ip s)) s]))
 
-(defn commit-pc []
+(defn commit-pc
+  "Commit the in-progress program counter back to ip."
+  []
   (do-vm
-   [pc (pc)
+   [pc (fetch-val :pc)
     _ (set-val :ip pc)
     _ (update-state #(dissoc % :pc))]
    nil))
 
-
+(defn dump-state [] (fn [s] (println s) [nil s]))
+(defn dump-vals [& keys] (fn [s] (println (select-keys s keys)) [nil s]))
 (defn get-say-method [] (fetch-val :say-method))
 (def set-say-method (partial set-val :say-method))
 (defn get-say-function [] (fetch-val :say-function))
@@ -220,11 +223,18 @@ Return opcode map, args map and byte length of compete instruction."
                                     (assoc i (stack j))
                                     (assoc j (stack i))))))
 
-(defn jump [offset]
-  (update-val :pc (partial + (- offset 2))))
+(defn jump-from-ip
+  "Jump to an offset from the instruction byte code (still stored in :ip) by
+setting the program counter (pc) - this will be committed to ip once the
+instruction is complete."
+  [offset-from-ip]
+  (do-vm
+   [ip (fetch-val :ip)
+    _ (set-pc (+ ip offset-from-ip))]
+   nil))
 
 (def reg-get fetch-val)
-(def reg-set set-val)
+(defn reg-set [reg val] (fn [s] [nil (assoc s reg val)]))
 (def return (partial reg-set :r0))
 
 (defn symbol-value [sym]
@@ -264,10 +274,8 @@ Return opcode map, args map and byte length of compete instruction."
    exceptions, rollback etc."
   [op]
   (do-vm
-    [_ (fresh-pc)
-     exc (op)
-     _ (update-val :sequence inc)
-     _ (commit-pc)]
+    [exc (op)
+     _ (update-val :sequence inc)]
     exc))
 
 ;; Operations on primitives / op overloads
@@ -293,11 +301,17 @@ Return opcode map, args map and byte length of compete instruction."
       (first ((parse/lst) [buf idx])))
     ))
 
-; TODO other types
-(defn convert-to-string [v]
+;; TODO other types
+;; should this be in string metaclass
+(defn convert-to-string 
+  "Return internal string representation (not vm-sstring)."
+  [v]
   (cond
    (vm-sstring? v) (fn [s] [(load-string-constant s (value v)) s])
-   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-string obj))
+   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-string obj)) ;TODO metaclass cast_to_string
+   (vm-int? v) (in-vm (m-result (str (value v))))
+   (vm-nil? v) (in-vm (m-result "nil"))
+   (vm-true? v) (in-vm (m-result "true"))
    :else (abort (str "TODO other string conversions: value: " (mnemonise v)))))
 
 ; TODO non-numerics
@@ -433,20 +447,21 @@ Return opcode map, args map and byte length of compete instruction."
 (defn- stack-op2 [op]
   (with-stack [a b] [(op a b)]))
 
-(defn- vm-+ [a b]
+(defn- compute-sum [a b]
   (in-vm
    (cond
     (vm-int? a) (if (vm-int? b)
                   (m-result (vm-int (+ (value a) (value b))))
                   (abort "NUM_VAL_REQD"))
     (vm-sstring? a) (t3chnique.metaclass.string/add-to-str a b)
+    (vm-obj? a) (t3chnique.metaclass.string/add-to-str a b)
     ;; create string
     :else (abort "BAD_TYPE_ADD"))))
 
 (defop add 0x22 []
   (do-vm
    [[right left] (m-seq (repeat 2 (stack-pop)))
-    ret (vm-+ left right)
+    ret (compute-sum left right)
     _ (stack-push ret)]
    nil))
 
@@ -556,7 +571,7 @@ Return opcode map, args map and byte length of compete instruction."
       (>= ac varmin)
       (= ac param-count))))
 
-(def FRAME-SIZE 11)
+(def FRAME-SIZE 10)
 
 (defn prepare-frame
   "Prepare stack frame for call. target-pid is (vm-prop), objs are
@@ -593,21 +608,29 @@ Return opcode map, args map and byte length of compete instruction."
    nil))
 
 (defn property-accessor
-  "Construct monadic function using mc-mf to search properties and
-exec-mf to handle the results. mc-mf has signature of Metaclass
-get-property or inherit-property. exec-mf accepts target-val
+  "Construct monadic function using locate-property-fn to search properties and
+handle-property-fn to handle the results. locate-property-fn has signature of Metaclass
+get-property or inherit-property. handle-property-fn accepts target-val
 as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
-  [mc-mf exec-mf]
-  (fn access [target-object pid argc]
-    {:pre [(vm-obj-or-nil? target-object)
-           (number? pid)]}
-    (do-vm
-     [target (obj-retrieve (value target-object))
-      [defobj prop-val] (mc-mf target pid argc)
-      r (exec-mf target-object defobj target-object pid prop-val argc)]
-     r)))
+  [locate-property-fn handle-property-fn]
 
-(defn call-or-return
+  (fn [target-val pid argc]
+
+    {:pre [(vm-obj-or-nil? target-val)
+           (number? pid)]}
+
+    (cond
+     (vm-list? target-val) (abort "TODO Constant list property access")
+     (vm-sstring? target-val) (abort "TODO Constant string property access")
+     (vm-obj? target-val) (do-vm
+                           [target (obj-retrieve (value target-val))
+                            [defining-obj prop-val] (locate-property-fn target pid argc)
+                            r (handle-property-fn target-val defining-obj target-val pid prop-val argc)]
+                           r)
+     (vm-nil?) (abort "VMERR_NIL_DEREF")
+     :else (abort "VMERR_OBJ_VAL_REQD"))))
+
+(defn eval-prop
   "Property handler which calls a method if appropriate or returns
 property value directly."
   [target defining self pid prop-val argc]
@@ -632,8 +655,8 @@ items if available."
      (not (vm-auto-eval? prop-val)) (return prop-val)
      :else (abort "BAD_SPEC_EVAL"))))
 
-(def generic-get-prop (property-accessor mc/get-property call-or-return))
-(def generic-inherit-prop (property-accessor mc/inherit-property call-or-return))
+(def generic-get-prop (property-accessor mc/get-property eval-prop))
+(def generic-inherit-prop (property-accessor mc/inherit-property eval-prop))
 (def generic-get-prop-data (property-accessor mc/get-property data-only))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
@@ -801,22 +824,22 @@ items if available."
   (copy :fp (partial + local_number)))
 
 (defop getarg1 0x82 [:ubyte param_number]
-  (copy :fp #(- % (+ FRAME-SIZE param_number))))
+  (copy :fp #(- % (+ FRAME-SIZE (inc param_number)))))
 
 (defop getarg2 0x83 [:uint2 param_number]
-  (copy :fp #(- % (+ FRAME-SIZE param_number))))
+  (copy :fp #(- % (+ FRAME-SIZE (inc param_number)))))
 
 (defop getargn0 0x7C []
-  (copy :fp #(- % FRAME-SIZE)))
-
-(defop getargn1 0x7D []
   (copy :fp #(- % (inc FRAME-SIZE))))
 
-(defop getargn2 0x7E []
+(defop getargn1 0x7D []
   (copy :fp #(- % (+ 2 FRAME-SIZE))))
 
-(defop getargn3 0x7F []
+(defop getargn2 0x7E []
   (copy :fp #(- % (+ 3 FRAME-SIZE))))
+
+(defop getargn3 0x7F []
+  (copy :fp #(- % (+ 4 FRAME-SIZE))))
 
 (defop pushself 0x84 []
   (copy :fp #(- % (- FRAME-SIZE 3))))
@@ -862,19 +885,66 @@ items if available."
 (defop dup2 0x8F []
   (with-stack [a b] [a b a b]))
 
-; TODO switch
-(defop switch 0x90 [:SPECIAL])
+;; The switch instruction requires a custom parser, as the case
+;; table is embedded in the op code.
+;;
+;; http://www.tads.org/t3doc/doc/techman/t3spec/opcode.htm#opc_switch 
+(def switch-instruction-parser
+  (domonad parse/byteparser-m
+    [count (parse/uint2)
+     cases (parse/times count
+                        (parse/record :case-val (parse/data-holder)
+                                      :case-branch (parse/int2)))
+     default (parse/int2)]
+    {:count count
+     :cases cases
+     :default default}))
+
+(defn resolve-offsets
+  "Throughout the instruction the program counter points just past the
+opcode and jump jumps relative to the instruction, however the branch
+offsets are relative to the bytes representing the offset so adjust
+them to account for the difference."
+  [{:keys [count cases] :as switch-instruction}]
+  (->  switch-instruction
+       (update-in [:cases]
+                  #(map (fn [case index]
+                          (assoc case :case-branch 
+                                 (+ 1                 ; opcode
+                                    2                 ; count
+                                    (* 5 (inc index)) ; dataholder
+                                    (* 2 index) ; previous offsets
+                                    (:case-branch case))))
+                        %
+                        (range)))
+       (update-in [:default] #(+ %
+                                 1
+                                 2
+                                 (* 7 count)))))
+
+(defop switch 0x90 [switch-instruction-parser switch-instruction]
+  (let [inst (resolve-offsets switch-instruction)
+        find-offset (fn [val]
+                      (or (:case-branch (first (filter
+                                                (fn [case] (vm-eq? val (:case-val case)))
+                                                (:cases inst))))
+                          (:default inst)))]
+    (do-vm
+     [val (stack-pop)
+      pc (pc)
+      _ (jump-from-ip (find-offset val))]
+     (do pc nil))))
 
 ;; Various jump and branch operations
 
 (defop jmp 0x91 [:int2 branch_offset]
-  (jump branch_offset))
+  (jump-from-ip (inc branch_offset)))
 
 (defn- jump-cond1
   [jumpif? branch_offset]
   (do-vm
    [v (stack-pop)
-    _ (m-when (jumpif? v) (jump branch_offset))]
+    _ (m-when (jumpif? v) (jump-from-ip (inc branch_offset)))]
    nil))
 
 (defn- jump-cond2
@@ -882,7 +952,7 @@ items if available."
   (do-vm
    [v2 (stack-pop)
     v1 (stack-pop)
-    _ (m-when (jumpif? v1 v2) (jump branch_offset))]
+    _ (m-when (jumpif? v1 v2) (jump-from-ip (inc branch_offset)))]
    nil))
 
 (defop jt 0x92 [:int2 branch_offset]
@@ -912,14 +982,14 @@ items if available."
 (defop jst 0x9A [:int2 branch_offset]
   (do-vm [v (stack-peek)
                  _ (if (not (vm-falsey? v))
-                     (jump branch_offset)
+                     (jump-from-ip (inc branch_offset))
                      (stack-pop))]
            nil))
 
 (defop jsf 0x9B [:int2 branch_offset]
   (do-vm [v (stack-peek)
                  _ (if (vm-falsey? v)
-                     (jump branch_offset)
+                     (jump-from-ip (inc branch_offset))
                      (stack-pop))]
            nil))
 
@@ -936,13 +1006,13 @@ items if available."
 
 (defop jr0t 0xA0 [:int2 branch_offset]
   (do-vm [r0 (reg-get :r0)
-                 _ (m-when (not (vm-falsey? r0)) (jump branch_offset))]
-           nil))
+          _ (m-when (not (vm-falsey? r0)) (jump-from-ip (inc branch_offset)))]
+         nil))
 
 (defop jr0f 0xA1 [:int2 branch_offset]
   (do-vm [r0 (reg-get :r0)
-                 _ (m-when (vm-falsey? r0) (jump branch_offset))]
-           nil))
+          _ (m-when (vm-falsey? r0) (jump-from-ip (inc branch_offset)))]
+         nil))
 
 (defop getspn 0xA6 [:ubyte index]
   (copy :sp #(- % (inc index))))
@@ -1005,10 +1075,10 @@ items if available."
   (bif host 3 func_index argc))
 
 (defop builtin1 0xB5 [:ubyte argc :ubyte func_index :ubyte set_index]
-  (bif set_index func_index argc))
+  (bif host set_index func_index argc))
 
 (defop builtin2 0xB6 [:ubyte argc :uint2 func_index :ubyte set_index]
-  (bif set_index func_index argc))
+  (bif host set_index func_index argc))
 
 (defop callext 0xB7 []
   (abort "callext not implemented"))
@@ -1068,6 +1138,14 @@ items if available."
           _ (stack-set (+ fp i) (f v))]
          nil))
 
+(defn- updlcl-m [i mv]
+  (do-vm
+   [fp (reg-get :fp)
+    v (stack-get (+ fp i))
+    v+ (mv v)
+    _ (stack-set (+ fp i) v+)]
+   nil))
+
 (defop inclcl 0xD0 [:uint2 local_number]
   (updlcl local_number vm-inc))
 
@@ -1078,20 +1156,20 @@ items if available."
   (updlcl local_number vm-dec))
 
 (defop addilcl1 0xD2 [:ubyte local_number :sbyte val]
-  (updlcl local_number (partial vm-+ val)))
+  (updlcl-m local_number (partial compute-sum val)))
 
 (defop addilcl4 0xD3 [:uint2 local_number :int4 val]
-  (updlcl local_number (partial vm-+ val)))
+  (updlcl-m local_number (partial compute-sum val)))
 
 (defop addtolcl 0xD4 [:uint2 local_number]
   (do-vm [v (stack-pop)
-                 _ (updlcl local_number #(vm-+ % v))]
-           nil))
+          _ (updlcl-m local_number #(compute-sum % v))]
+         nil))
 
 (defop subfromlcl 0xD5 [:uint2 local_number]
   (do-vm [v (stack-pop)
-                 _ (updlcl local_number #(vm-- % v))]
-           nil))
+          _ (updlcl local_number #(vm-- % v))]
+         nil))
 
 (defop zerolcl1 0xD6 [:ubyte local_number]
   (setlcl local_number (vm-int 0)))
@@ -1184,7 +1262,8 @@ items if available."
   (do-vm
     [entp (fetch-val :entry-point-offset)
      _ (op-pushlst host 0)
-     _ (op-call host 1 entp)]
+     _ (op-call host 1 entp)
+     _ (commit-pc)]
     nil))
 
 (defn step
@@ -1192,8 +1271,10 @@ items if available."
   [host]
   (do-vm
    [[op args len] (parse-op-at-ip)
-    _ (update-val :ip (partial + len))
-    ret (apply (:run-fn op) (cons host (vals args)))]
+    ip (reg-get :ip)
+    _ (set-pc (+ ip len))
+    ret (apply (:run-fn op) (cons host (vals args)))
+    _ (commit-pc)]
    ret))
 
 (defn run-state

@@ -4,15 +4,30 @@
             [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]
             [t3chnique.parse :as parse]
+            [t3chnique.metaclass :as mc]
             [t3chnique.intrinsics :as bif]
             [t3chnique.intrinsics.t3vm :as t3vm]
             [t3chnique.intrinsics.gen :as gen]
-            [clojure.algo.monads :refer (update-val fetch-val m-seq)]
+            t3chnique.all
+            [clojure.algo.monads :refer (update-val fetch-val m-seq m-chain)]
             [clojure.pprint :refer (pprint)]
             [clojure.string :as string])
   (:use [midje.sweet]))
 
 (defrecord TraceHost [])
+
+(defn to-string
+  "A special to-string for say"
+  [v]
+  (cond
+   (p/vm-sstring? v) (fn [s] [(vm/load-string-constant s (p/value v)) s])
+   (p/vm-obj? v) (m/do-vm [obj (vm/obj-retrieve (p/value v))
+                            text (mc/cast-to-string obj)]
+                           text)
+   (p/vm-int? v) (m/in-vm (m-result (str (p/value v))))
+   (p/vm-list? v) (m/abort "TODO say to-string for lists")
+   (p/vm-nil? v) (m/in-vm (m-result ""))
+   :else (m/abort "VMERR_BAD_TYPE_BIF")))
 
 (extend TraceHost
     
@@ -33,7 +48,9 @@
   bif/tads-io
   {:tadsSay (fn [_ argc]
               (m/do-vm
-               [args (m-seq (repeat argc (vm/stack-pop)))
+               [args (m-seq (repeat argc (m-bind
+                                          (vm/stack-pop)
+                                          to-string)))
                 _ (update-val :_output #(concat % args))
                 _ (vm/reg-set :r0 (p/vm-nil))]
                nil))}
@@ -49,10 +66,13 @@
   (m/do-vm
    [ip (vm/reg-get :ip)
     [op args len] (vm/parse-op-at-ip)
-    _ (update-val :ip (partial + len))
+    _ (vm/set-pc (+ ip len))
     stack (fetch-val :stack)
     _ (update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))
-    ret (apply (:run-fn op) (cons host (vals args)))]
+    ret (if (or (nil? ip) (zero? ip))
+          (vm/reg-get :r0)              ; finished return r0
+          (apply (:run-fn op) (cons host (vals args))))
+    _ (vm/commit-pc)]
    ret))
 
 (defn format-stack
@@ -99,7 +119,6 @@
 (defn test [name]
   (let [resource-name (str name ".t3")
         [r s] (trace-execution resource-name)
-        _ (println "Return was " r)
         trc (str (format-trace s)
                  (when r (str "\nreturn " (p/mnemonise r))))]
     (spit (str "test/t3chnique/out/" resource-name ".trc") trc)))
@@ -108,7 +127,6 @@
   (let [new (str "test/t3chnique/out/" name ".t3.trc")
         old (str "test/t3chnique/out/" name ".t3.good")]
     (= (string/trim (slurp new)) (string/trim (slurp old)))))
-
 
 (fact
   (let [s (test "arith")]

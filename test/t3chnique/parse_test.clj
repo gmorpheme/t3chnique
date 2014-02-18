@@ -8,15 +8,16 @@
 ;; testing functions
 
 (defn make-buf [bytes]
-  (ByteBuffer/wrap
-   (byte-array
-    (map unchecked-byte bytes))))
+  (doto (ByteBuffer/wrap
+         (byte-array
+          (map unchecked-byte bytes)))
+    (.order ByteOrder/LITTLE_ENDIAN)))
 
 (defn utf8-buf [str]
   (make-buf (seq (.getBytes ^String str "utf-8"))))
 
 (defn utf8-pbuf [c str]
-  (make-buf (cons c (seq (.getBytes ^String str "utf-8")))))
+  (make-buf (concat [c 0] (seq (.getBytes ^String str "utf-8")))))
 
 ;; byte array
 (fact
@@ -62,11 +63,11 @@
   (parse (data-holder) (make-buf [1 0 0 0 0])) => prim/vm-nil?)
 
 (fact
-  (parse (lst) (make-buf [0x00 0x02 prim/vm-prop-id 0xbb 0xbb 0x00 0x00 prim/vm-prop-id 0xcc 0xcc 0x00 0x00]))
+  (parse (lst) (make-buf [0x02 0x00 prim/vm-prop-id 0xbb 0xbb 0x00 0x00 prim/vm-prop-id 0xcc 0xcc 0x00 0x00]))
   => (just [{:type prim/vm-prop-id, :value 48059} {:type prim/vm-prop-id, :value 52428}]))
 
 (fact
-  (parse (within 4 (uint2)) (make-buf [1 2 3 4])) => 258)
+  (parse (within 4 (uint2)) (make-buf [2 1 3 4])) => 258)
 
 (fact
   (parse (repeat-up-to 4 (ubyte)) (make-buf [1 2 3 4 5 6])) => [1 2 3 4])
@@ -85,7 +86,7 @@
           :sbyte 'arg4
           :int2 'arg5
           :int4 'arg6])
-   (make-buf [0 1 0 0 0 1 1 1 0 1 0 0 0 1]))
+   (make-buf [1 0 1 0 0 0 1 1 1 0 1 0 0 0]))
   => {:arg1 1
       :arg2 1
       :arg3 1

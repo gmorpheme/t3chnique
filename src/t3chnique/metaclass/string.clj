@@ -6,6 +6,8 @@
             [clojure.algo.monads :refer [domonad with-monad m-seq fetch-val]]
             [t3chnique.parse :refer [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
+(declare add-to-str)
+
 (def fn-table
   [
     (fn undef [])                                         ; 0 TODO
@@ -46,7 +48,12 @@
     (with-monad byteparser-m
       (TadsString. (first ((prefixed-utf8) [buf o])))))
 
-  (get-as-string [_] text))
+  (get-as-string [_] text)
+
+  (cast-to-string [_] (m/in-vm (m-result text)))
+
+  (add [self val]
+    (add-to-str (p/vm-sstring self) val)))
 
 (defn tads-string
   "Create a TadsString."

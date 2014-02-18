@@ -4,7 +4,7 @@
             [t3chnique.metaclass.object :as obj]
             [t3chnique.monad :as m])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val fetch-state]]
-        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
+        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8 binary]]))
 
 (def tobj-table
   [
@@ -91,7 +91,6 @@ final instance remains in the sequence."
          flags (uint2)
          bases (times base-count (uint4))
          properties (times prop-count (m-seq [(uint2) (data-holder)]))]
-
         (TadsObject.
          (= (bit-and flags 1) 1)
          bases

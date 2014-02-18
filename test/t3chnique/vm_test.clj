@@ -109,7 +109,8 @@
     (apply-ops vm [(op call 2 0x1234)]) =>
     (assoc vm
       :ep 0x1234
-      :ip 0x123e
+      :pc 0x123e
+      :ip 0x30
       :fp 12
       :sp 16
       :sequence 1
@@ -140,7 +141,7 @@
                                      0 ;fp
                                      nil ;sp
                                      nil nil nil 99))]
-    (fact (apply-ops vm [(op retval)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 99) :sequence 1)))
+    (fact (apply-ops vm [(op retval)]) => (vm-state-with :ep 0x20 :ip 0x123e :pc 0x30 :r0 (vm-int 99) :sequence 1)))
 
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
@@ -149,9 +150,9 @@
                                      (vm-codeofs 0x20)
                                      (vm-codeofs 0x10)
                                      2 0 nil nil nil nil))]
-    (fact (apply-ops vm [(op retnil)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-nil) :sequence 1))
-    (fact (apply-ops vm [(op rettrue)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-true) :sequence 1))
-    (fact (apply-ops (assoc vm :r0 (vm-int 111)) [(op ret)]) => (vm-state-with :ep 0x20 :ip 0x30 :r0 (vm-int 111) :sequence 1))))
+    (fact (apply-ops vm [(op retnil)]) => (vm-state-with :ep 0x20 :ip 0x123e :pc 0x30 :r0 (vm-nil) :sequence 1))
+    (fact (apply-ops vm [(op rettrue)]) => (vm-state-with :ep 0x20 :ip 0x123e :pc 0x30 :r0 (vm-true) :sequence 1))
+    (fact (apply-ops (assoc vm :r0 (vm-int 111)) [(op ret)]) => (vm-state-with :ip 0x123e :ep 0x20 :pc 0x30 :r0 (vm-int 111) :sequence 1))))
 
 (fact "Local access"
   (let [stack (map vm-int (range 4))]
@@ -159,51 +160,53 @@
       (apply-with-stack stack [(f nil i)]) => (conj stack (vm-int i)))))
 
 (fact "Argument access"
-  (let [vm (vm-state-with :fp 10
-                          :stack (st 101 100 nil nil nil nil (vm-codeofs 0x20) (vm-codeofs 0x10)
+  (let [vm (vm-state-with :fp 12
+                          :stack (st 101 100 nil nil nil nil (vm-nil) (vm-nil) (vm-codeofs 0x20) (vm-codeofs 0x10)
                                      2 0 nil nil nil nil))]
     (doseq [i (range 2) f [op-getarg1 op-getarg2]]
       (apply-ops vm [(f nil i)]) => 
-      (contains {:sp 15 :stack (has-suffix (vm-int (+ 100 i)))}))))
+      (contains {:sp 17 :stack (has-suffix (vm-int (+ 100 i)))}))))
 
 (fact "Push self"
-  (let [vm (vm-state-with :fp 10
+  (let [vm (vm-state-with :fp 12
              :stack (st 101 100
                         (vm-prop 10) (vm-obj 0x12) (vm-obj 0x22) (vm-obj 0x33)
+                        (vm-nil)
+                        (vm-nil)
                         (vm-codeofs 0x20)
                         (vm-codeofs 0x10)
                         2 0 nil nil nil nil))]
-    (apply-ops vm [(op pushself)]) => (contains {:sp 15 :stack (has-suffix (vm-obj 0x33))})))
+    (apply-ops vm [(op pushself)]) => (contains {:sp 17 :stack (has-suffix (vm-obj 0x33))})))
 
 (facts "Jumps"
   (let [init 0x66
         offs 0x11
-        dest (- (+ init offs) 2)]
+        dest (inc (+ init offs))]
     (tabular
      (fact (apply-ops (vm-state-with :ip init :stack ?stack) [?op]) => ?check)
-     ?stack        ?op            ?check
-     (st)          (op jmp offs)      (contains {:ip dest})
-     (st 0 0)      (op je offs)       (contains {:ip dest})
-     (st 0 0)      (op jne offs)      (contains {:ip init})
-     (st true)     (op jt offs)       (contains {:ip dest})
-     (st nil)      (op jt offs)       (contains {:ip init})
-     (st true)     (op jf offs)       (contains {:ip init})
-     (st nil)      (op jf offs)       (contains {:ip dest})
-     (st nil)      (op jnil offs)     (contains {:ip dest})
-     (st nil)      (op jnotnil offs)  (contains {:ip init})
-     (st true)     (op jnotnil offs)  (contains {:ip dest})
-     (st true)     (op jnil offs)     (contains {:ip init}))
+     ?stack        ?op                ?check
+     (st)          (op jmp offs)      (contains {:pc dest})
+     (st 0 0)      (op je offs)       (contains {:pc dest})
+     (st 0 0)      (op jne offs)      #(not (contains? % #{:pc}))
+     (st true)     (op jt offs)       (contains {:pc dest})
+     (st nil)      (op jt offs)       #(not (contains? % #{:pc}))
+     (st true)     (op jf offs)       #(not (contains? % #{:pc}))
+     (st nil)      (op jf offs)       (contains {:pc dest})
+     (st nil)      (op jnil offs)     (contains {:pc dest})
+     (st nil)      (op jnotnil offs)  #(not (contains? % #{:pc}))
+     (st true)     (op jnotnil offs)  (contains {:pc dest})
+     (st true)     (op jnil offs)     #(not (contains? % #{:pc})))
     (tabular
      (fact (apply-ops (vm-state-with :ip init :stack ?stack :r0 ?r0) [?op]) => ?check)
      ?stack     ?r0        ?op            ?check
-     (st true)  (vm-true)  (op jr0t offs) (contains {:ip dest :r0 (vm-true)})
-     (st true)  (vm-true)  (op jr0f offs) (contains {:ip init :r0 (vm-true)})
-     (st nil)   (vm-nil)   (op jr0f offs) (contains {:ip dest :r0 (vm-nil)})
-     (st nil)   (vm-nil)   (op jr0t offs) (contains {:ip init :r0 (vm-nil)}))))
+     (st true)  (vm-true)  (op jr0t offs) (contains {:pc dest :r0 (vm-true)})
+     (st true)  (vm-true)  (op jr0f offs) #(not (contains? % #{:pc}))
+     (st nil)   (vm-nil)   (op jr0f offs) (contains {:pc dest :r0 (vm-nil)})
+     (st nil)   (vm-nil)   (op jr0t offs) #(not (contains? % #{:pc})))))
 
 (let [init 0x66
       offs 0x11
-      dest (- (+ init offs) 2)
+      dest (inc (+ init offs))
       x-false (vm-state-with :ip init :stack (st 0 0))
       x-true (vm-state-with :ip init :stack (st 0 1))]
   (tabular
@@ -213,8 +216,8 @@
    ?state      ?op           ?check
    
    x-false (op jst offs) (contains {:stack (st 0)})
-   x-true  (op jst offs) (contains {:ip dest})
-   x-false (op jsf offs) (contains {:ip dest})
+   x-true  (op jst offs) (contains {:pc dest})
+   x-false (op jsf offs) (contains {:pc dest})
    x-true  (op jsf offs) (contains {:stack (st 0)})))
 
 (facts "Stack access"
@@ -240,3 +243,18 @@
                                   2 0 nil nil))]
     (fact (apply-ops vm [(op setlcl1r0 0) (op setlcl1r0 1)]) => (contains {:stack (has-suffix (st 727 727))}))))
 
+(facts "Switch offset correction"
+  (let [inst {:count 5
+              :cases [{:case-branch 32, :case-val {:type 7, :value 1}}
+                      {:case-branch 33, :case-val {:type 7, :value 2}}
+                      {:case-branch 34, :case-val {:type 7, :value 3}}
+                      {:case-branch 35, :case-val {:type 7, :value 4}}
+                      {:case-branch 36, :case-val {:type 7, :value 5}}]
+              :default 42}]
+    (resolve-offsets inst) => {:count 5
+                               :cases [{:case-branch 40 :case-val {:type 7, :value 1}}
+                                       {:case-branch 48 :case-val {:type 7, :value 2}}
+                                       {:case-branch 56 :case-val {:type 7, :value 3}}
+                                       {:case-branch 64 :case-val {:type 7, :value 4}}
+                                       {:case-branch 72 :case-val {:type 7, :value 5}}]
+                               :default 80}))
