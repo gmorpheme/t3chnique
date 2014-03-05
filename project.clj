@@ -17,14 +17,10 @@
   :jvm-opts ["-Xms48m" "-Xmx1g" "-XX:MaxPermSize=512M" "-server"]
 
   :repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot"
-                                         :username :env/artifactory_username
-                                         :passphrase :env/artifactory_password}]]
-  :deploy-repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot-local"
-                                                :username :env/artifactory_username
-                                                :passphrase :env/artifactory_password}]]
+                                         :username :env/ARTIFACTORY_USERNAME
+                                         :passphrase :env/ARTIFACTORY_PASSWORD}]]
   
   ; add t3 tests to resources for 
-
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["t3"]
                    :dependencies [[org.clojure/tools.trace "0.7.6"]
