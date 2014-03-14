@@ -11,7 +11,8 @@
             t3chnique.all
             [clojure.algo.monads :refer (update-val fetch-val m-seq m-chain)]
             [clojure.pprint :refer (pprint)]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [clojure.java.io :as io])
   (:use [midje.sweet]))
 
 (defrecord TraceHost [])
@@ -71,7 +72,11 @@
     _ (update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))
     ret (if (or (nil? ip) (zero? ip))
           (vm/reg-get :r0)              ; finished return r0
-          (apply (:run-fn op) (cons host (vals args))))
+          (try
+            (apply (:run-fn op) (cons host (vals args)))
+            (catch Exception e
+              (println "During " op " with " args ", " e)
+              (throw e))))
     _ (vm/commit-pc)]
    ret))
 
@@ -116,7 +121,7 @@
             [r s+]
             (recur s+)))))))
 
-(defn test [name]
+(defn run [name]
   (let [resource-name (str name ".t3")
         [r s] (trace-execution resource-name)
         trc (str (format-trace s)
@@ -126,15 +131,17 @@
 (defn compare-trace [name]
   (let [new (str "test/t3chnique/out/" name ".t3.trc")
         old (str "test/t3chnique/out/" name ".t3.good")]
-    (= (string/trim (slurp new)) (string/trim (slurp old)))))
+    (and (.exists (io/file new))
+         (= (string/trim (slurp new)) (string/trim (slurp old))))))
 
-(fact
-  (let [s (test "arith")]
-    (compare-trace "arith") => true
-    ))
+(fact "arith"
+  (let [s (run "arith")]
+    (compare-trace "arith") => true))
 
-(fact
-  (let [s (test "basic")]
-    (compare-trace "basic") => true
-    ))
+(fact "basic"
+  (let [s (run "basic")]
+    (compare-trace "basic") => true))
 
+(future-fact "object"
+  (let [s (run "object")]
+    (compare-trace "object") => true))

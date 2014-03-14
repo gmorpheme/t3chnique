@@ -19,7 +19,7 @@
   :repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot"
                                          :username :env/ARTIFACTORY_USERNAME
                                          :passphrase :env/ARTIFACTORY_PASSWORD}]]
-  
+
   ; add t3 tests to resources for 
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["t3"]
