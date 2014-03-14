@@ -20,7 +20,11 @@
                                          :username :env/ARTIFACTORY_USERNAME
                                          :passphrase :env/ARTIFACTORY_PASSWORD}]]
 
-  ; add t3 tests to resources for 
+  :deployment-repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot-local"
+                                                    :username :env/ARTIFACTORY_USERNAME
+                                                    :passphrase :env/ARTIFACTORY_PASSWORD}]]
+
+  ;; add t3 tests to resources for 
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["t3"]
                    :dependencies [[org.clojure/tools.trace "0.7.6"]
