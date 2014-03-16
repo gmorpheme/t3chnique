@@ -20,7 +20,7 @@
             [t3chnique.parse :as parse]
             [t3chnique.inspect :as i]
             [clojure.stacktrace :as st]
-            [clojure.tools.logging :refer (info debug trace)]
+            [clojure.tools.logging :refer (info debug trace error spy)]
             [t3chnique.all :refer [default-host]]))
 
 (defn vm-actions
@@ -64,7 +64,10 @@
   "Form a URL with the supplied context root and path elements. context should
 start with a /. Use / for the root context."
   [context & components]
-  (string/join "/" (if (string/blank? context) components (cons context components)) ))
+  (let [path (string/join "/" components)]
+    (if (string/blank? context)
+      path
+      (str context path))))
 
 (defn represent-game [context game]
   (assoc game :_links {:self {:href (url context "games" (:id game))}
@@ -294,10 +297,11 @@ useful information for tooling UIs."
 (defn scan-for-t3
   "Scan the classpath for .t3 files to produce the game catalogue."
   []
-  (->> (cp/classpath-directories)
-       (mapcat file-seq)
-       (map #(.getName %))
-       (filter #(.endsWith % ".t3"))))
+  (info "Scanning for t3 resources.")
+  (spy :info (->> (cp/classpath-directories)
+                  (mapcat file-seq)
+                  (map #(.getName %))
+                  (filter #(.endsWith % ".t3")))))
 
 (defn new-id
   "Create a new id string with prefix"
@@ -342,7 +346,7 @@ useful information for tooling UIs."
         id (first (remove (partial contains? @histories) (repeatedly #(new-id prefix))))
         vm (assoc (t3vm/vm-from-image (parse/parse-resource name)) :id id)
         host (default-host)]
-    (info "Created VM:" id)
+    (info "Created VM: " id)
     (swap! histories assoc id [vm])
     (swap! hosts assoc id host)
     vm))
@@ -350,6 +354,7 @@ useful information for tooling UIs."
 (defn vm-destroy!
   "Delete a VM by id"
   [system id]
+  (info "Destroying VM: " id)
   (swap! (:vm-histories system) dissoc id)
   nil)
 
@@ -366,10 +371,12 @@ useful information for tooling UIs."
   [system id]
   (let [initial-state (vm-get system id)
         host (vm-host system id)]
+    (debug "Stepping VM: " id " from sequence " (:sequence initial-state))
     (try
       (let [[e s] ((t3vm/step host) initial-state)]
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
+        (error t "Error while stepping from " id "/" (:sequence initial-state))
         (swap! (:vm-histories system)
                update-in [id] conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t))))))
     (vm-get system id)))
@@ -533,6 +540,7 @@ supplied for URL formation."
 (defn system 
   "Initialise a new instance of the whole application."
   ([]
+     (info "Initialising t3 system")
      (let [t3s (scan-for-t3)
            game-catalogue (map (fn [id name] {:id id :name name}) (range (count t3s)) t3s)]
        {:game-catalogue game-catalogue
@@ -544,11 +552,13 @@ supplied for URL formation."
   "Start an instance of the application."
   [system]
   {:pre [(not (nil? system))]}
+  (info "Starting server")
   (swap! (:server system) (constantly (start-server system)))
   system)
 
 (defn stop
   "Stop serving requests."
   [system]
+  (info "Stopping server")
   (stop-server system)
   system)
