@@ -345,7 +345,7 @@ useful information for tooling UIs."
         hosts (:hosts system)
         id (first (remove (partial contains? @histories) (repeatedly #(new-id prefix))))
         vm (assoc (t3vm/vm-from-image (parse/parse-resource name)) :id id)
-        host (default-host)]
+        host ((:make-host system))]
     (info "Created VM: " id)
     (swap! histories assoc id [vm])
     (swap! hosts assoc id host)
@@ -410,114 +410,115 @@ useful information for tooling UIs."
   [context system]
   {:pre [(not (nil? system))
          (associative? system)]}
-  (routes
+  (let [make-host (or (:make-host system) default-host)]
+    (routes
 
-   (GET "/games" []
-     (respond context "t3chnique.server/games-page" (represent-game-list context (game-list system))))
+     (GET "/games" []
+       (respond context "t3chnique.server/games-page" (represent-game-list context (game-list system))))
 
-   (GET ["/games/:id"] [id]
-     (let [id (Integer/parseInt id)]
-       (if-let [game (game-get system id)]
-         (respond context "t3chnique.server/game-page" (represent-game context game))
-         (response/not-found "Nonesuch"))))
+     (GET ["/games/:id"] [id]
+       (let [id (Integer/parseInt id)]
+         (if-let [game (game-get system id)]
+           (respond context "t3chnique.server/game-page" (represent-game context game))
+           (response/not-found "Nonesuch"))))
 
-   (GET "/vms" []
-     (respond context "t3chnique.server/vms-page" (represent-vm-map context (vm-map system))))
+     (GET "/vms" []
+       (respond context "t3chnique.server/vms-page" (represent-vm-map context (vm-map system))))
 
-   (GET ["/vms/:id"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context "t3chnique.server/vm-page" (represent-vm context id vm))
-       (response/not-found "Nonesuch")))
-   
-   (GET ["/vms/:id/stack"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context (represent-vm-stack context id vm))
-       (response/not-found "Nonesuch")))
-   
-   (GET ["/vms/:id/registers"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context (represent-vm-registers context id vm))
-       (response/not-found "Nonesuch")))
-   
-   (GET ["/vms/:id/code"] [id address length]
-     (let [addr (Integer/parseInt address)
-           len (Integer/parseInt length)]
+     (GET ["/vms/:id"] [id]
        (if-let [vm (vm-get system id)]
-         (respond context (represent-vm-code context id vm addr len))
-         (response/not-found "Nonesuch"))))
-
-   (GET ["/vms/:id/const"] [id address length]
-     (let [addr (Integer/parseInt address)
-           len (Integer/parseInt length)]
+         (respond context "t3chnique.server/vm-page" (represent-vm context id vm))
+         (response/not-found "Nonesuch")))
+     
+     (GET ["/vms/:id/stack"] [id]
        (if-let [vm (vm-get system id)]
-         (respond context (represent-vm-const context id vm addr len))
-         (response/not-found "Nonesuch"))))
-
-   (GET ["/vms/:id/objects"] [id oid count]
-     (let [o (Integer/parseInt oid)
-           n (Integer/parseInt count)]
+         (respond context (represent-vm-stack context id vm))
+         (response/not-found "Nonesuch")))
+     
+     (GET ["/vms/:id/registers"] [id]
        (if-let [vm (vm-get system id)]
-         (respond context (represent-vm-objects context id vm o n))
-         (response/not-found "Nonesuch"))))
-   
-   (GET ["/vms/:id/mcld"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context (represent-vm-mcld context id vm))
-       (response/not-found "Nonesuch")))
+         (respond context (represent-vm-registers context id vm))
+         (response/not-found "Nonesuch")))
+     
+     (GET ["/vms/:id/code"] [id address length]
+       (let [addr (Integer/parseInt address)
+             len (Integer/parseInt length)]
+         (if-let [vm (vm-get system id)]
+           (respond context (represent-vm-code context id vm addr len))
+           (response/not-found "Nonesuch"))))
 
-   (GET ["/vms/:id/fnsd"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context (represent-vm-fnsd context id vm))
-       (response/not-found "Nonesuch")))
-   
-   (GET ["/vms/:id/symd"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context (represent-vm-symd context id vm))
-       (response/not-found "Nonesuch")))
-   
-   (GET ["/vms/:id/exc"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context (represent-vm-exc context id vm))
-       (response/not-found "Nonesuch")))
+     (GET ["/vms/:id/const"] [id address length]
+       (let [addr (Integer/parseInt address)
+             len (Integer/parseInt length)]
+         (if-let [vm (vm-get system id)]
+           (respond context (represent-vm-const context id vm addr len))
+           (response/not-found "Nonesuch"))))
 
-   ;; actions
-   
-   (POST ["/vms"] [game]
-     (let [game (Integer/parseInt game)]
-       (response/redirect-after-post (url context "vms" (:id (vm-new! system game))))))
-   
-   (POST ["/vms/:id/step"] [id]
-     (respond context (represent-vm context id (vm-step! system id))))
-   
-   (POST ["/vms/:id/enter"] [id]
-     (respond context (represent-vm context id (vm-enter! system id))))
-   
-   (POST ["/vms/:id/run"] [id]
-     (respond context (represent-vm context id (vm-run! system id))))
-
-   (POST ["/vms/:id/back"] [id]
-     (respond context (represent-vm context id (vm-back! system id))))
-   
-   (GET ["/vms/:id/dis1/:addr"] [id addr]
-     (let [addr (Integer/parseInt addr)]
+     (GET ["/vms/:id/objects"] [id oid count]
+       (let [o (Integer/parseInt oid)
+             n (Integer/parseInt count)]
+         (if-let [vm (vm-get system id)]
+           (respond context (represent-vm-objects context id vm o n))
+           (response/not-found "Nonesuch"))))
+     
+     (GET ["/vms/:id/mcld"] [id]
        (if-let [vm (vm-get system id)]
-         (respond context (represent-vm-assembly context id vm addr (dis1 system id addr)))
-         (response/not-found "Nonesuch"))))
+         (respond context (represent-vm-mcld context id vm))
+         (response/not-found "Nonesuch")))
 
-   ;; register and stack state annotated with debug / tooling info
-   (GET ["/vms/:id/inspect-state"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context (represent-vm-annotated-state context id vm))
-       (response/not-found "Nonesuch")))
-   
-   (GET ["/exec/:id"] [id]
-     (if-let [vm (vm-get system id)]
-       (respond context "t3chnique.server/exec-page" (represent-vm context id vm))
-       (response/not-found "Nonesuch")))
-   
-   (route/resources "/")
-   
-   (route/not-found "No such resource")))
+     (GET ["/vms/:id/fnsd"] [id]
+       (if-let [vm (vm-get system id)]
+         (respond context (represent-vm-fnsd context id vm))
+         (response/not-found "Nonesuch")))
+     
+     (GET ["/vms/:id/symd"] [id]
+       (if-let [vm (vm-get system id)]
+         (respond context (represent-vm-symd context id vm))
+         (response/not-found "Nonesuch")))
+     
+     (GET ["/vms/:id/exc"] [id]
+       (if-let [vm (vm-get system id)]
+         (respond context (represent-vm-exc context id vm))
+         (response/not-found "Nonesuch")))
+
+     ;; actions
+     
+     (POST ["/vms"] [game]
+       (let [game (Integer/parseInt game)]
+         (response/redirect-after-post (url context "vms" (:id (vm-new! system game))))))
+     
+     (POST ["/vms/:id/step"] [id]
+       (respond context (represent-vm context id (vm-step! system id))))
+     
+     (POST ["/vms/:id/enter"] [id]
+       (respond context (represent-vm context id (vm-enter! system id))))
+     
+     (POST ["/vms/:id/run"] [id]
+       (respond context (represent-vm context id (vm-run! system id))))
+
+     (POST ["/vms/:id/back"] [id]
+       (respond context (represent-vm context id (vm-back! system id))))
+     
+     (GET ["/vms/:id/dis1/:addr"] [id addr]
+       (let [addr (Integer/parseInt addr)]
+         (if-let [vm (vm-get system id)]
+           (respond context (represent-vm-assembly context id vm addr (dis1 system id addr)))
+           (response/not-found "Nonesuch"))))
+
+     ;; register and stack state annotated with debug / tooling info
+     (GET ["/vms/:id/inspect-state"] [id]
+       (if-let [vm (vm-get system id)]
+         (respond context (represent-vm-annotated-state context id vm))
+         (response/not-found "Nonesuch")))
+     
+     (GET ["/exec/:id"] [id]
+       (if-let [vm (vm-get system id)]
+         (respond context "t3chnique.server/exec-page" (represent-vm context id vm))
+         (response/not-found "Nonesuch")))
+     
+     (route/resources "/")
+     
+     (route/not-found "No such resource"))))
 
 (defn make-app
   "Make a Ring app for serving the REST tools API. Context root must be
@@ -546,7 +547,8 @@ supplied for URL formation."
        {:game-catalogue game-catalogue
         :vm-histories (atom {})
         :server (atom nil)
-        :hosts (atom {})})))
+        :hosts (atom {})
+        :make-host default-host})))
 
 (defn start
   "Start an instance of the application."
