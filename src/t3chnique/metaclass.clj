@@ -18,13 +18,13 @@
     "Monadic value to return [defining-object property-value]. When argc
 is not nil, intrinsic methods may be invoked. Otherwise a vm-native-code
 value may be returned to indicate that an intrinsic method would have
-been invoked.")
+been invoked. propid passed as number.")
 
   (inherit-property [self propid argc]
     "Monadic value to return [defining-object property-value. When argc
 is not nil, intrinsic methods may be invoked. Otherwise a vm-native-code
 value may be returned to indicate that an intrinsic method would have
-been invoked.")
+been invoked. propid passed as number.")
 
   (list-like? [self vm]
     "Whether the object is list like")
@@ -40,7 +40,11 @@ been invoked.")
 
   (add [self val]
     "Monadic value to add val to self and return the sum. Returns nil if not possible
-and alternative strategies should be attempted (op overloading)."))
+and alternative strategies should be attempted (op overloading).")
+
+  (set-property [self pid val]
+    "Monadic value to set property pid to value val. pid passed as number. Returns new obj.")
+  )
 
 (defrecord Unimplemented []
   MetaClass

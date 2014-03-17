@@ -3,6 +3,7 @@
         [t3chnique.vm]
         [t3chnique.primitive]
         [t3chnique.util]
+        [t3chnique.metaclass :as mc]
         [midje.sweet])
   (:require [t3chnique.intrinsics :as bif]
             [t3chnique.monad :as m]))
@@ -258,3 +259,38 @@
                                        {:case-branch 64 :case-val {:type 7, :value 4}}
                                        {:case-branch 72 :case-val {:type 7, :value 5}}]
                                :default 80}))
+
+
+(let [vm (vm-state-with :stack (st 99 (vm-obj 1))
+                        :objs {1 (reify
+                                   mc/MetaClass
+                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+  (fact (apply-ops vm [(op setprop 20)]) => (contains {:objs {1 {20 (vm-int 99)}}})))
+
+(let [vm (vm-state-with :stack (st 99 (vm-obj 1) (vm-prop 20))
+                        :objs {1 (reify
+                                   mc/MetaClass
+                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+  (fact (apply-ops vm [(op ptrsetprop)]) => (contains {:objs {1 {20 (vm-int 99)}}})))
+
+(let [vm (vm-state-with :fp 9
+                        :stack (st (vm-prop 10) (vm-obj 0x1) (vm-obj 0x1) (vm-obj 0x1)
+                                   (vm-nil) (vm-nil)
+                                   (vm-codeofs 0x20) (vm-codeofs 0x10)
+                                   1 0 689)
+                        :objs {1 (reify
+                                   mc/MetaClass
+                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+  (fact (apply-ops vm [(op setpropself 20)]) => (contains {:objs {1 {20 (vm-int 689)}}})))
+
+(let [vm (vm-state-with :stack (st 99)
+                        :objs {1 (reify
+                                   mc/MetaClass
+                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+  (fact (apply-ops vm [(op objsetprop 1 20)]) => (contains {:objs {1 {20 (vm-int 99)}}})))
+
+(let [vm (vm-state-with :stack (st 99 (vm-codeofs 99))
+                        :objs {1 (reify
+                                   mc/MetaClass
+                                   (mc/set-property [self prop val] (fn [s] [nil s])))})]
+  (fact (apply-ops vm [(op setprop 20)]) => (throws Exception #"OBJ_VAL_REQUIRED")))

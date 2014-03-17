@@ -13,6 +13,7 @@
        ([val#] (TypedValue. ~typeid val#))
        ([] (TypedValue. ~typeid nil)))
      (defn ~(symbol (str name "?")) [entry#] (= (:type entry#) ~typeid))
+     (defn ~(symbol (str name "-check")) [p# msg#] (if (= (:type p#) ~typeid) p# (throw (RuntimeException. msg#))))
      (def ~(symbol (str name "-id")) ~typeid)))
 
 (defn primitive [typeid] (or (get @primitives typeid)

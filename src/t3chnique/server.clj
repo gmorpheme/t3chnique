@@ -3,7 +3,7 @@
   (:use [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
-        [compojure.core :only [routes GET POST]]
+        [compojure.core :only [routes GET POST DELETE]]
         clojure.java.io)
   (:require [ring.adapter.jetty :as j]
             [ring.util.response :as response]
@@ -77,22 +77,44 @@ start with a /. Use / for the root context."
   {:games (map (partial represent-game context) gs)})
 
 (defn add-vm-links
+  "Add HATEOAS style links for further information / functionality."
   [context id actions repn]
-  (let [basic {:self {:href (url context "vms" id)}
+  (let [basic {:self {:href (url context "vms" id)
+                      :doc "GET for basic details. DELETE to destroy."}
+               
                :stack {:href (url context "vms" id "stack")}
+               
                :registers {:href (url context "vms" id "registers")}
+               
                :exec {:href (url context "exec" id)}
-               :code {:href (url context "vms" id "code{?address,length}") :templated true}
-               :const {:href (url context "vms" id "const{?address,length}") :templated true}
-               :objects {:href (url context "vms" id "objects{?oid,count}") :templated true}
+               
+               :code {:href (url context "vms" id "code{?address,length}")
+                      :templated true
+                      :doc "Return section of code pool of specified length, starting from address."}
+               
+               :const {:href (url context "vms" id "const{?address,length}")
+                       :templated true
+                       :doc "Return section of const pool of specified length, starting from address."}
+               
+               :objects {:href (url context "vms" id "objects{?oid,count}")
+                         :templated true
+                         :doc "List count objects starting at oid."}
+               
                :mcld {:href (url context "vms" id "mcld")}
+               
                :fnsd {:href (url context "vms" id "fnsd")}
+               
                :symd {:href (url context "vms" id "symd")}
+               
                :exc {:href (url context "vms" id "exc")}
+               
                :dis1 {:href (url context "vms" id "dis1" "{address}") :templated true}
+               
                :inspect-state {:href (url context "vms" id "inspect-state")}}
-                action-links (map (fn [x] {x {:href (url context "vms" id (name x))
-                                     :name (string/capitalize (name x))}})
+        
+        action-links (map (fn [x] {x {:href (url context "vms" id (name x))
+                                     :name (string/capitalize (name x))
+                                     :method :post}})
                           actions)
         links (reduce merge basic action-links)]
     (assoc repn :_links links)))
@@ -486,6 +508,11 @@ useful information for tooling UIs."
      (POST ["/vms"] [game]
        (let [game (Integer/parseInt game)]
          (response/redirect-after-post (url context "vms" (:id (vm-new! system game))))))
+
+     (DELETE ["/vms/:id"] [id]
+       (do
+         (vm-destroy! system id)
+         (response/redirect-after-post (url context "vms"))))
      
      (POST ["/vms/:id/step"] [id]
        (respond context (represent-vm context id (vm-step! system id))))

@@ -99,6 +99,7 @@ final instance remains in the sequence."
            {}))) [buf o])))
 
   (mc/get-property [self propid argc]
+    {:pre [(number? propid)]}
     (let [metaclass-index (:metaclass self)]
       (m/do-vm
        [[obj val] (m/m-apply #(get-prop % self propid))]
@@ -108,7 +109,14 @@ final instance remains in the sequence."
          ((p/value val) argc)
          [(p/vm-obj (:oid obj)) val]))))
 
+  (mc/set-property [self propid val]
+    {:pre [(number? propid) (p/vm-primitive? val)]}
+    (m/do-vm
+     []
+     (TadsObject. is-class bases (assoc properties propid val))))
+
   (mc/inherit-property [self propid argc]
+    {:pre [(number? propid)]}
     (m/do-vm
      [[obj val] (m/m-apply #(inh-prop-from-chain % self propid))]
      (when obj

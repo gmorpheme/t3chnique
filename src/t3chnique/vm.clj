@@ -5,7 +5,8 @@ and function set protocols."}
         [t3chnique.monad])
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
-            [t3chnique.metaclass :as mc])
+            [t3chnique.metaclass :as mc]
+            [clojure.tools.logging :refer [spy debug info error]])
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until m-result m-chain]])
   (:import [java.nio ByteBuffer]))
 
@@ -117,7 +118,8 @@ the VM execution."
         param-types (vec (map first param-defs))
         param-syms (vec (cons 'host (map second param-defs)))
         spec (vec (apply concat (for [[t s] param-defs] [t (keyword s)])))
-        op-fn-name (symbol (str "op-" op))]
+        op-fn-name (symbol (str "op-" op))
+        exprs (or exprs `((abort (str '~op " not implemented"))))]
     `(do
        (defn ^{:opcode ~cd} ~op-fn-name ~param-syms
          (runop (fn [] ~@exprs)))
@@ -597,8 +599,8 @@ instruction is complete."
     p (pc)
     fp (reg-get :fp)
     ;; TODO seems that recursive call descriptor should go here too
-    _ (stack-push (vm-codeofs (- p ep)))
-    _ (stack-push (vm-codeofs ep))
+    _ (stack-push (vm-codeofs (- p ep))) ; return offset
+    _ (stack-push (vm-codeofs ep)) ; current entry point
     _ (stack-push (vm-int argc))
     _ (stack-push (vm-stack fp))
     sp (reg-get :sp)
@@ -697,7 +699,7 @@ items if available."
 (defn- get-stack-self []
   (do-vm
    [fp (reg-get :fp)
-    self (stack-get (- fp 5))]
+    self (stack-get (- fp 7))]
    (if (vm-obj? self) self (vm-obj nil))))
 
 (defn- get-stack-local [i]
@@ -1210,24 +1212,50 @@ them to account for the difference."
 
 (defop setarg2 0xE3 [:uint2 arg_number]
   (do-vm [fp (reg-get :fp)
-                 v (stack-pop)
-                 _ (stack-set (- fp (+ 9 arg_number)) v)]
-           nil))
+          v (stack-pop)
+          _ (stack-set (- fp (+ 9 arg_number)) v)]
+         nil))
 
 ;TODO setind
 (defop setind 0xE4 [])
 
-;TODO setprop
-(defop setprop 0xE5 [:uint2 prop_id])
+(defn- set-property
+  "Updates object store to contain modified version of object
+with property set as specified. oid, pid numbers. val primitive."
+  [oid pid val]
+  (do-vm
+   [object (obj-retrieve oid)
+    new-object (mc/set-property object pid val)
+    _ (obj-store oid new-object)]
+   nil))
 
-;TODO ptrsetprop
-(defop ptrsetprop 0xE6 [])
+(defop setprop 0xE5 [:uint2 prop_id]
+  (do-vm
+   [obj-id (stack-pop)
+    new-val (stack-pop)
+    ret (set-property (value (vm-obj-check obj-id "OBJ_VAL_REQUIRED")) prop_id new-val)]
+   ret))
 
-;TODO setpropself
-(defop setpropself 0xE7 [:uint2 prop_id])
+(defop ptrsetprop 0xE6 []
+  (do-vm
+   [prop-id (stack-pop)
+    obj (stack-pop)
+    new-val (stack-pop)
+    ret (set-property (value obj) (value prop-id) new-val)]
+   ret))
 
-;TODO objsetprop
-(defop objsetprop 0xE8 [:uint4 obj :uint2 prop_id])
+(defop setpropself 0xE7 [:uint2 prop_id]
+  (do-vm
+   [new-val (stack-pop)
+    self (get-stack-self)
+    ret (set-property (value self) prop_id new-val)]
+   ret))
+
+(defop objsetprop 0xE8 [:uint4 obj :uint2 prop_id]
+  (do-vm
+   [new-val (stack-pop)
+    ret (set-property obj prop_id new-val)]
+   ret))
 
 ;TODO setdblcl
 (defop setdblcl 0xE9 [:uint2 local_number])
@@ -1273,7 +1301,7 @@ them to account for the difference."
   "Execute the op code referenced by the ip register."
   [host]
   (do-vm
-   [[op args len] (parse-op-at-ip)
+   [[op args len] (spy :trace (parse-op-at-ip))
     ip (reg-get :ip)
     _ (set-pc (+ ip len))
     ret (apply (:run-fn op) (cons host (vals args)))

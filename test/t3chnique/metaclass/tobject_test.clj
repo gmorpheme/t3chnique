@@ -67,17 +67,17 @@
     (map second (prop-chain vm o3 4)) => [:y]
     (map second (prop-chain vm o4 4)) => [:e :y]
 
-    (first ((mc/get-property o1 1 0) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/get-property o2 1 0) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/get-property o3 1 0) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/get-property o4 1 0) vm)) => [(p/vm-obj 4) :d]
+    (m/eval-vm (mc/get-property o1 1 0) vm) => [(p/vm-obj 1) :a]
+    (m/eval-vm (mc/get-property o2 1 0) vm) => [(p/vm-obj 1) :a]
+    (m/eval-vm (mc/get-property o3 1 0) vm) => [(p/vm-obj 1) :a]
+    (m/eval-vm (mc/get-property o4 1 0) vm) => [(p/vm-obj 4) :d]
 
-    (first ((mc/inherit-property o1 1 0) vm)) => nil
-    (first ((mc/inherit-property o2 1 0) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/inherit-property o3 1 0) vm)) => [(p/vm-obj 1) :a]
-    (first ((mc/inherit-property o4 1 0) vm)) => [(p/vm-obj 1) :a]
+    (m/eval-vm (mc/inherit-property o1 1 0) vm) => nil
+    (m/eval-vm (mc/inherit-property o2 1 0) vm) => [(p/vm-obj 1) :a]
+    (m/eval-vm (mc/inherit-property o3 1 0) vm) => [(p/vm-obj 1) :a]
+    (m/eval-vm (mc/inherit-property o4 1 0) vm) => [(p/vm-obj 1) :a]
     
-    (first ((mc/get-property o4 4 0) vm)) => [(p/vm-obj 2) :e]))
+    (m/eval-vm (mc/get-property o4 4 0) vm) => [(p/vm-obj 2) :e]))
 
 (let [vm (vm/vm-state)
       [[o1 o2] vm] ((m/do-vm
@@ -86,8 +86,8 @@
                       os (m-map vm/obj-retrieve [1 2])]
                      os) vm)]
   (facts "VM property access helpers with tads-objects"
-    (:r0 (second ((vm/generic-get-prop (p/vm-obj 2) 1 0) vm))) => (p/vm-int 11)
-    (:r0 (second ((vm/generic-inherit-prop (p/vm-obj 2) 1 0) vm))) => (p/vm-int 1)))
+    (:r0 (m/exec-vm (vm/generic-get-prop (p/vm-obj 2) 1 0) vm)) => (p/vm-int 11)
+    (:r0 (m/exec-vm (vm/generic-inherit-prop (p/vm-obj 2) 1 0) vm)) => (p/vm-int 1)))
 
 (facts "Test is instance"
   (let [vm (vm/vm-state)
@@ -99,9 +99,25 @@
                               os (m-map vm/obj-retrieve [1 2 3 4])]
                              os) vm)]
     (obj-chain vm o4) => [o4 o2 o3 o1]
-    (first ((mc/is-instance? o4 (p/vm-obj 1)) vm)) => true
-    (first ((mc/is-instance? o4 (p/vm-obj 2)) vm)) => true
-    (first ((mc/is-instance? o4 (p/vm-obj 3)) vm)) => true
-    (first ((mc/is-instance? o4 (p/vm-obj 4)) vm)) => true
+    (m/eval-vm (mc/is-instance? o4 (p/vm-obj 1)) vm) => true
+    (m/eval-vm (mc/is-instance? o4 (p/vm-obj 2)) vm) => true
+    (m/eval-vm (mc/is-instance? o4 (p/vm-obj 3)) vm) => true
+    (m/eval-vm (mc/is-instance? o4 (p/vm-obj 4)) vm) => true
 
-    (first ((mc/is-instance? o4 (p/vm-obj 23)) vm)) => false))
+    (m/eval-vm (mc/is-instance? o4 (p/vm-obj 23)) vm) => false))
+
+(facts "set-property"
+  (let [vm (vm/vm-state)
+        [object vm] (m/run-vm (m/do-vm [_ (obj 1 [] {4 (p/vm-int 1256)
+                                                     119 (p/vm-nil)
+                                                     14235 (p/vm-obj 2)})
+                                        o (vm/obj-retrieve 1)]
+                                       o)
+                              vm)]
+    (m/eval-vm (mc/set-property object 119 (p/vm-true)) vm) => (contains {:properties {4 (p/vm-int 1256)
+                                                                                       119 (p/vm-true)
+                                                                                       14235 (p/vm-obj 2)}})
+    (m/eval-vm (mc/set-property object 120 (p/vm-int 999)) vm) => (contains {:properties {4 (p/vm-int 1256)
+                                                                                          119 (p/vm-nil)
+                                                                                          120 (p/vm-int 999)
+                                                                                          14235 (p/vm-obj 2)}})))
