@@ -1,0 +1,175 @@
+[...nil x0 x0 1 st0] ip:180 pushfnptr code_offset: 125
+[...x0 x0 1 st0 f125] ip:185 builtin_a argc: 1 func_index: 1
+[...nil x0 x0 1 st0] ip:188 say offset: 286
+[...nil x23 x170 1 st11] ip:135 getargn0 
+[...x23 x170 1 st11 '286] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x23 x170 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:193 objgetprop obj_id: 19 prop_id: 116
+[...nil x0 x0 1 st0] ip:200 getr0 
+[...x0 x0 1 st0 '0] ip:201 builtin_c argc: 1 func_index: 0
+[...nil x0 x0 1 st0] ip:204 say offset: 320
+[...nil x186 x23 1 st11] ip:135 getargn0 
+[...x186 x23 1 st11 '320] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x186 x23 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:209 objgetprop obj_id: 19 prop_id: 117
+[...nil x0 x0 1 st0] ip:216 getr0 
+[...x0 x0 1 st0 '18] ip:217 builtin_c argc: 1 func_index: 0
+[...nil x0 x0 1 st0] ip:220 say offset: 338
+[...nil x39 x186 1 st11] ip:135 getargn0 
+[...x39 x186 1 st11 '338] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x39 x186 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:225 objgetprop obj_id: 21 prop_id: 116
+[...nil x0 x0 1 st0] ip:232 getr0 
+[...x0 x0 1 st0 '36] ip:233 builtin_c argc: 1 func_index: 0
+[...nil x0 x0 1 st0] ip:236 push_1 
+[...x0 x0 1 st0 1] ip:237 objsetprop obj: 19 prop_id: 118
+[...nil x0 x0 1 st0] ip:244 say offset: 357
+[...nil x210 x39 1 st11] ip:135 getargn0 
+[...x210 x39 1 st11 '357] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x210 x39 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:249 objgetprop obj_id: 21 prop_id: 117
+[...nil x0 x0 1 st0] ip:256 getr0 
+[...x0 x0 1 st0 '18] ip:257 builtin_c argc: 1 func_index: 0
+[...nil x0 x0 1 st0] ip:260 say offset: 376
+[...nil x55 x210 1 st11] ip:135 getargn0 
+[...x55 x210 1 st11 '376] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x55 x210 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:265 pushstr offset: 402
+[...x0 x0 1 st0 '402] ip:270 push_1 
+[...x0 1 st0 '402 1] ip:271 objcallprop arg_count: 2 obj_id: 21 prop_id: 118
+[...nil x224 x55 2 st11] ip:10 say offset: 55
+[...nil x15 x0 1 st23] ip:135 getargn0 
+[...x15 x0 1 st23 '55] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x15 x0 1 st23] ip:139 retnil 
+[...nil x224 x55 2 st11] ip:15 say offset: 82
+[...nil x5 x15 1 st23] ip:135 getargn0 
+[...x5 x15 1 st23 '82] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x5 x15 1 st23] ip:139 retnil 
+[...nil x224 x55 2 st11] ip:20 getargn0 
+[...x224 x55 2 st11 1] ip:21 sayval 
+[...nil x17 x5 1 st23] ip:135 getargn0 
+[...x17 x5 1 st23 1] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x17 x5 1 st23] ip:139 retnil 
+[...nil x224 x55 2 st11] ip:22 say offset: 108
+[...nil x10 x17 1 st23] ip:135 getargn0 
+[...x10 x17 1 st23 '108] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x10 x17 1 st23] ip:139 retnil 
+[...nil x224 x55 2 st11] ip:27 getargn1 
+[...x224 x55 2 st11 '402] ip:28 sayval 
+[...nil x19 x10 1 st23] ip:135 getargn0 
+[...x19 x10 1 st23 '402] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x19 x10 1 st23] ip:139 retnil 
+[...nil x224 x55 2 st11] ip:29 say offset: 116
+[...nil x15 x19 1 st23] ip:135 getargn0 
+[...x15 x19 1 st23 '116] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x15 x19 1 st23] ip:139 retnil 
+[...nil x224 x55 2 st11] ip:34 retnil 
+[...nil x0 x0 1 st0] ip:279 say offset: 405
+[...nil x60 x224 1 st11] ip:135 getargn0 
+[...x60 x224 1 st11 '405] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x60 x224 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:284 objgetprop obj_id: 21 prop_id: 119
+[...nil x231 x60 0 st11] ip:83 pushstr offset: 119
+[...x231 x60 0 st11 '119] ip:88 getpropself prop_id: 120
+[...x231 x60 0 st11 '119] ip:91 getr0 
+[...x60 0 st11 '119 '149] ip:92 add 
+[...x231 x60 0 st11 o4096] ip:93 retval 
+[...nil x0 x0 1 st0] ip:291 getr0 
+[...x0 x0 1 st0 o4096] ip:292 builtin_c argc: 1 func_index: 0
+[...nil x0 x0 1 st0] ip:295 say offset: 424
+[...nil x69 x231 1 st11] ip:135 getargn0 
+[...x69 x231 1 st11 '424] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x69 x231 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:300 objgetprop obj_id: 21 prop_id: 120
+[...nil x0 x0 1 st0] ip:307 getr0 
+[...x0 x0 1 st0 '149] ip:308 builtin_c argc: 1 func_index: 0
+[...nil x0 x0 1 st0] ip:311 say offset: 443
+[...nil x247 x69 1 st11] ip:135 getargn0 
+[...x247 x69 1 st11 '443] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x247 x69 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:316 objgetprop obj_id: 21 prop_id: 121
+[...nil x76 x247 1 st11] ip:135 getargn0 
+[...x76 x247 1 st11 "169] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x76 x247 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:323 say offset: 462
+[...nil x252 x76 1 st11] ip:135 getargn0 
+[...x252 x76 1 st11 '462] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x252 x76 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:328 objgetprop obj_id: 21 prop_id: 122
+[...nil x83 x252 0 st11] ip:104 say offset: 217
+[...nil x15 x94 1 st21] ip:135 getargn0 
+[...x15 x94 1 st21 '217] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x15 x94 1 st21] ip:139 retnil 
+[...nil x83 x252 0 st11] ip:109 pushint8 val: 10
+[...x83 x252 0 st11 10] ip:111 pushint8 val: 9
+[...x252 0 st11 10 9] ip:113 callpropself arg_count: 2 prop_id: 118
+[...nil x102 x15 2 st21] ip:10 say offset: 55
+[...nil x15 x0 1 st33] ip:135 getargn0 
+[...x15 x0 1 st33 '55] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x15 x0 1 st33] ip:139 retnil 
+[...nil x102 x15 2 st21] ip:15 say offset: 82
+[...nil x5 x15 1 st33] ip:135 getargn0 
+[...x5 x15 1 st33 '82] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x5 x15 1 st33] ip:139 retnil 
+[...nil x102 x15 2 st21] ip:20 getargn0 
+[...x102 x15 2 st21 9] ip:21 sayval 
+[...nil x17 x5 1 st33] ip:135 getargn0 
+[...x17 x5 1 st33 9] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x17 x5 1 st33] ip:139 retnil 
+[...nil x102 x15 2 st21] ip:22 say offset: 108
+[...nil x10 x17 1 st33] ip:135 getargn0 
+[...x10 x17 1 st33 '108] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x10 x17 1 st33] ip:139 retnil 
+[...nil x102 x15 2 st21] ip:27 getargn1 
+[...x102 x15 2 st21 10] ip:28 sayval 
+[...nil x19 x10 1 st33] ip:135 getargn0 
+[...x19 x10 1 st33 10] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x19 x10 1 st33] ip:139 retnil 
+[...nil x102 x15 2 st21] ip:29 say offset: 116
+[...nil x15 x19 1 st33] ip:135 getargn0 
+[...x15 x19 1 st33 '116] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x15 x19 1 st33] ip:139 retnil 
+[...nil x102 x15 2 st21] ip:34 retnil 
+[...nil x83 x252 0 st11] ip:117 getr0 
+[...x83 x252 0 st11 nil] ip:118 sayval 
+[...nil x17 x102 1 st21] ip:135 getargn0 
+[...x17 x102 1 st21 nil] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x17 x102 1 st21] ip:139 retnil 
+[...nil x83 x252 0 st11] ip:119 say offset: 280
+[...nil x107 x17 1 st21] ip:135 getargn0 
+[...x107 x17 1 st21 '280] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x107 x17 1 st21] ip:139 retnil 
+[...nil x83 x252 0 st11] ip:124 retnil 
+[...nil x0 x0 1 st0] ip:335 say offset: 481
+[...nil x257 x83 1 st11] ip:135 getargn0 
+[...x257 x83 1 st11 '481] ip:136 builtin_c argc: 1 func_index: 0
+[...nil x257 x83 1 st11] ip:139 retnil 
+[...nil x0 x0 1 st0] ip:340 retnil 
+[...] ip:0 push_1 
+
+stack: 
+
+output: Property test - calling test.p1
+This is test.p1
+calling test.p2
+This is test.p2
+calling test2.p1
+This is test2.p1
+calling test2.p2
+This is test.p2
+calling test2.p3(1,'x')
+Here we are in test2.p3!
+test2.p3 arguments: a = 1, b = x
+calling test2.p4
+this is test2.p4: self.p5 = This is test2.p5!
+calling test2.p5
+This is test2.p5!
+calling test2.p6
+This is a double-quoted string in test2.p6!!!
+calling test2.p7
+This is test2.p7, a dstring with embedding - self.p3(9,10) = Here we are in test2.p3!
+test2.p3 arguments: a = 9, b = 10
+!!!
+Done!
+
+return nil

@@ -21,7 +21,7 @@
   "A special to-string for say"
   [v]
   (cond
-   (p/vm-sstring? v) (fn [s] [(vm/load-string-constant s (p/value v)) s])
+   (p/vm-string? v) (fn [s] [(vm/load-string-constant s (p/value v)) s])
    (p/vm-obj? v) (m/do-vm [obj (vm/obj-retrieve (p/value v))
                             text (mc/cast-to-string obj)]
                            text)
@@ -142,6 +142,6 @@
   (let [s (run "basic")]
     (compare-trace "basic") => true))
 
-(future-fact "object"
+(fact "object"
   (let [s (run "object")]
     (compare-trace "object") => true))

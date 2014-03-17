@@ -6,18 +6,17 @@ and function set protocols."}
   (:require [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
-            [clojure.tools.logging :refer [spy debug info error]])
+            [clojure.tools.logging :refer [spy debug info trace error]])
   (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until m-result m-chain]])
   (:import [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
 
-(declare host)
-
 ;; The VM has an awkward circular relationship with string and list
 ;; metaclasses. This is a temporary workaround for the circular dependencies
 (do (in-ns 't3chnique.metaclass.string)
     (clojure.core/declare add-to-str)
+    (clojure.core/declare create)
     (in-ns 't3chnique.vm))
 
 ;; vm-m implementation
@@ -122,6 +121,7 @@ the VM execution."
         exprs (or exprs `((abort (str '~op " not implemented"))))]
     `(do
        (defn ^{:opcode ~cd} ~op-fn-name ~param-syms
+         (trace '~op ~(rest param-syms))
          (runop (fn [] ~@exprs)))
 
        (swap! table assoc ~cd (OpCode. ~cd '~op ~spec ~(symbol (str "op-" op)))))))
@@ -418,8 +418,12 @@ instruction is complete."
 (defop pushfnptr 0x0B [:uint4 code_offset]
   (stack-push (vm-funcptr code_offset)))
 
-; TODO
-(defop pushstri 0x0C [:pref-utf8 string_bytes])
+(defop pushstri 0x0C [:pref-utf8 string_bytes]
+  (do-vm
+   [s (t3chnique.metaclass.string/create string_bytes)
+    oid (new-obj-id)
+    obj-store (oid s)]
+   (vm-obj s)))
 
 ; TODO
 (defop pushparlst 0x0D [:ubyte fixed_arg_count])
@@ -578,6 +582,19 @@ instruction is complete."
 
 (def FRAME-SIZE 10)
 
+(defn- get-stack-self []
+  (do-vm
+   [fp (reg-get :fp)
+    self (stack-get (- fp 7))]
+   (if (vm-obj? self) self (vm-obj nil))))
+
+(defn- get-stack-local [i]
+  (do-vm
+   [fp (reg-get :fp)
+    target (stack-get (+ fp i))]
+   target))
+
+
 (defn prepare-frame
   "Prepare stack frame for call. target-pid is (vm-prop), objs are
  (vm-obj) or (vm-nil). Func offset and argc are raw int."
@@ -635,6 +652,8 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
      (vm-nil?) (abort "VMERR_NIL_DEREF")
      :else (abort "VMERR_OBJ_VAL_REQD"))))
 
+(declare say-value)
+
 (defn eval-prop
   "Property handler which calls a method if appropriate or returns
 property value directly."
@@ -642,7 +661,9 @@ property value directly."
   (if prop-val
     (cond
      (not (vm-auto-eval? prop-val)) (return prop-val)
-     (vm-dstring? prop-val) (abort "not implemented (say)")
+     (vm-dstring? prop-val) (m->>
+                             (stack-push prop-val)
+                             (say-value))
      (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
                                            target
                                            defining
@@ -663,6 +684,19 @@ items if available."
 (def generic-get-prop (property-accessor mc/get-property eval-prop))
 (def generic-inherit-prop (property-accessor mc/inherit-property eval-prop))
 (def generic-get-prop-data (property-accessor mc/get-property data-only))
+
+(defn- say-value
+  "Take the value from top of stack and say it."
+  []
+  (do-vm
+   [self (get-stack-self)
+    sm (get-say-method)
+    sf (get-say-function)
+    v (cond
+       (and (valid? self) (valid? sm)) (generic-get-prop self sm 1)
+       (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1))]
+   nil))
+
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
   (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count))
@@ -696,18 +730,6 @@ items if available."
     r (generic-get-prop target-val (value prop) arg_count)]
    r))
 
-(defn- get-stack-self []
-  (do-vm
-   [fp (reg-get :fp)
-    self (stack-get (- fp 7))]
-   (if (vm-obj? self) self (vm-obj nil))))
-
-(defn- get-stack-local [i]
-  (do-vm
-   [fp (reg-get :fp)
-    target (stack-get (+ fp i))]
-   target))
-
 (defop getpropself 0x63 [:uint2 prop_id]
   (do-vm
    [self (get-stack-self)
@@ -731,7 +753,7 @@ items if available."
   (generic-get-prop (vm-obj obj_id) prop_id 0))
 
 (defop objcallprop 0x67 [:ubyte arg_count :uint4 obj_id :uint2 prop_id]
-  (generic-get-prop (vm-obj obj_id prop_id arg_count)))
+  (generic-get-prop (vm-obj obj_id) prop_id arg_count))
 
 (defop getpropdata 0x68 [:uint2 prop_id]
   (do-vm
@@ -1039,18 +1061,6 @@ them to account for the difference."
 
 (defop getlcln5 0xAF []
   (copy :fp (partial + 5)))
-
-(defn- say-value
-  "Take the value from top of stack and say it."
-  []
-  (do-vm
-   [self (get-stack-self)
-    sm (get-say-method)
-    sf (get-say-function)
-    v (cond
-       (and (valid? self) (valid? sm)) (generic-get-prop self sm 1)
-       (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1))]
-   nil))
 
 ;; TODO
 (defop say 0xB0 [:uint4 offset]
