@@ -35,6 +35,9 @@ been invoked. propid passed as number.")
   (get-as-string [self]
     "Expose internal String if appropriate or nil otherwise. (Non-monadic)")
 
+  (get-as-seq [self]
+    "Expose internal list as seq if appropriate or nil otherwise. (Non-monadic)")
+
   (cast-to-string [self]
     "Cast to String if possible or nil otherwise. (Monadic)")
 

@@ -121,7 +121,7 @@ the VM execution."
         exprs (or exprs `((abort (str '~op " not implemented"))))]
     `(do
        (defn ^{:opcode ~cd} ~op-fn-name ~param-syms
-         (trace '~op ~(rest param-syms))
+         (trace '~op ~(vec (rest param-syms)))
          (runop (fn [] ~@exprs)))
 
        (swap! table assoc ~cd (OpCode. ~cd '~op ~spec ~(symbol (str "op-" op)))))))
@@ -302,6 +302,13 @@ instruction is complete."
     (let [[buf idx] (const-offset state address)]
       (first ((parse/lst) [buf idx])))
     ))
+
+(defn as-list
+  "Get seq from list or object list"
+  [v]
+  (cond
+   (vm-list? v) (fn [s] [(load-string-constant s (value v)) s])
+   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-seq obj))))
 
 ;; TODO other types
 ;; should this be in string metaclass
@@ -688,15 +695,20 @@ items if available."
 (defn- say-value
   "Take the value from top of stack and say it."
   []
+  (trace "say-value")
   (do-vm
    [self (get-stack-self)
     sm (get-say-method)
     sf (get-say-function)
-    v (cond
-       (and (valid? self) (valid? sm)) (generic-get-prop self sm 1)
-       (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1))]
-   nil))
+    :cond [(and (valid? self) (valid? sm))
+           [_ (generic-get-prop self sm 1)]
+           
+           (valid? sf)
+           [_ (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1)]
 
+           :else
+           [_ (abort "VMERR_SAY_IS_NOT_DEFINED")]]]
+   nil))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
   (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count))
@@ -1044,25 +1056,27 @@ them to account for the difference."
 (defop getspn 0xA6 [:ubyte index]
   (copy :sp #(- % (inc index))))
 
+(defn- getlcl [i]
+  (copy :fp (partial + i)))
+
 (defop getlcln0 0xAA []
-  (copy :fp identity))
+  (getlcl 0))
 
 (defop getlcln1 0xAB []
-  (copy :fp inc))
+  (getlcl 1))
 
 (defop getlcln2 0xAC []
-  (copy :fp (partial + 2)))
+  (getlcl 2))
 
 (defop getlcln3 0xAD []
-  (copy :fp (partial + 3)))
+  (getlcl 3))
 
 (defop getlcln4 0xAE []
-  (copy :fp (partial + 4)))
+  (getlcl 4))
 
 (defop getlcln5 0xAF []
-  (copy :fp (partial + 5)))
+  (getlcl 5))
 
-;; TODO
 (defop say 0xB0 [:uint4 offset]
   (do-vm
    [_ (stack-push (vm-sstring offset))
@@ -1113,14 +1127,33 @@ them to account for the difference."
 (defop sayval 0xB9 []
   (say-value))
 
-;; TODO
-(defop index 0xBA [])
+(defn- apply-index [obj idx]
+  {:pre [(vm-primitive? obj) (number? idx)]}
+  (do-vm
+   [sq (as-list obj)
+    :if sq
+    :then [_ (return (get sq idx))]
+    :else [_ (abort "Op overload not implemented")]]
+   nil))
 
-;; TODO
-(defop idxlcl1int8 0xBB [:ubyte local_number :ubyte index_val])
+(defop index 0xBA []
+  (do-vm
+   [idx (stack-pop)
+    obj (stack-pop)
+    _ (apply-index obj (value idx))]
+   nil))
 
-;; TODO
-(defop idxint8 0xBC [:ubyte index_val])
+(defop idxlcl1int8 0xBB [:ubyte local_number :ubyte index_val]
+  (do-vm
+   [obj (getlcl local_number)
+    _ (apply-index obj index_val)]
+   nil))
+
+(defop idxint8 0xBC [:ubyte index_val]
+  (do-vm
+   [obj (stack-pop)
+    _ (apply-index obj index_val)]
+   nil))
 
 ;; TODO byte code construction
 (defop new1 0xC0 [:ubyte arg_count :ubyte metaclass_id]
@@ -1301,17 +1334,17 @@ with property set as specified. oid, pid numbers. val primitive."
   "Set up vm at initial entry point."
   [host]
   (do-vm
-    [entp (fetch-val :entry-point-offset)
-     _ (op-pushlst host 0)
-     _ (op-call host 1 entp)
-     _ (commit-pc)]
-    nil))
+   [entp (fetch-val :entry-point-offset)
+    _ (op-pushlst host 0)
+    _ (op-call host 1 entp)
+    _ (commit-pc)]
+   nil))
 
 (defn step
   "Execute the op code referenced by the ip register."
   [host]
   (do-vm
-   [[op args len] (spy :trace (parse-op-at-ip))
+   [[op args len] (parse-op-at-ip)
     ip (reg-get :ip)
     _ (set-pc (+ ip len))
     ret (apply (:run-fn op) (cons host (vals args)))

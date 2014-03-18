@@ -294,3 +294,4 @@
                                    mc/MetaClass
                                    (mc/set-property [self prop val] (fn [s] [nil s])))})]
   (fact (apply-ops vm [(op setprop 20)]) => (throws Exception #"OBJ_VAL_REQUIRED")))
+

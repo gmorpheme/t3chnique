@@ -55,7 +55,8 @@
    (vm-obj? v) (and (value v) (pos? (value v)))
    (vm-prop? v) (and (value v) (pos? (value v)))
    (vm-objx? v) (and (value v) (pos? (value v)))
-   (vm-funcptr? v) (and (value v) (pos? (value v)))
+   (vm-funcptr? v) (and (value v)
+                        ((some-fn zero? pos?) (value v))) ; fn at 0x0 is ok
    :else true))
 
 (defn mnemonise

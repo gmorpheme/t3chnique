@@ -12,7 +12,8 @@
             [clojure.algo.monads :refer (update-val fetch-val m-seq m-chain)]
             [clojure.pprint :refer (pprint)]
             [clojure.string :as string]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.tools.logging :refer [trace debug info]])
   (:use [midje.sweet]))
 
 (defrecord TraceHost [])
@@ -145,3 +146,7 @@
 (fact "object"
   (let [s (run "object")]
     (compare-trace "object") => true))
+
+(future-fact "dstr"
+  (let [s (run "dstr")]
+    (compare-trace "dstr") => true))

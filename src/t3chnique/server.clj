@@ -20,7 +20,7 @@
             [t3chnique.parse :as parse]
             [t3chnique.inspect :as i]
             [clojure.stacktrace :as st]
-            [clojure.tools.logging :refer (info debug trace error spy)]
+            [clojure.tools.logging :refer (info debug debugf trace error spy)]
             [t3chnique.all :refer [default-host]]))
 
 (defn vm-actions
@@ -383,8 +383,10 @@ useful information for tooling UIs."
 (defn vm-enter!
   "Enter the VM with specified id."
   [system id]
+  (info "Entering VM: " id)
   (let [host (vm-host system id)
         [r s] ((t3vm/enter host) (vm-get system id))]
+    (debugf "Updating store with %s/%d" id (:sequence s))
     (swap! (:vm-histories system) update-in [id] conj s)
     (vm-get system id)))
 
@@ -396,6 +398,7 @@ useful information for tooling UIs."
     (debug "Stepping VM: " id " from sequence " (:sequence initial-state))
     (try
       (let [[e s] ((t3vm/step host) initial-state)]
+        (debugf "Updating store with %s/%d" id (:sequence s))
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
         (error t "Error while stepping from " id "/" (:sequence initial-state))
