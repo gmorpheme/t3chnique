@@ -147,6 +147,7 @@
   (let [s (run "object")]
     (compare-trace "object") => true))
 
-(future-fact "dstr"
+(fact "dstr"
   (let [s (run "dstr")]
     (compare-trace "dstr") => true))
+

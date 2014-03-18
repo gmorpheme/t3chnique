@@ -1,0 +1,261 @@
+[...1 st0 nil nil nil] ip:55 pushlst offset: 0
+[...st0 nil nil nil []0] ip:60 setlcl1 local_number: 0
+[...1 st0 []0 nil nil] ip:62 pushfnptr code_offset: 0
+[...st0 []0 nil nil f0] ip:67 builtin_a argc: 1 func_index: 1
+[...1 st0 []0 nil nil] ip:70 say offset: 111
+[...nil x30 x45 1 st11] ip:10 getargn0 
+[...x30 x45 1 st11 '111] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x30 x45 1 st11] ip:14 retnil 
+[...1 st0 []0 nil nil] ip:75 onelcl1 local_number: 2
+[...1 st0 []0 nil 1] ip:77 getlcln2 
+[...st0 []0 nil 1 1] ip:78 pushint8 val: 10
+[...[]0 nil 1 1 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 1] ip:83 say offset: 154
+[...nil x58 x30 1 st11] ip:10 getargn0 
+[...x58 x30 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x58 x30 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 1] ip:88 getlcln0 
+[...st0 []0 nil 1 []0] ip:89 getlcln2 
+[...[]0 nil 1 []0 1] ip:90 index 
+[...st0 []0 nil 1 '52] ip:91 sayval 
+[...nil x34 x58 1 st11] ip:10 getargn0 
+[...x34 x58 1 st11 '52] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x34 x58 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 1] ip:92 say offset: 180
+[...nil x63 x34 1 st11] ip:10 getargn0 
+[...x63 x34 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x63 x34 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 1] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 2] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 2] ip:77 getlcln2 
+[...st0 []0 nil 2 2] ip:78 pushint8 val: 10
+[...[]0 nil 2 2 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 2] ip:83 say offset: 154
+[...nil x25 x63 1 st11] ip:10 getargn0 
+[...x25 x63 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x25 x63 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 2] ip:88 getlcln0 
+[...st0 []0 nil 2 []0] ip:89 getlcln2 
+[...[]0 nil 2 []0 2] ip:90 index 
+[...st0 []0 nil 2 '57] ip:91 sayval 
+[...nil x67 x25 1 st11] ip:10 getargn0 
+[...x67 x25 1 st11 '57] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x67 x25 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 2] ip:92 say offset: 180
+[...nil x30 x67 1 st11] ip:10 getargn0 
+[...x30 x67 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x30 x67 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 2] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 3] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 3] ip:77 getlcln2 
+[...st0 []0 nil 3 3] ip:78 pushint8 val: 10
+[...[]0 nil 3 3 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 3] ip:83 say offset: 154
+[...nil x58 x30 1 st11] ip:10 getargn0 
+[...x58 x30 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x58 x30 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 3] ip:88 getlcln0 
+[...st0 []0 nil 3 []0] ip:89 getlcln2 
+[...[]0 nil 3 []0 3] ip:90 index 
+[...st0 []0 nil 3 '62] ip:91 sayval 
+[...nil x34 x58 1 st11] ip:10 getargn0 
+[...x34 x58 1 st11 '62] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x34 x58 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 3] ip:92 say offset: 180
+[...nil x63 x34 1 st11] ip:10 getargn0 
+[...x63 x34 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x63 x34 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 3] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 4] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 4] ip:77 getlcln2 
+[...st0 []0 nil 4 4] ip:78 pushint8 val: 10
+[...[]0 nil 4 4 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 4] ip:83 say offset: 154
+[...nil x25 x63 1 st11] ip:10 getargn0 
+[...x25 x63 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x25 x63 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 4] ip:88 getlcln0 
+[...st0 []0 nil 4 []0] ip:89 getlcln2 
+[...[]0 nil 4 []0 4] ip:90 index 
+[...st0 []0 nil 4 '69] ip:91 sayval 
+[...nil x67 x25 1 st11] ip:10 getargn0 
+[...x67 x25 1 st11 '69] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x67 x25 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 4] ip:92 say offset: 180
+[...nil x30 x67 1 st11] ip:10 getargn0 
+[...x30 x67 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x30 x67 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 4] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 5] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 5] ip:77 getlcln2 
+[...st0 []0 nil 5 5] ip:78 pushint8 val: 10
+[...[]0 nil 5 5 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 5] ip:83 say offset: 154
+[...nil x58 x30 1 st11] ip:10 getargn0 
+[...x58 x30 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x58 x30 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 5] ip:88 getlcln0 
+[...st0 []0 nil 5 []0] ip:89 getlcln2 
+[...[]0 nil 5 []0 5] ip:90 index 
+[...st0 []0 nil 5 '75] ip:91 sayval 
+[...nil x34 x58 1 st11] ip:10 getargn0 
+[...x34 x58 1 st11 '75] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x34 x58 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 5] ip:92 say offset: 180
+[...nil x63 x34 1 st11] ip:10 getargn0 
+[...x63 x34 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x63 x34 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 5] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 6] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 6] ip:77 getlcln2 
+[...st0 []0 nil 6 6] ip:78 pushint8 val: 10
+[...[]0 nil 6 6 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 6] ip:83 say offset: 154
+[...nil x25 x63 1 st11] ip:10 getargn0 
+[...x25 x63 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x25 x63 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 6] ip:88 getlcln0 
+[...st0 []0 nil 6 []0] ip:89 getlcln2 
+[...[]0 nil 6 []0 6] ip:90 index 
+[...st0 []0 nil 6 '81] ip:91 sayval 
+[...nil x67 x25 1 st11] ip:10 getargn0 
+[...x67 x25 1 st11 '81] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x67 x25 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 6] ip:92 say offset: 180
+[...nil x30 x67 1 st11] ip:10 getargn0 
+[...x30 x67 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x30 x67 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 6] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 7] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 7] ip:77 getlcln2 
+[...st0 []0 nil 7 7] ip:78 pushint8 val: 10
+[...[]0 nil 7 7 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 7] ip:83 say offset: 154
+[...nil x58 x30 1 st11] ip:10 getargn0 
+[...x58 x30 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x58 x30 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 7] ip:88 getlcln0 
+[...st0 []0 nil 7 []0] ip:89 getlcln2 
+[...[]0 nil 7 []0 7] ip:90 index 
+[...st0 []0 nil 7 '86] ip:91 sayval 
+[...nil x34 x58 1 st11] ip:10 getargn0 
+[...x34 x58 1 st11 '86] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x34 x58 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 7] ip:92 say offset: 180
+[...nil x63 x34 1 st11] ip:10 getargn0 
+[...x63 x34 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x63 x34 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 7] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 8] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 8] ip:77 getlcln2 
+[...st0 []0 nil 8 8] ip:78 pushint8 val: 10
+[...[]0 nil 8 8 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 8] ip:83 say offset: 154
+[...nil x25 x63 1 st11] ip:10 getargn0 
+[...x25 x63 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x25 x63 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 8] ip:88 getlcln0 
+[...st0 []0 nil 8 []0] ip:89 getlcln2 
+[...[]0 nil 8 []0 8] ip:90 index 
+[...st0 []0 nil 8 '93] ip:91 sayval 
+[...nil x67 x25 1 st11] ip:10 getargn0 
+[...x67 x25 1 st11 '93] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x67 x25 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 8] ip:92 say offset: 180
+[...nil x30 x67 1 st11] ip:10 getargn0 
+[...x30 x67 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x30 x67 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 8] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 9] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 9] ip:77 getlcln2 
+[...st0 []0 nil 9 9] ip:78 pushint8 val: 10
+[...[]0 nil 9 9 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 9] ip:83 say offset: 154
+[...nil x58 x30 1 st11] ip:10 getargn0 
+[...x58 x30 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x58 x30 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 9] ip:88 getlcln0 
+[...st0 []0 nil 9 []0] ip:89 getlcln2 
+[...[]0 nil 9 []0 9] ip:90 index 
+[...st0 []0 nil 9 '100] ip:91 sayval 
+[...nil x34 x58 1 st11] ip:10 getargn0 
+[...x34 x58 1 st11 '100] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x34 x58 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 9] ip:92 say offset: 180
+[...nil x63 x34 1 st11] ip:10 getargn0 
+[...x63 x34 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x63 x34 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 9] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 10] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 10] ip:77 getlcln2 
+[...st0 []0 nil 10 10] ip:78 pushint8 val: 10
+[...[]0 nil 10 10 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 10] ip:83 say offset: 154
+[...nil x25 x63 1 st11] ip:10 getargn0 
+[...x25 x63 1 st11 '154] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x25 x63 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 10] ip:88 getlcln0 
+[...st0 []0 nil 10 []0] ip:89 getlcln2 
+[...[]0 nil 10 []0 10] ip:90 index 
+[...st0 []0 nil 10 '106] ip:91 sayval 
+[...nil x67 x25 1 st11] ip:10 getargn0 
+[...x67 x25 1 st11 '106] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x67 x25 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 10] ip:92 say offset: 180
+[...nil x30 x67 1 st11] ip:10 getargn0 
+[...x30 x67 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x30 x67 1 st11] ip:14 retnil 
+[...1 st0 []0 nil 10] ip:97 inclcl local_number: 2
+[...1 st0 []0 nil 11] ip:100 jmp branch_offset: -24
+[...1 st0 []0 nil 11] ip:77 getlcln2 
+[...st0 []0 nil 11 11] ip:78 pushint8 val: 10
+[...[]0 nil 11 11 10] ip:80 jgt branch_offset: 22
+[...1 st0 []0 nil 11] ip:103 pushint8 val: 5
+[...st0 []0 nil 11 5] ip:105 setlcl1 local_number: 1
+[...1 st0 []0 5 11] ip:107 getlcln1 
+[...st0 []0 5 11 5] ip:108 pushint8 val: 3
+[...[]0 5 11 5 3] ip:110 jle branch_offset: 10
+[...1 st0 []0 5 11] ip:113 say offset: 183
+[...nil x88 x30 1 st11] ip:10 getargn0 
+[...x88 x30 1 st11 '183] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x88 x30 1 st11] ip:14 retnil 
+[...1 st0 []0 5 11] ip:118 jmp branch_offset: 7
+[...1 st0 []0 5 11] ip:126 say offset: 180
+[...nil x43 x88 1 st11] ip:10 getargn0 
+[...x43 x88 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x43 x88 1 st11] ip:14 retnil 
+[...1 st0 []0 5 11] ip:131 getlcln1 
+[...st0 []0 5 11 5] ip:132 pushint8 val: 3
+[...[]0 5 11 5 3] ip:134 jge branch_offset: 10
+[...1 st0 []0 5 11] ip:145 say offset: 265
+[...nil x107 x43 1 st11] ip:10 getargn0 
+[...x107 x43 1 st11 '265] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x107 x43 1 st11] ip:14 retnil 
+[...1 st0 []0 5 11] ip:150 say offset: 180
+[...nil x48 x107 1 st11] ip:10 getargn0 
+[...x48 x107 1 st11 '180] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x48 x107 1 st11] ip:14 retnil 
+[...1 st0 []0 5 11] ip:155 say offset: 293
+[...nil x112 x48 1 st11] ip:10 getargn0 
+[...x112 x48 1 st11 '293] ip:11 builtin_c argc: 1 func_index: 0
+[...nil x112 x48 1 st11] ip:14 retnil 
+[...1 st0 []0 5 11] ip:160 retnil 
+[...] ip:0 push_0 
+
+stack: 
+
+output: This is a test of double-quoted strings.This is embedded string one
+This is embedded string two
+This is embedded string three
+This is embedded string four
+This is embedded string five
+This is embedded string six
+This is embedded string seven
+This is embedded string eight
+This is embedded string nine
+This is embedded string ten
+x is greater than 3 (correct)
+x is still greater than 3!
+Done!!!
+
+return nil

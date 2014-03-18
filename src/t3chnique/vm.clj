@@ -298,16 +298,14 @@ instruction is complete."
 (defn load-list-constant
   "Read a list (prefixed) from the constant pool."
   [state address]
-  (when (not (zero? address))
-    (let [[buf idx] (const-offset state address)]
-      (first ((parse/lst) [buf idx])))
-    ))
+  (let [[buf idx] (const-offset state address)]
+    (first ((parse/lst) [buf idx]))))
 
 (defn as-list
   "Get seq from list or object list"
   [v]
   (cond
-   (vm-list? v) (fn [s] [(load-string-constant s (value v)) s])
+   (vm-list? v) (fn [s] [(load-list-constant s (value v)) s])
    (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-seq obj))))
 
 ;; TODO other types
@@ -1132,7 +1130,7 @@ them to account for the difference."
   (do-vm
    [sq (as-list obj)
     :if sq
-    :then [_ (return (get sq idx))]
+    :then [_ (stack-push (nth sq (dec idx)))]
     :else [_ (abort "Op overload not implemented")]]
    nil))
 

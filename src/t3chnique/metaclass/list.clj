@@ -8,13 +8,13 @@
 
 (defrecord TadsList [val]
   mc/MetaClass
-  (load-from-image [self buf o]
+  (mc/load-from-image [self buf o]
     (first ((domonad byteparser-m
               [n (uint2)
                values (times n (data-holder))]
               (TadsList. values)) [buf o])))
 
-  (get-as-seq [self]
+  (mc/get-as-seq [self]
     val))
 
 (defn tads-list
