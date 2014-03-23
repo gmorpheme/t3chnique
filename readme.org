@@ -40,21 +40,23 @@ Github projects for reference:
 ** Organisation
 
  - primitives.clj and monad.clj provide the lowest level utilities
- - parse.clj is building blocks for parsing image files and byte-code
-instructions
- - vm.clj contains the representation of VM state and the primary means
-of manipulating it (i.e. computing new states - as this is pure
-functional)
- - On top of this, there are implementations of various "intrinsics"
-including intrinsic function sets (bif.clj) and metaclasses (in
-t3chnique.metaclass).
+ - parse.clj is building blocks for parsing image files and byte-code instructions
+ - metaclass.clj and bif.clj provide some wiring and protocols to make
+   metaclasses and intrinsic function sets available to the VM
+ - vm.clj contains the representation of VM state and the primary
+   means of manipulating it (i.e. computing new states - as this is
+   pure functional)
+ - implementations of metaclasses and intrinsic function sets (of
+   which there is basically nothing at the moment) are under metaclass
+   and instrinsic respectively
  - all.clj, loads all of the intrinsics and metaclasses up.
  - a rough REST interface (server.clj) and CLI tooling (main.clj)
 
-There's very crude and buggy visualisation of the VM available using
+There's a very crude and buggy visualisation of the VM available using
 pages served up by server.clj and the vm.js javascript functionality.
 This allows stepping instruction by instruction through the VM.) I
-have a better (ClojureScript) UI in progress in a separate project...
+have a better (ClojureScript) WebSockets-based UI in progress in a
+separate project...
 
 ** Links / References
 
