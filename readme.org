@@ -1,7 +1,9 @@
 * t3chnique
 
+** What is this?
+
 T3chnique is an experimental, work-in-progress, attempt to implement a
-TADS 3 virtual machine in clojure. Right now this is just an
+[[http://www.tads.org/][TADS3]] virtual machine in clojure. Right now this is just an
 occasional, spare time, iterative sketching out of an implementation.
 
 As yet this lacks a coherent approach to several major aspects of the
@@ -54,4 +56,17 @@ pages served up by server.clj and the vm.js javascript functionality.
 This allows stepping instruction by instruction through the VM.) I
 have a better (ClojureScript) UI in progress in a separate project...
 
+** Links / References
 
+ - [[http://www.tads.org/t3doc/doc/techman/toc.htm][TADS3 Technical Manual]]
+ - [[http://www.tads.org/t3doc/doc/sysman/toc.htm][TADS3 System Manual]]
+ - [[http://www.tads.org][TADS Home Page]]
+ - [[http://www.tads.org/t3dl/t3_src.zip][Reference MWR Implementation Source Code Download]] - contains test
+   .t source for the .t3 files included in this source tree
+
+** Licence
+
+Copyright © 2014 Greg Hawkins
+
+Distributed under the Eclipse Public License either version 1.0 or (at
+your option) any later version.
