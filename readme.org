@@ -1,53 +1,56 @@
 * t3chnique
 
-T3chnique is an experimental, work in progress, attempt to implement a
-TADS 3 virtual machine in clojure.
+T3chnique is an experimental, work-in-progress, attempt to implement a
+TADS 3 virtual machine in clojure. Right now this is just an
+occasional, spare time, iterative sketching out of an implementation.
 
-It uses a monadic approach to the virtual machine state and exception
-semantics.
+There is no coherent approach to several major aspects of the VM at
+the moment (metaclass inheritance, unified exception / error handling,
+recursive calls into the VM, implementation sharing between constant
+strings and lists and their dynamic counterparts). In some cases this
+is currently following the OO reference implementation way too closely
+to be idiomatic Clojure.
+
+It uses a broadly monadic approach to the virtual machine state,
+though parking / yield semantics in intrinsic functions is likely to
+be handled via core.async rather than the continuation monad.
 
 If it were ever finished, it would doubtless perform extremely poorly.
 
-This source tree contains items for testing purposes which are
-copyright Michael J Roberts and Eric Eve.
+And it's unlikely to ever be finished; the TADS3 virtual machine is a
+monster. Not so much in the VM itself but in the bundled platform - it
+has its own regex engine, random number generators, data structures
+and so on. All of these are significant obstacles to alternative
+implementations. This implementation is primarily for my own interest
+and investigation.
 
-The ZMPP2 project also contains an unfinished scala-based sketch of a
-TADS3 implementation.
+This source tree contains items for testing purposes which are
+copyright Michael J Roberts and Eric Eve. (Anything .t3)
+
+Github projects for reference:
+ - [QTads](https://github.com/realnc/qtads) contains most of 
+   the C++ reference implementation (apart from tests) and is useful
+   for reference.
+ - [ZMPP2](https://github.com/weiju/zmpp2) contains another unfinished
+   TADS3 implementation (in Scala).
 
 ** Organisation
 
-primitives.clj and monad.clj provide the lowest level
-
-parse.clj is building blocks for parsing image files and byte-code
+ - primitives.clj and monad.clj provide the lowest level utilities
+ - parse.clj is building blocks for parsing image files and byte-code
 instructions
-
-vm.clj contains the representation of VM state and the primary means
-of manipulating it (or computing new states - as this is purely
+ - vm.clj contains the representation of VM state and the primary means
+of manipulating it (i.e. computing new states - as this is pure
 functional)
-
-On top of this, there are implementations of various "intrinsics"
+ - On top of this, there are implementations of various "intrinsics"
 including intrinsic function sets (bif.clj) and metaclasses (in
 t3chnique.metaclass).
+ - all.clj, loads all of the intrinsics and metaclasses up.
+ - a rough REST interface (server.clj) and CLI tooling (main.clj)
 
-all.clj, loads all of these up.
+There's very crude and buggy visualisation of the VM available using
+pages served up by server.clj and the vm.js javascript functionality.
+This allows stepping instruction by instruction through the VM.) I
+have a better (ClojureScript) UI in progress in a separate project...
 
-control.clj is the basics for managing in-play games and intended to
-be the commonality between the REST interface (server.clj) and CLI
-toolin (main.clj).
 
-there's very crude visualisation of the VM available using pages
-served up by server.clj and the vm.js javascript functionality.
-
-** Backlog
-
-*** TODO [#B] simple export / import
-*** DONE keep history
-*** TODO fix main loop
-*** DONE clean-up app start / stop handling in control.clj
-    - http://thinkrelevance.com/blog/2013/06/04/clojure-workflow-reloaded
-*** TODO [#A] fix stack usage for recursive calls and frame refs
-*** TODO [#A] exception handling
-*** TODO yield (via continuation monad)
-*** TODO minimise monad usage for r/o stuff
-*** work through t3 tests to complete implementation 
-**** TODO vector.t3
