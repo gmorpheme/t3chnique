@@ -1,6 +1,8 @@
 (defproject t3chnique "0.0.1-SNAPSHOT"
   :description "TADS 3 implementation"
-  :url "http://dev.gmorpheme.net/t3chnique"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :url "http://github.com/gmorpheme/t3chnique"
   :resources-path "resources"
   :main t3chnique.main
   :dependencies [[org.clojure/clojure "1.5.1"]
@@ -14,7 +16,9 @@
                  [ring-middleware-format "0.3.2"]
                  [nio "1.0.2"]
                  [hiccup "1.0.5"]
-                 [ch.qos.logback/logback-classic "1.1.1"]]
+                 ;; for logback and groovy configuration
+                 [ch.qos.logback/logback-classic "1.1.1"]
+                 [org.codehaus.groovy/groovy "2.2.2"]]
   :jvm-opts ["-Xms48m" "-Xmx1g" "-XX:MaxPermSize=512M" "-server"]
 
   :repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot"

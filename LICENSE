@@ -1,0 +1,15 @@
+  e:/local/dev/marston:
+  total used in directory 13 available 997502744
+  drwxrwxrwx  1 greg None     0 03-22 17:30 .
+  drwxrwxrwx  1 greg None     0 03-21 15:10 ..
+  drwxrwxrwx  1 greg None     0 03-22 17:34 .git
+  -rw-rw-rw-  1 greg None    93 03-21 15:10 .gitignore
+  -rw-rw-rw-  1 greg None     5 03-22 17:28 .nrepl-port
+  -rw-rw-rw-  1 greg None 11434 03-21 15:10 LICENSE
+  -rw-rw-rw-  1 greg None  1150 03-22 17:30 README.md
+  -rw-rw-rw-  1 greg None   285 03-22 17:27 project.clj
+  drwxrwxrwx  1 greg None     0 03-21 15:10 resources
+  drwxrwxrwx  1 greg None     0 03-21 15:10 src
+  drwxrwxrwx  1 greg None     0 03-22 10:05 target
+  drwxrwxrwx  1 greg None     0 03-22 17:26 test
+  drwxrwxrwx  1 greg None     0 03-22 17:30 ~
