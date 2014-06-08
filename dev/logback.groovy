@@ -10,6 +10,6 @@ appender("CONSOLE", ConsoleAppender) {
 
 scan("60 seconds")
 
-logger("t3chnique", TRACE)
+logger("t3chnique", WARN)
 
-root(INFO, ["CONSOLE"])
+root(WARN, ["CONSOLE"])

@@ -3,7 +3,9 @@
             [t3chnique.primitive :as p]
             [t3chnique.metaclass.object :as obj]
             [t3chnique.vm :as vm]
-            [t3chnique.monad :as m])
+            [t3chnique.monad :as m]
+            [t3chnique.metaclass.collection :as coll]
+            [t3chnique.metaclass.object :as obj])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
         [t3chnique.monad :only [vm-m do-vm m-apply]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
@@ -52,9 +54,11 @@
 
   mc/MetaClass
 
-  (load-from-image [self buf o])
+  (load-from-image [self buf o]
+                                        ; TODO vector load-from-image
+    )
 
-  ; [] [capacity] [src] [capacity src] [src copy-count]
+                                        ; [] [capacity] [src] [capacity src] [src copy-count]
   (load-from-stack [_ argc]
 
     (case argc
@@ -75,7 +79,10 @@
   (get-property [self propid argc]
     (let [mcidx (:metaclass self)]
       (do-vm
-       [[obj {f :value}] (m-apply #(mc/get-intrinsic-method % mcidx propid vec-table))
+       [f (mc/lookup-intrinsic-m propid
+                                 :vector vec-table
+                                 :collection coll/property-table
+                                 :object obj/property-table)
         r (f argc)]
        r)))
   

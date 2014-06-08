@@ -1,10 +1,10 @@
 (ns ^{:doc "Run compiled t3 test cases from TADS3 source"}
   t3chnique.t3-test
   (:require [t3chnique.monad :as m]
+            [t3chnique.metaclass :as mc]
             [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]
             [t3chnique.parse :as parse]
-            [t3chnique.metaclass :as mc]
             [t3chnique.intrinsics :as bif]
             [t3chnique.intrinsics.t3vm :as t3vm]
             [t3chnique.intrinsics.gen :as gen]
@@ -151,3 +151,6 @@
   (let [s (run "dstr")]
     (compare-trace "dstr") => true))
 
+(future-fact "cube"
+  (let [s (run "cube")]
+    (compare-trace "cube") => true))

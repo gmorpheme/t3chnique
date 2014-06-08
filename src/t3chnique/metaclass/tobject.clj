@@ -69,7 +69,7 @@ final instance remains in the sequence."
 (defn get-prop-intrinsic
   "Get a property by considering TadsObject's intrinsic methods."
   [state {mcidx :metaclass} pid]
-  (mc/get-intrinsic-method state mcidx pid tobj-table))
+  (mc/lookup-intrinsic state pid mcidx tobj-table))
 
 (defn get-prop
   "Get property"

@@ -19,7 +19,8 @@
   (do-vm [_ (monads/m-seq ops)] nil))
 
 (defn m-apply
-  "Return result of applying f to state, do not evolve state."
+  "Lift non monadic function with state as first arg to monadic
+function."
   [f & args]
   {:pre [f]}
   (fn [s] {:pre [s]} [(apply f s args) s]))

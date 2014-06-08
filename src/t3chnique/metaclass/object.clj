@@ -3,22 +3,25 @@
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]))
 
 
-(def obj-table
+(def property-table
   [
-   (fn undef [])
-   (fn of-kind [])
-   (fn sclist [])
-   (fn propdef [])
-   (fn proptype [])
-   (fn get-prop-list [])
-   (fn get-prop-params [])
-   (fn is-class [])
-   (fn propinh [])
-   (fn is-transient [])
+   (fn undef [self argc])
+   (fn of-kind [self argc])
+   (fn sclist [self argc])
+   (fn propdef [self argc])
+   (fn proptype [self argc])
+   (fn get-prop-list [self argc])
+   (fn get-prop-params [self argc])
+   (fn is-class [self argc])
+   (fn propinh [self argc])
+   (fn is-transient [self argc])
    ])
 
+(defrecord RootObject [])
 
 (defn get-prop
   "TODO"
   [state self pid]
   nil)
+
+(mc/register-metaclass! "root-object/030004" nil)

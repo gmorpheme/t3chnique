@@ -17,6 +17,8 @@ and function set protocols."}
 (do (in-ns 't3chnique.metaclass.string)
     (clojure.core/declare add-to-str)
     (clojure.core/declare create)
+    (in-ns 't3chnique.metaclass.list)
+    (clojure.core/declare tads-list)
     (in-ns 't3chnique.vm))
 
 ;; vm-m implementation
@@ -643,11 +645,16 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 
   (fn [target-val pid argc]
 
-    {:pre [(vm-obj-or-nil? target-val)
-           (number? pid)]}
+    {:pre [(number? pid)]}
 
+    (trace "Accessing property" pid "of" target-val)
     (cond
-     (vm-list? target-val) (abort "TODO Constant list property access")
+     (vm-list? target-val) (do-vm
+                            [lst (as-list target-val)
+                             :let [tlst (t3chnique.metaclass.list/tads-list lst)]
+                             [defining-obj prop-val] (locate-property-fn tlst pid argc)
+                             r (handle-property-fn tlst defining-obj tlst pid prop-val argc)]
+                            r)
      (vm-sstring? target-val) (abort "TODO Constant string property access")
      (vm-obj? target-val) (do-vm
                            [target (obj-retrieve (value target-val))

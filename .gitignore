@@ -13,3 +13,12 @@ pom.xml
 /test/t3chnique/out/arith.t3.trc
 /test/t3chnique/out/basic.t3.err
 /test/t3chnique/out/basic.t3.trc
+/t3/empty/Scripts/
+/t3/empty/empty.tdbconfig
+/t3/suite/GameInfo.txt
+/t3/suite/Scripts/
+/t3/suite/suite.tdbconfig
+*.trc
+*.err
+/.nrepl-port
+/.lein-repl-history

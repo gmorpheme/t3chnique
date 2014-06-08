@@ -1,8 +1,11 @@
 (ns t3chnique.metaclass
   (:require [clojure.string :as string]
             [t3chnique.intrinsics :as bif]
-            [t3chnique.primitive :as p])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq]]
+            [t3chnique.primitive :as p]
+            [t3chnique.monad :as m]
+            [t3chnique.common :refer [indexed positions]]
+            [clojure.tools.logging :refer [trace info]])
+  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
 (defprotocol MetaClass
@@ -13,7 +16,7 @@
 
   (load-from-stack [_ argc]
     "Return monadic value to create from stack.")
-  
+
   (get-property [self propid argc]
     "Monadic value to return [defining-object property-value]. When argc
 is not nil, intrinsic methods may be invoked. Otherwise a vm-native-code
@@ -56,30 +59,41 @@ and alternative strategies should be attempted (op overloading).")
 
 (defn unknown-metaclass [] (Unimplemented.))
 
-(defonce metaclasses (atom {:dictionary2 unknown-metaclass
-                            :grammar-production unknown-metaclass
-                            :anon-func-ptr unknown-metaclass
-                            :int-class-mod unknown-metaclass
-                            :root-object unknown-metaclass
-                            :intrinsic-class unknown-metaclass
+(defonce metaclasses (atom {
                             :collection unknown-metaclass
                             :iterator unknown-metaclass
                             :indexed-iterator unknown-metaclass
                             :character-set unknown-metaclass
                             :bytearray unknown-metaclass
                             :regex-pattern unknown-metaclass
-                            :lookuptable unknown-metaclass
                             :weakreflookuptable unknown-metaclass
                             :lookuptable-iterator unknown-metaclass
                             :file unknown-metaclass
                             :string-comparator unknown-metaclass
                             :bignumber unknown-metaclass
-                            :stack-frame-desc unknown-metaclass}))
+                            :stringbuffer unknown-metaclass}))
 
 (defn register-metaclass! [metaclass-id constructor]
   (let [[id version] (bif/parse-id metaclass-id)
         kw (keyword id)]
+    (info "Registering metaclass:" metaclass-id)
     (swap! metaclasses assoc kw constructor)))
+
+(defn- find-metaclass-index-by-id
+  "Find metaclass in mcld by full id match."
+  [mcld id]
+  (first
+   (keep-indexed
+    #(when (= id (:metaclass-id %2)) %1)
+    mcld)))
+
+(defn find-metaclass-by-id
+  "Find metaclass in cld by name / keyword match."
+  [mcld metaclass-id]
+  (first
+   (filter
+    #(= metaclass-id (:metaclass-id %))
+    mcld)))
 
 (defn wire-up-metaclasses
   "Takes MCLD block from image and wires in metaclass implementations"
@@ -88,6 +102,7 @@ and alternative strategies should be attempted (op overloading).")
     (let [[n version-required] (string/split name #"/")
           k (keyword n)
           ctor (k @metaclasses)]
+      (info "Wiring up metaclass: " name)
       (when (nil? ctor) (throw (RuntimeException. (str "Metaclass " k " not available"))))
       {:metaclass-id k :pids pids :metaclass ctor :_prototype (ctor)})))
 
@@ -111,8 +126,25 @@ and alternative strategies should be attempted (op overloading).")
                                 (assoc :oid (:oid obj)))])
                   (:objects oblock)))))
 
-(defn get-intrinsic-method [{:keys [mcld] :as state} mcidx pid table]
-  (let [{pids :pids} (nth mcld mcidx)
-        dict (zipmap pids table)
-        f (get dict pid nil)]
-    (when f (p/vm-native-code f))))
+
+(defn lookup-intrinsic
+  "Lookup an intrinsic method by property id against a sequence of
+metaclass id / method table pairs. e.g. 
+
+(lookup-intrinsic vm 23 :list list/property-table :collection coll/property-table ..)"
+  [state propid & mc-table-pairs]
+  
+  {:pre [(even? (count mc-table-pairs))
+         (number? propid)]}
+  (let [pairs (partition 2 mc-table-pairs)
+        mcld (:mcld state)]
+    (loop [[[name prop-table] & more] pairs]
+      (when name
+        (let [{pids :pids} (find-metaclass-by-id mcld name)]
+          (if-let [property-index (first (positions #{propid} pids))]
+            (p/vm-native-code (get prop-table property-index))
+            (recur more)))))))
+
+(defn lookup-intrinsic-m
+  [propid & mc-table-pairs]
+  (m/m-apply #(apply lookup-intrinsic % propid mc-table-pairs)))

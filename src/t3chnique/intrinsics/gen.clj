@@ -5,6 +5,7 @@
             [t3chnique.primitive :as p]
             [t3chnique.metaclass :as mc]
             [t3chnique.monad :as m]
+            [clojure.tools.logging :refer [info trace debug]]
             [clojure.algo.monads :refer [m-seq fetch-val fetch-state]]))
 
 (defn dataType
@@ -38,6 +39,7 @@ specified."
 
   (fn [o]
     {:pre [#(not (or (nil? o) (p/vm-obj? o)))]} ;; full map not id
+    (trace "Testing oid" o " for match")
     (and (>= (:oid o) start-id)
          (not false)             ; TODO intrinsic class mods
          (not false)             ; list or string classes also ignored
