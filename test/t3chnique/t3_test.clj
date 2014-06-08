@@ -14,6 +14,8 @@
             [clojure.string :as string]
             [clojure.java.io :as io]
             [clojure.tools.logging :refer [trace debug info]])
+  (:import [java.util Date]
+           [java.text DateFormat])
   (:use [midje.sweet]))
 
 (defrecord TraceHost [])
@@ -61,6 +63,15 @@
 
 (defn trace-host []
   (TraceHost.))
+
+(defn dump-state [s]
+  (let [fmt (DateFormat/getDateTimeInstance DateFormat/SHORT DateFormat/SHORT)
+        now (Date.)
+        filename (string/replace
+                  (str "state-" (.format fmt now) ".edn")
+                  #"[ :/]"
+                  "_")]
+    (spit filename (pr-str s))))
 
 (defn trace-step
   "Execute the op code referenced by the ip register."
@@ -117,6 +128,7 @@
                        (catch Exception e
                          (spit (str "test/t3chnique/out/" name ".err")
                                (str (format-trace s) "\nexception: " e))
+                         (dump-state s)
                          (throw e)))]
           (if r
             [r s+]
@@ -151,6 +163,6 @@
   (let [s (run "dstr")]
     (compare-trace "dstr") => true))
 
-(future-fact "cube"
+(fact "cube"
   (let [s (run "cube")]
     (compare-trace "cube") => true))

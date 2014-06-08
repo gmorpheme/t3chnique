@@ -22,3 +22,4 @@ pom.xml
 *.err
 /.nrepl-port
 /.lein-repl-history
+*.log

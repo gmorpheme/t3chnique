@@ -4,7 +4,7 @@
             [t3chnique.primitive :as p]
             [t3chnique.monad :as m]
             [t3chnique.common :refer [indexed positions]]
-            [clojure.tools.logging :refer [trace info]])
+            [clojure.tools.logging :refer [trace info spy]])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
@@ -114,8 +114,9 @@ and alternative strategies should be attempted (op overloading).")
 
 (defn read-object-block
   "Read an image object block and represent as map of oid to obj
-  map (as returned by metaclass load-from-image) together with
-  metaclass and oid keys."
+map (as returned by metaclass load-from-image) together with
+metaclass and oid keys.
+"
   [mcld oblock]
   (let [mcld-index (:mcld-index oblock)
         mclass-ctor (:metaclass (nth mcld mcld-index))
@@ -127,11 +128,35 @@ and alternative strategies should be attempted (op overloading).")
                   (:objects oblock)))))
 
 
+(defn process-intrinsic-class-objects
+  "Process all the objects and link back any metaclasses to the 
+intrinsic class objects that represent them by storing oid in metaclass
+under key :intrinsic-class-oid. Return enhanced mcld."
+  [mcld objs]
+  {pre [(vector? mcld) (vector? objs)]}
+  (info "Wiring up intrinsic class objects")
+  (into []
+        (reduce
+         (fn [mcs [oid obj]]
+           (trace "Considering object" obj)
+           (if-let [idx (:metaclass-index obj)]
+             (do
+               (info "Wired in intrinsic class object for metaclass " idx)
+               (update-in mcs [idx :intrinsic-class-oid] (constantly oid)))
+             mcs))
+         mcld
+         objs)))
+
 (defn lookup-intrinsic
   "Lookup an intrinsic method by property id against a sequence of
 metaclass id / method table pairs. e.g. 
 
-(lookup-intrinsic vm 23 :list list/property-table :collection coll/property-table ..)"
+(lookup-intrinsic vm 23 :list list/property-table :collection coll/property-table ..)
+
+Returns pair of the intrinsic class oid for the metaclass that defines
+the intrinsic and the intrinsic method itself, which when called delivers
+a monadic value.
+"
   [state propid & mc-table-pairs]
   
   {:pre [(even? (count mc-table-pairs))
@@ -140,9 +165,9 @@ metaclass id / method table pairs. e.g.
         mcld (:mcld state)]
     (loop [[[name prop-table] & more] pairs]
       (when name
-        (let [{pids :pids} (find-metaclass-by-id mcld name)]
+        (let [{pids :pids intcls :intrinsic-class-oid} (find-metaclass-by-id mcld name)]
           (if-let [property-index (first (positions #{propid} pids))]
-            (p/vm-native-code (get prop-table property-index))
+            [(p/vm-obj intcls) (p/vm-native-code (get prop-table property-index))]
             (recur more)))))))
 
 (defn lookup-intrinsic-m

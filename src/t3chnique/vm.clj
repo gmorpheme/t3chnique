@@ -91,7 +91,9 @@ on block type."
   (assoc s :mcld (mc/wire-up-metaclasses (:entries b))))
 
 (defmethod load-image-block "OBJS" [s b]
-  (merge-with merge s {:objs (mc/read-object-block (:mcld s) b)}))
+  (let [objs (mc/read-object-block (:mcld s) b)
+        mcld (mc/process-intrinsic-class-objects (:mcld s) objs)]
+    (assoc s :objs objs :mcld mcld)))
 
 (defmethod load-image-block "EOF " [s b]
   (assoc s :next-oid (inc (apply max (keys (:objs s))))))
@@ -670,6 +672,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   "Property handler which calls a method if appropriate or returns
 property value directly."
   [target defining self pid prop-val argc]
+  (trace "vm/eval-prop" self pid prop-val argc)
   (if prop-val
     (cond
      (not (vm-auto-eval? prop-val)) (return prop-val)
@@ -688,6 +691,7 @@ property value directly."
   "Property handler which won't call methods but only returns data
 items if available."
   [target defining self pid prop-val argc]
+  (trace "vm/data-only" self pid prop-val argc)
   (if prop-val
     (cond
      (not (vm-auto-eval? prop-val)) (return prop-val)

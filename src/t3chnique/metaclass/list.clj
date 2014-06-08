@@ -57,13 +57,14 @@
   ; Get property - intrinsics and superclass properties only
   (mc/get-property [self propid argc]
     {:pre [(number? propid)]}
+    (trace "TadsList/get-property" propid argc)
     (m/do-vm
      [method (mc/lookup-intrinsic-m propid
                                     :list property-table
                                     :collection coll/property-table
                                     :object obj/property-table)
       r ((p/value method) self argc)]
-     r))
+     [nil r])) ; this needs to be the class obj of the metaclass that defined it
   
   (mc/get-as-seq [self]
     val))
