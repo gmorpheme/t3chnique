@@ -2,7 +2,8 @@
   (:require [t3chnique.metaclass :as mc]
             [t3chnique.primitive :as p]
             [t3chnique.metaclass.object :as obj]
-            [t3chnique.monad :as m])
+            [t3chnique.monad :as m]
+            [clojure.tools.logging :refer [trace]])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val fetch-state]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8 binary]]))
 
@@ -66,17 +67,13 @@ final instance remains in the sequence."
       (second pchain)
       (first pchain))))
 
-(defn get-prop-intrinsic
-  "Get a property by considering TadsObject's intrinsic methods."
-  [state {mcidx :metaclass} pid]
-  (mc/lookup-intrinsic state pid mcidx tobj-table))
-
 (defn get-prop
   "Get property"
   [state self pid]
   (or (get-prop-from-chain state self pid)
-      (get-prop-intrinsic state self pid)
-      (obj/get-prop state self pid)))
+      (mc/lookup-intrinsic state pid
+                       :tads-object tobj-table
+                       :root-object obj/property-table)))
 
 (defrecord TadsObject [is-class bases properties]
 
@@ -137,8 +134,12 @@ final instance remains in the sequence."
   (mc/get-as-string [self]))
 
 (defn tads-object
-  ([] (TadsObject. nil nil nil))
-  ([is-class bases properties] (TadsObject. is-class bases properties)))
+  ([]
+     (trace "create tads-object")
+     (TadsObject. nil nil nil))
+  ([is-class bases properties]
+     (trace "create tads-object(" is-class bases properties ")")
+     (TadsObject. is-class bases properties)))
 
 (mc/register-metaclass! "tads-object/030005" tads-object)
 

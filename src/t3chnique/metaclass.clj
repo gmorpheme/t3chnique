@@ -98,12 +98,14 @@ and alternative strategies should be attempted (op overloading).")
 (defn wire-up-metaclasses
   "Takes MCLD block from image and wires in metaclass implementations"
   [mcld]
+  (trace "Metaclass table: " mcld)
   (for [{:keys [name pids]} mcld]
     (let [[n version-required] (string/split name #"/")
           k (keyword n)
           ctor (k @metaclasses)]
       (info "Wiring up metaclass: " name)
-      (when (nil? ctor) (throw (RuntimeException. (str "Metaclass " k " not available"))))
+      (when (nil? ctor)
+        (throw (RuntimeException. (str "Metaclass " k " not available. Known metaclasses: " (keys @metaclasses)))))
       {:metaclass-id k :pids pids :metaclass ctor :_prototype (ctor)})))
 
 (defn prototype
@@ -119,7 +121,10 @@ metaclass and oid keys.
 "
   [mcld oblock]
   (let [mcld-index (:mcld-index oblock)
+        _ (trace "reading object block : " oblock)
+        _ (trace "Metaclass table now: " mcld)
         mclass-ctor (:metaclass (nth mcld mcld-index))
+        _ (trace "constructor : " mclass-ctor)
         prototype (mclass-ctor)]
     (into {} (map (fn [obj] [(:oid obj)
                             (-> (load-from-image prototype (:bytes obj) 0)
@@ -141,7 +146,7 @@ under key :intrinsic-class-oid. Return enhanced mcld."
            (trace "Considering object" obj)
            (if-let [idx (:metaclass-index obj)]
              (do
-               (info "Wired in intrinsic class object for metaclass " idx)
+               (info "Wired in intrinsic class object " oid " for metaclass " idx)
                (update-in mcs [idx :intrinsic-class-oid] (constantly oid)))
              mcs))
          mcld

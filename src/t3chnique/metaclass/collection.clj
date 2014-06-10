@@ -18,6 +18,8 @@
 (defrecord Collection [])
 
 (defn collection
-  ([] (Collection.)))
+  ([]
+     (trace "create collection")
+     (Collection.)))
 
 (mc/register-metaclass! "collection/030000" collection)

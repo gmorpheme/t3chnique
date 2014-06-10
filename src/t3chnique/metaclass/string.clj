@@ -3,6 +3,7 @@
             [t3chnique.monad :as m]
             [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]
+            [clojure.tools.logging :refer [trace]]
             [clojure.algo.monads :refer [domonad with-monad m-seq fetch-val]]
             [t3chnique.parse :refer [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
 
@@ -57,8 +58,12 @@
 
 (defn tads-string
   "Create a TadsString."
-  ([] (TadsString. nil))
-  ([text] (TadsString. text)))
+  ([]
+     (trace "create tads-string")
+     (TadsString. nil))
+  ([text]
+     (trace "create tads-string(" text ")")
+     (TadsString. text)))
 
 (mc/register-metaclass! "string/030008" tads-string)
 

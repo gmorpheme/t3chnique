@@ -2,7 +2,8 @@
   (:require [t3chnique.metaclass :as mc]
             [t3chnique.vm :as vm]
             [t3chnique.monad :as m]
-            [t3chnique.primitive :as p])
+            [t3chnique.primitive :as p]
+            [clojure.tools.logging :refer [trace]])
   (:use [clojure.algo.monads :only [domonad]]
         [t3chnique.parse :only [skip uint2 uint4 byteparser-m]]))
 
@@ -24,6 +25,8 @@
   )
 
 (defn int-cls
-  ([] (IntrinsicClass. nil nil)))
+  ([]
+     (trace "create int-cls")
+     (IntrinsicClass. nil nil)))
 
 (mc/register-metaclass! "intrinsic-class/030001" int-cls)

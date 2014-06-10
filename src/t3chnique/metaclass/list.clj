@@ -62,7 +62,7 @@
      [method (mc/lookup-intrinsic-m propid
                                     :list property-table
                                     :collection coll/property-table
-                                    :object obj/property-table)
+                                    :root-object obj/property-table)
       r ((p/value method) self argc)]
      [nil r])) ; this needs to be the class obj of the metaclass that defined it
   
@@ -71,8 +71,12 @@
 
 (defn tads-list
   "Create non-interned list (no :oid or :metaclass)."
-  ([] (TadsList. nil))
-  ([elems] (TadsList. elems)))
+  ([]
+     (trace "creat tads-list")
+     (TadsList. nil))
+  ([elems]
+     (trace "create tads-list(elems)")
+     (TadsList. elems)))
 
 (defn create [elems]
   (m/do-vm

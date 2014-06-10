@@ -92,8 +92,11 @@ on block type."
 
 (defmethod load-image-block "OBJS" [s b]
   (let [objs (mc/read-object-block (:mcld s) b)
+        _ (trace "loaded objects: " (keys objs))
         mcld (mc/process-intrinsic-class-objects (:mcld s) objs)]
-    (assoc s :objs objs :mcld mcld)))
+    (assoc
+        (merge-with merge s {:objs objs})
+      :mcld mcld)))
 
 (defmethod load-image-block "EOF " [s b]
   (assoc s :next-oid (inc (apply max (keys (:objs s))))))
@@ -102,6 +105,7 @@ on block type."
   s)
 
 (defn vm-from-image [bs]
+  (info "===*** Loading new VM image ***===")
   (reduce load-image-block (vm-state) bs))
 
 (defrecord OpCode [code mnemonic parse-spec run-fn])
@@ -255,10 +259,12 @@ instruction is complete."
    oid))
 
 (defn obj-store [oid o]
+  (trace "obj-store" oid)
   (update-val :objs #(assoc % oid o)))
 
 (defn obj-retrieve [oid]
   {:pre [(number? oid)]}
+  (trace "obj-retrieve" oid)
   (m-apply get-in [:objs oid]))
 
 (defn get-method-header

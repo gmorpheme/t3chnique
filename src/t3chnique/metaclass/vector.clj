@@ -5,7 +5,8 @@
             [t3chnique.vm :as vm]
             [t3chnique.monad :as m]
             [t3chnique.metaclass.collection :as coll]
-            [t3chnique.metaclass.object :as obj])
+            [t3chnique.metaclass.object :as obj]
+            [clojure.tools.logging :refer [trace]])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
         [t3chnique.monad :only [vm-m do-vm m-apply]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
@@ -91,7 +92,11 @@
   (get-as-string [_] nil))
 
 (defn tads-vector
-  ([] (Vector. []))
-  ([src] (Vector. src)))
+  ([]
+     (trace "create tads-vector")
+     (Vector. []))
+  ([src]
+     (trace "create tads-vector(" src ")")
+     (Vector. src)))
 
 (mc/register-metaclass! "vector/030005" tads-vector)

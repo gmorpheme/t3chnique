@@ -33,24 +33,30 @@
    (p/vm-nil? v) (m/in-vm (m-result ""))
    :else (m/abort "VMERR_BAD_TYPE_BIF")))
 
+(defmacro traced [f]
+  `(fn [self# argc#]
+    (trace ~(str f))
+    (~f self# argc#)))
+
 (extend TraceHost
     
   bif/t3vm
-  {:t3RunGC t3vm/t3RunGC
-   :t3GetVMVsn t3vm/t3GetVMVsn
-   :t3GetVMID t3vm/t3GetVMID
-   :t3GetVMBannder t3vm/t3GetVMBanner
-   :t3GetVMPreinitMode t3vm/t3GetVMPreinitMode
-   :t3DebugTrace t3vm/t3DebugTrace
-   :t3SetSay t3vm/t3SetSay}
+  {:t3RunGC (traced t3vm/t3RunGC)
+   :t3GetVMVsn (traced t3vm/t3GetVMVsn)
+   :t3GetVMID (traced t3vm/t3GetVMID)
+   :t3GetVMBannder (traced t3vm/t3GetVMBanner)
+   :t3GetVMPreinitMode (traced t3vm/t3GetVMPreinitMode)
+   :t3DebugTrace (traced t3vm/t3DebugTrace)
+   :t3SetSay (traced t3vm/t3SetSay)}
   
   bif/tads-gen
-  {:dataType gen/dataType
-   :firstObj gen/firstObj
-   :nextObj  gen/nextObj}
+  {:dataType (traced gen/dataType)
+   :firstObj (traced gen/firstObj)
+   :nextObj (traced gen/nextObj)}
 
   bif/tads-io
   {:tadsSay (fn [_ argc]
+              (trace "tads-io/tadsSay")
               (m/do-vm
                [args (m-seq (repeat argc (m-bind
                                           (vm/stack-pop)
@@ -163,6 +169,6 @@
   (let [s (run "dstr")]
     (compare-trace "dstr") => true))
 
-(fact "cube"
+(future-fact "cube"
   (let [s (run "cube")]
     (compare-trace "cube") => true))

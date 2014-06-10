@@ -5,6 +5,7 @@ and intrinstic function sets."}
             t3chnique.metaclass.object
             t3chnique.metaclass.tobject
             t3chnique.metaclass.string
+            t3chnique.metaclass.collection
             t3chnique.metaclass.vector
             t3chnique.metaclass.list
             t3chnique.metaclass.dictionary2
@@ -13,8 +14,8 @@ and intrinstic function sets."}
             t3chnique.metaclass.intcls
             t3chnique.metaclass.intclsmod
             t3chnique.metaclass.lookup
-            t3chnique.metaclass.root
             t3chnique.metaclass.stackframe
+            t3chnique.metaclass.tobject
             [t3chnique.intrinsics :as bif]
             [t3chnique.intrinsics.t3vm :as t3vm]
             [t3chnique.intrinsics.gen :as gen]))

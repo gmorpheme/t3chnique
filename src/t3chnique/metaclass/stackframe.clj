@@ -2,7 +2,8 @@
   (:require [t3chnique.metaclass :as mc]
             [t3chnique.vm :as vm]
             [t3chnique.monad :as m]
-            [t3chnique.primitive :as p])
+            [t3chnique.primitive :as p]
+            [clojure.tools.logging :refer [trace]])
   (:use [clojure.algo.monads :only [domonad]]
         [t3chnique.parse :only [uint2 byteparser-m data-holder times]]))
 
@@ -23,7 +24,9 @@
     ))
 
 (defn stack-frame-ref
-  ([] (StackFrameRef.)))
+  ([]
+     (trace "create stack-frame-ref")
+     (StackFrameRef.)))
 
 (mc/register-metaclass! "stack-frame-desc/030000" stack-frame-desc)
 (mc/register-metaclass! "stack-frame-ref/030000" stack-frame-ref)

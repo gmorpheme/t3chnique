@@ -1,5 +1,6 @@
 (ns t3chnique.metaclass.object
-  (:require [t3chnique.metaclass :as mc])
+  (:require [t3chnique.metaclass :as mc]
+            [clojure.tools.logging :refer [trace]])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]))
 
 
@@ -17,11 +18,16 @@
    (fn is-transient [self argc])
    ])
 
-(defrecord RootObject [])
+(defrecord RootObject []
+  mc/MetaClass
 
-(defn get-prop
-  "TODO"
-  [state self pid]
-  nil)
+  (mc/load-from-image [self buf o]
+    (RootObject.))
+  )
 
-(mc/register-metaclass! "root-object/030004" nil)
+(defn root
+  ([]
+     (trace "create root")
+     (RootObject.)))
+
+(mc/register-metaclass! "root-object/030004" root)
