@@ -24,3 +24,4 @@ pom.xml
 /.lein-repl-history
 *.log
 *.edn
+*.log#
