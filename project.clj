@@ -5,7 +5,7 @@
   :url "http://github.com/gmorpheme/t3chnique"
   :resources-path "resources"
   :main t3chnique.main
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
                  [org.clojure/algo.monads "0.1.5"]
                  [org.clojure/tools.cli "0.3.1"]
