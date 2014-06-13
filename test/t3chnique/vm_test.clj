@@ -112,10 +112,11 @@
       :ep 0x1234
       :pc 0x123e
       :ip 0x30
-      :fp 12
-      :sp 16
+      :fp 13
+      :sp 17
       :sequence 1
       :stack (st 1 2 (vm-prop 0) nil nil nil nil nil
+                 (vm-codeptr nil)
                  (vm-codeofs 0x20)
                  (vm-codeofs 0x10)
                  2 (vm-stack 0) nil nil nil nil))
@@ -127,7 +128,7 @@
 
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
-                          :fp 12
+                          :fp 13
                           :stack (st 1 ;arg
                                      2 ;arg
                                      nil ;pid
@@ -136,6 +137,7 @@
                                      nil ;slf
                                      nil ;ivk
                                      nil ;sfr
+                                     (vm-codeptr nil) ;rc
                                      (vm-codeofs 0x20) ;pc
                                      (vm-codeofs 0x10) ;ep
                                      2 ;args
@@ -146,8 +148,9 @@
 
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
-                          :fp 12
+                          :fp 13
                           :stack (st 1 2 nil nil nil nil nil nil
+                                     (vm-codeptr nil)
                                      (vm-codeofs 0x20)
                                      (vm-codeofs 0x10)
                                      2 0 nil nil nil nil))]
@@ -161,23 +164,24 @@
       (apply-with-stack stack [(f nil i)]) => (conj stack (vm-int i)))))
 
 (fact "Argument access"
-  (let [vm (vm-state-with :fp 12
-                          :stack (st 101 100 nil nil nil nil (vm-nil) (vm-nil) (vm-codeofs 0x20) (vm-codeofs 0x10)
+  (let [vm (vm-state-with :fp 13
+                          :stack (st 101 100 nil nil nil nil (vm-nil) (vm-nil) (vm-codeptr nil) (vm-codeofs 0x20) (vm-codeofs 0x10)
                                      2 0 nil nil nil nil))]
     (doseq [i (range 2) f [op-getarg1 op-getarg2]]
       (apply-ops vm [(f nil i)]) => 
-      (contains {:sp 17 :stack (has-suffix (vm-int (+ 100 i)))}))))
+      (contains {:sp 18 :stack (has-suffix (vm-int (+ 100 i)))}))))
 
 (fact "Push self"
-  (let [vm (vm-state-with :fp 12
+  (let [vm (vm-state-with :fp 13
              :stack (st 101 100
                         (vm-prop 10) (vm-obj 0x12) (vm-obj 0x22) (vm-obj 0x33)
                         (vm-nil)
                         (vm-nil)
+                        (vm-codeptr nil)
                         (vm-codeofs 0x20)
                         (vm-codeofs 0x10)
                         2 0 nil nil nil nil))]
-    (apply-ops vm [(op pushself)]) => (contains {:sp 17 :stack (has-suffix (vm-obj 0x33))})))
+    (apply-ops vm [(op pushself)]) => (contains {:sp 18 :stack (has-suffix (vm-obj 0x33))})))
 
 (facts "Jumps"
   (let [init 0x66
@@ -224,8 +228,9 @@
 (facts "Stack access"
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
-                          :fp 10
+                          :fp 11
                           :stack (st 1 2 nil nil nil nil
+                                     (vm-codeptr nil)
                                      (vm-codeofs 0x20)
                                      (vm-codeofs 0x10)
                                      2 0 nil nil nil nil 999))]

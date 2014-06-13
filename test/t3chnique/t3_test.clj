@@ -80,23 +80,14 @@
     (spit filename (pr-str s))))
 
 (defn trace-step
-  "Execute the op code referenced by the ip register."
   [host]
-  (m/do-vm
-   [ip (vm/reg-get :ip)
-    [op args len] (vm/parse-op-at-ip)
-    _ (vm/set-pc (+ ip len))
-    stack (fetch-val :stack)
-    _ (update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))
-    ret (if (or (nil? ip) (zero? ip))
-          (vm/reg-get :r0)              ; finished return r0
-          (try
-            (apply (:run-fn op) (cons host (vals args)))
-            (catch Exception e
-              (println "During " op " with " args ", " e)
-              (throw e))))
-    _ (vm/commit-pc)]
-   ret))
+  (vm/step
+   host
+   (fn [op args ip]
+     (m/do-vm
+      [stack (fetch-val :stack)
+       _ (update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))]
+      nil))))
 
 (defn format-stack
   ([stack]
@@ -127,18 +118,12 @@
           m1 (m/exec-vm (vm/enter host) m0)
           m2 (assoc m1 :_trace [])
           stepper (trace-step host)]
-
-      (loop [s m1]
-        (let [[r s+] (try
-                       (m/run-vm stepper s)
-                       (catch Exception e
-                         (spit (str "test/t3chnique/out/" name ".err")
-                               (str (format-trace s) "\nexception: " e))
-                         (dump-state s)
-                         (throw e)))]
-          (if r
-            [r s+]
-            (recur s+)))))))
+      (vm/execute stepper m2
+                  (fn error-handler [s e]
+                    (spit (str "test/t3chnique/out/" name ".err")
+                          (str (format-trace s) "\nexception: " e))
+                    (dump-state s)
+                    (throw e))))))
 
 (defn run [name]
   (let [resource-name (str name ".t3")

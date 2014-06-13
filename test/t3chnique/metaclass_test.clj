@@ -28,8 +28,8 @@
               {:metaclass-id :bar
                :intrinsic-class-oid 20
                :pids [3 5 7 9 11]}]
-        foo-table ['a 'b 'c 'd 'e]
-        bar-table ['A 'B 'C 'D 'E]]
+        foo-table [nil 'a 'b 'c 'd 'e]
+        bar-table [nil 'A 'B 'C 'D 'E]]
     (lookup-intrinsic {:mcld mcld} 2 :foo foo-table :bar bar-table) => [(p/vm-obj 10) (p/vm-native-code 'a)]
     (lookup-intrinsic {:mcld mcld} 3 :foo foo-table :bar bar-table) => [(p/vm-obj 20) (p/vm-native-code 'A)]
     (lookup-intrinsic {:mcld mcld} 4 :foo foo-table :bar bar-table) => [(p/vm-obj 10) (p/vm-native-code 'b)]

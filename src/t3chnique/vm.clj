@@ -553,7 +553,8 @@ instruction is complete."
     fp (stack-pop)
     ac (stack-pop)
     of (stack-pop)
-    ep (stack-pop) ;; TODO recursive call descriptor too
+    ep (stack-pop)
+    rc (stack-pop)
     _ (m-seq (repeat (+ 6 (value ac)) (stack-pop)))
     _ (reg-set :fp (value fp))
     _ (reg-set :ep (value ep))
@@ -595,12 +596,12 @@ instruction is complete."
       (>= ac varmin)
       (= ac param-count))))
 
-(def FRAME-SIZE 10)
+(def FRAME-SIZE 11)
 
 (defn- get-stack-self []
   (do-vm
    [fp (reg-get :fp)
-    self (stack-get (- fp 7))]
+    self (stack-get (- fp (- FRAME-SIZE 3)))]
    (if (vm-obj? self) self (vm-obj nil))))
 
 (defn- get-stack-local [i]
@@ -609,11 +610,20 @@ instruction is complete."
     target (stack-get (+ fp i))]
    target))
 
+(defrecord RecursiveCallContext [bif self idx argc argp caller-addr])
+
+(defn recurse-from-bif [funcset idx argc]
+  (RecursiveCallContext. funcset nil idx argc nil nil))
+
+(defn recurse-from-intrinsic-class [self idx argc]
+  (RecursiveCallContext. nil self idx argc nil nil))
+
 
 (defn prepare-frame
   "Prepare stack frame for call. target-pid is (vm-prop), objs are
- (vm-obj) or (vm-nil). Func offset and argc are raw int."
-  [target-pid target-obj defining-obj self-obj func-offset argc]
+ (vm-obj) or (vm-nil). Func offset and argc are raw int. rc is 
+instance of RecursiveCallContext."
+  [target-pid target-obj defining-obj self-obj func-offset argc rc]
   {:pre [(vm-prop? target-pid)
          (vm-obj-or-nil? target-obj)
          (vm-obj-or-nil? defining-obj)
@@ -621,25 +631,28 @@ instruction is complete."
          (number? func-offset)
          (number? argc)]}
   (do-vm
+   ;; invocation frame
    [_ (stack-push target-pid) 
     _ (stack-push target-obj) ; object whose method is called
     _ (stack-push defining-obj) ; defining obj (may be superclass of target)
     _ (stack-push self-obj) ; self (method may belong to delegate)
     _ (stack-push (vm-nil)) ; TODO: "invokee"
-    _ (stack-push (vm-nil)) ; TODO: "stack frame references"
     ep (reg-get :ep)
     p (pc)
     fp (reg-get :fp)
+    ;; do_call
+    _ (stack-push (vm-nil)) ; TODO: "stack frame references"
     ;; TODO seems that recursive call descriptor should go here too
+    _ (stack-push (vm-codeptr rc))
     _ (stack-push (vm-codeofs (- p ep))) ; return offset
-    _ (stack-push (vm-codeofs ep)) ; current entry point
+    _ (stack-push (vm-codeofs ep)) ; current entry point should be codeptr
     _ (stack-push (vm-int argc))
     _ (stack-push (vm-stack fp))
     sp (reg-get :sp)
     _ (reg-set :fp sp)
     _ (reg-set :ep func-offset)
     mh (get-method-header func-offset)
-                                        ;            _ (m-when (check-argc mh arg_count))
+    ;;            _ (m-when (check-argc mh arg_count))
     _ (m-seq (repeat (:local-variable-count mh) (stack-push (vm-nil))))
     _ (set-pc (+ func-offset (:code-offset mh)))]
    nil))
@@ -690,7 +703,8 @@ property value directly."
                                            defining
                                            self
                                            (value prop-val)
-                                           argc))
+                                           argc
+                                           nil))
     (abort "not implemented propNotDefined")))
 
 (defn data-only
@@ -719,20 +733,20 @@ items if available."
            [_ (generic-get-prop self sm 1)]
            
            (valid? sf)
-           [_ (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1)]
+           [_ (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1 nil)]
 
            :else
            [_ (abort "VMERR_SAY_IS_NOT_DEFINED")]]]
    nil))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
-  (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count))
+  (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count nil))
 
 (defop ptrcall 0x59 [:ubyte arg_count]
   (do-vm
    [val (stack-pop)
     r (cond
-       (vm-funcptr? val) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value val) arg_count)
+       (vm-funcptr? val) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value val) arg_count nil)
        (vm-prop? val) (abort "todo as per ptrcallpropself")
        (vm-obj? val) (abort "todo ObjectCallProp")
        :else (abort "FUNCPTR_VAL_REQD"))]
@@ -1265,13 +1279,13 @@ them to account for the difference."
 (defop setarg1 0xE2 [:ubyte arg_number]
   (do-vm [fp (reg-get :fp)
           v (stack-pop)
-          _ (stack-set (- fp (+ 9 arg_number)) v)]
+          _ (stack-set (- fp (+ (dec FRAME-SIZE) arg_number)) v)]
          nil))
 
 (defop setarg2 0xE3 [:uint2 arg_number]
   (do-vm [fp (reg-get :fp)
           v (stack-pop)
-          _ (stack-set (- fp (+ 9 arg_number)) v)]
+          _ (stack-set (- fp (+ (dec FRAME-SIZE) arg_number)) v)]
          nil))
 
 ;TODO setind
@@ -1356,15 +1370,36 @@ with property set as specified. oid, pid numbers. val primitive."
    nil))
 
 (defn step
-  "Execute the op code referenced by the ip register."
-  [host]
+  "Execute the op code referenced by the ip register.
+   pre-action takes op args ip."
+  [host pre-action]
   (do-vm
-   [[op args len] (parse-op-at-ip)
+   [
+    
+    ;; parse op and set pc
+    [op args len] (parse-op-at-ip)
     ip (reg-get :ip)
     _ (set-pc (+ ip len))
-    ret (apply (:run-fn op) (cons host (vals args)))
+
+    ;; pre-action
+    _ (pre-action op args ip)
+
+    ;; run, commit pc, return
+    ret (if (or (nil? ip) (zero? ip))
+          (reg-get :r0)
+          (apply (:run-fn op) (cons host (vals args))))
     _ (commit-pc)]
    ret))
+
+(defn execute
+  "Repeatedly execute a monadic step until it returns a value.
+error-fn takes state and exception."
+  [stepper s error-fn]
+  (loop [s s]
+    (let [[r s+] (try (run-vm stepper s) (catch Exception e (error-fn s e)))]
+      (if r
+        [r s+]
+        (recur s+)))))
 
 (defn run-state
   "Run until an error occurs. Explicitly in the state monad!"

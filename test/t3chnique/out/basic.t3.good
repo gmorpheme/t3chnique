@@ -1,467 +1,467 @@
-[...nil x0 x0 1 st0] ip:1456 pushstr offset: 651
+[...# x0 x0 1 st0] ip:1456 pushstr offset: 651
 [...x0 x0 1 st0 '651] ip:1461 builtin_c argc: 1 func_index: 0
-[...nil x0 x0 1 st0] ip:1464 call arg_count: 0 func_offset: 0
-[...0 st11 nil nil nil] ip:10 zerolcl1 local_number: 2
-[...0 st11 nil nil 0] ip:12 getlcln2 
-[...st11 nil nil 0 0] ip:13 pushint8 val: 5
+[...# x0 x0 1 st0] ip:1464 call arg_count: 0 func_offset: 0
+[...0 st12 nil nil nil] ip:10 zerolcl1 local_number: 2
+[...0 st12 nil nil 0] ip:12 getlcln2 
+[...st12 nil nil 0 0] ip:13 pushint8 val: 5
 [...nil nil 0 0 5] ip:15 jge branch_offset: 53
-[...0 st11 nil nil 0] ip:18 pushint8 val: 7
-[...st11 nil nil 0 7] ip:20 setlcl1 local_number: 0
-[...0 st11 7 nil 0] ip:22 getlcln0 
-[...st11 7 nil 0 7] ip:23 call arg_count: 1 func_offset: 275
-[...nil x29 x0 1 st21] ip:285 getargn0 
-[...x29 x0 1 st21 7] ip:286 push_1 
-[...x0 1 st21 7 1] ip:287 jle branch_offset: 14
-[...nil x29 x0 1 st21] ip:290 getargn0 
-[...x29 x0 1 st21 7] ip:291 getargn0 
-[...x0 1 st21 7 7] ip:292 dec 
-[...x0 1 st21 7 6] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st35] ip:285 getargn0 
-[...x24 x275 1 st35 6] ip:286 push_1 
-[...x275 1 st35 6 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st35] ip:290 getargn0 
-[...x24 x275 1 st35 6] ip:291 getargn0 
-[...x275 1 st35 6 6] ip:292 dec 
-[...x275 1 st35 6 5] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st47] ip:285 getargn0 
-[...x24 x275 1 st47 5] ip:286 push_1 
-[...x275 1 st47 5 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st47] ip:290 getargn0 
-[...x24 x275 1 st47 5] ip:291 getargn0 
-[...x275 1 st47 5 5] ip:292 dec 
-[...x275 1 st47 5 4] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st59] ip:285 getargn0 
-[...x24 x275 1 st59 4] ip:286 push_1 
-[...x275 1 st59 4 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st59] ip:290 getargn0 
-[...x24 x275 1 st59 4] ip:291 getargn0 
-[...x275 1 st59 4 4] ip:292 dec 
-[...x275 1 st59 4 3] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st71] ip:285 getargn0 
-[...x24 x275 1 st71 3] ip:286 push_1 
-[...x275 1 st71 3 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st71] ip:290 getargn0 
-[...x24 x275 1 st71 3] ip:291 getargn0 
-[...x275 1 st71 3 3] ip:292 dec 
-[...x275 1 st71 3 2] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st83] ip:285 getargn0 
-[...x24 x275 1 st83 2] ip:286 push_1 
-[...x275 1 st83 2 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st83] ip:290 getargn0 
-[...x24 x275 1 st83 2] ip:291 getargn0 
-[...x275 1 st83 2 2] ip:292 dec 
-[...x275 1 st83 2 1] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st95] ip:285 getargn0 
-[...x24 x275 1 st95 1] ip:286 push_1 
-[...x275 1 st95 1 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st95] ip:302 push_1 
-[...x24 x275 1 st95 1] ip:303 retval 
-[...x24 x275 1 st83 2] ip:299 getr0 
-[...x275 1 st83 2 1] ip:300 mul 
-[...x24 x275 1 st83 2] ip:301 retval 
-[...x24 x275 1 st71 3] ip:299 getr0 
-[...x275 1 st71 3 2] ip:300 mul 
-[...x24 x275 1 st71 6] ip:301 retval 
-[...x24 x275 1 st59 4] ip:299 getr0 
-[...x275 1 st59 4 6] ip:300 mul 
-[...x24 x275 1 st59 24] ip:301 retval 
-[...x24 x275 1 st47 5] ip:299 getr0 
-[...x275 1 st47 5 24] ip:300 mul 
-[...x24 x275 1 st47 120] ip:301 retval 
-[...x24 x275 1 st35 6] ip:299 getr0 
-[...x275 1 st35 6 120] ip:300 mul 
-[...x24 x275 1 st35 720] ip:301 retval 
-[...x29 x0 1 st21 7] ip:299 getr0 
-[...x0 1 st21 7 720] ip:300 mul 
-[...x29 x0 1 st21 5040] ip:301 retval 
-[...0 st11 7 nil 0] ip:29 setlcl1r0 local_number: 1
-[...0 st11 7 5040 0] ip:31 pushstr offset: 0
-[...st11 7 5040 0 '0] ip:36 getlcln2 
+[...0 st12 nil nil 0] ip:18 pushint8 val: 7
+[...st12 nil nil 0 7] ip:20 setlcl1 local_number: 0
+[...0 st12 7 nil 0] ip:22 getlcln0 
+[...st12 7 nil 0 7] ip:23 call arg_count: 1 func_offset: 275
+[...# x29 x0 1 st23] ip:285 getargn0 
+[...x29 x0 1 st23 7] ip:286 push_1 
+[...x0 1 st23 7 1] ip:287 jle branch_offset: 14
+[...# x29 x0 1 st23] ip:290 getargn0 
+[...x29 x0 1 st23 7] ip:291 getargn0 
+[...x0 1 st23 7 7] ip:292 dec 
+[...x0 1 st23 7 6] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st38] ip:285 getargn0 
+[...x24 x275 1 st38 6] ip:286 push_1 
+[...x275 1 st38 6 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st38] ip:290 getargn0 
+[...x24 x275 1 st38 6] ip:291 getargn0 
+[...x275 1 st38 6 6] ip:292 dec 
+[...x275 1 st38 6 5] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st51] ip:285 getargn0 
+[...x24 x275 1 st51 5] ip:286 push_1 
+[...x275 1 st51 5 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st51] ip:290 getargn0 
+[...x24 x275 1 st51 5] ip:291 getargn0 
+[...x275 1 st51 5 5] ip:292 dec 
+[...x275 1 st51 5 4] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st64] ip:285 getargn0 
+[...x24 x275 1 st64 4] ip:286 push_1 
+[...x275 1 st64 4 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st64] ip:290 getargn0 
+[...x24 x275 1 st64 4] ip:291 getargn0 
+[...x275 1 st64 4 4] ip:292 dec 
+[...x275 1 st64 4 3] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st77] ip:285 getargn0 
+[...x24 x275 1 st77 3] ip:286 push_1 
+[...x275 1 st77 3 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st77] ip:290 getargn0 
+[...x24 x275 1 st77 3] ip:291 getargn0 
+[...x275 1 st77 3 3] ip:292 dec 
+[...x275 1 st77 3 2] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st90] ip:285 getargn0 
+[...x24 x275 1 st90 2] ip:286 push_1 
+[...x275 1 st90 2 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st90] ip:290 getargn0 
+[...x24 x275 1 st90 2] ip:291 getargn0 
+[...x275 1 st90 2 2] ip:292 dec 
+[...x275 1 st90 2 1] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st103] ip:285 getargn0 
+[...x24 x275 1 st103 1] ip:286 push_1 
+[...x275 1 st103 1 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st103] ip:302 push_1 
+[...x24 x275 1 st103 1] ip:303 retval 
+[...x24 x275 1 st90 2] ip:299 getr0 
+[...x275 1 st90 2 1] ip:300 mul 
+[...x24 x275 1 st90 2] ip:301 retval 
+[...x24 x275 1 st77 3] ip:299 getr0 
+[...x275 1 st77 3 2] ip:300 mul 
+[...x24 x275 1 st77 6] ip:301 retval 
+[...x24 x275 1 st64 4] ip:299 getr0 
+[...x275 1 st64 4 6] ip:300 mul 
+[...x24 x275 1 st64 24] ip:301 retval 
+[...x24 x275 1 st51 5] ip:299 getr0 
+[...x275 1 st51 5 24] ip:300 mul 
+[...x24 x275 1 st51 120] ip:301 retval 
+[...x24 x275 1 st38 6] ip:299 getr0 
+[...x275 1 st38 6 120] ip:300 mul 
+[...x24 x275 1 st38 720] ip:301 retval 
+[...x29 x0 1 st23 7] ip:299 getr0 
+[...x0 1 st23 7 720] ip:300 mul 
+[...x29 x0 1 st23 5040] ip:301 retval 
+[...0 st12 7 nil 0] ip:29 setlcl1r0 local_number: 1
+[...0 st12 7 5040 0] ip:31 pushstr offset: 0
+[...st12 7 5040 0 '0] ip:36 getlcln2 
 [...7 5040 0 '0 0] ip:37 add 
-[...st11 7 5040 0 o4096] ip:38 pushstr offset: 7
+[...st12 7 5040 0 o4096] ip:38 pushstr offset: 7
 [...7 5040 0 o4096 '7] ip:43 add 
-[...st11 7 5040 0 o4097] ip:44 getlcln0 
+[...st12 7 5040 0 o4097] ip:44 getlcln0 
 [...7 5040 0 o4097 7] ip:45 add 
-[...st11 7 5040 0 o4098] ip:46 pushstr offset: 12
+[...st12 7 5040 0 o4098] ip:46 pushstr offset: 12
 [...7 5040 0 o4098 '12] ip:51 add 
-[...st11 7 5040 0 o4099] ip:52 getlcln1 
+[...st12 7 5040 0 o4099] ip:52 getlcln1 
 [...7 5040 0 o4099 5040] ip:53 add 
-[...st11 7 5040 0 o4100] ip:54 pushstr offset: 18
+[...st12 7 5040 0 o4100] ip:54 pushstr offset: 18
 [...7 5040 0 o4100 '18] ip:59 add 
-[...st11 7 5040 0 o4101] ip:60 builtin_c argc: 1 func_index: 0
-[...0 st11 7 5040 0] ip:63 inclcl local_number: 2
-[...0 st11 7 5040 1] ip:66 jmp branch_offset: -55
-[...0 st11 7 5040 1] ip:12 getlcln2 
-[...st11 7 5040 1 1] ip:13 pushint8 val: 5
+[...st12 7 5040 0 o4101] ip:60 builtin_c argc: 1 func_index: 0
+[...0 st12 7 5040 0] ip:63 inclcl local_number: 2
+[...0 st12 7 5040 1] ip:66 jmp branch_offset: -55
+[...0 st12 7 5040 1] ip:12 getlcln2 
+[...st12 7 5040 1 1] ip:13 pushint8 val: 5
 [...7 5040 1 1 5] ip:15 jge branch_offset: 53
-[...0 st11 7 5040 1] ip:18 pushint8 val: 7
-[...st11 7 5040 1 7] ip:20 setlcl1 local_number: 0
-[...0 st11 7 5040 1] ip:22 getlcln0 
-[...st11 7 5040 1 7] ip:23 call arg_count: 1 func_offset: 275
-[...nil x0 x29 1 st21] ip:285 getargn0 
-[...x0 x29 1 st21 7] ip:286 push_1 
-[...x29 1 st21 7 1] ip:287 jle branch_offset: 14
-[...nil x0 x29 1 st21] ip:290 getargn0 
-[...x0 x29 1 st21 7] ip:291 getargn0 
-[...x29 1 st21 7 7] ip:292 dec 
-[...x29 1 st21 7 6] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st35] ip:285 getargn0 
-[...x24 x275 1 st35 6] ip:286 push_1 
-[...x275 1 st35 6 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st35] ip:290 getargn0 
-[...x24 x275 1 st35 6] ip:291 getargn0 
-[...x275 1 st35 6 6] ip:292 dec 
-[...x275 1 st35 6 5] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st47] ip:285 getargn0 
-[...x24 x275 1 st47 5] ip:286 push_1 
-[...x275 1 st47 5 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st47] ip:290 getargn0 
-[...x24 x275 1 st47 5] ip:291 getargn0 
-[...x275 1 st47 5 5] ip:292 dec 
-[...x275 1 st47 5 4] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st59] ip:285 getargn0 
-[...x24 x275 1 st59 4] ip:286 push_1 
-[...x275 1 st59 4 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st59] ip:290 getargn0 
-[...x24 x275 1 st59 4] ip:291 getargn0 
-[...x275 1 st59 4 4] ip:292 dec 
-[...x275 1 st59 4 3] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st71] ip:285 getargn0 
-[...x24 x275 1 st71 3] ip:286 push_1 
-[...x275 1 st71 3 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st71] ip:290 getargn0 
-[...x24 x275 1 st71 3] ip:291 getargn0 
-[...x275 1 st71 3 3] ip:292 dec 
-[...x275 1 st71 3 2] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st83] ip:285 getargn0 
-[...x24 x275 1 st83 2] ip:286 push_1 
-[...x275 1 st83 2 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st83] ip:290 getargn0 
-[...x24 x275 1 st83 2] ip:291 getargn0 
-[...x275 1 st83 2 2] ip:292 dec 
-[...x275 1 st83 2 1] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st95] ip:285 getargn0 
-[...x24 x275 1 st95 1] ip:286 push_1 
-[...x275 1 st95 1 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st95] ip:302 push_1 
-[...x24 x275 1 st95 1] ip:303 retval 
-[...x24 x275 1 st83 2] ip:299 getr0 
-[...x275 1 st83 2 1] ip:300 mul 
-[...x24 x275 1 st83 2] ip:301 retval 
-[...x24 x275 1 st71 3] ip:299 getr0 
-[...x275 1 st71 3 2] ip:300 mul 
-[...x24 x275 1 st71 6] ip:301 retval 
-[...x24 x275 1 st59 4] ip:299 getr0 
-[...x275 1 st59 4 6] ip:300 mul 
-[...x24 x275 1 st59 24] ip:301 retval 
-[...x24 x275 1 st47 5] ip:299 getr0 
-[...x275 1 st47 5 24] ip:300 mul 
-[...x24 x275 1 st47 120] ip:301 retval 
-[...x24 x275 1 st35 6] ip:299 getr0 
-[...x275 1 st35 6 120] ip:300 mul 
-[...x24 x275 1 st35 720] ip:301 retval 
-[...x0 x29 1 st21 7] ip:299 getr0 
-[...x29 1 st21 7 720] ip:300 mul 
-[...x0 x29 1 st21 5040] ip:301 retval 
-[...0 st11 7 5040 1] ip:29 setlcl1r0 local_number: 1
-[...0 st11 7 5040 1] ip:31 pushstr offset: 0
-[...st11 7 5040 1 '0] ip:36 getlcln2 
+[...0 st12 7 5040 1] ip:18 pushint8 val: 7
+[...st12 7 5040 1 7] ip:20 setlcl1 local_number: 0
+[...0 st12 7 5040 1] ip:22 getlcln0 
+[...st12 7 5040 1 7] ip:23 call arg_count: 1 func_offset: 275
+[...# x0 x29 1 st23] ip:285 getargn0 
+[...x0 x29 1 st23 7] ip:286 push_1 
+[...x29 1 st23 7 1] ip:287 jle branch_offset: 14
+[...# x0 x29 1 st23] ip:290 getargn0 
+[...x0 x29 1 st23 7] ip:291 getargn0 
+[...x29 1 st23 7 7] ip:292 dec 
+[...x29 1 st23 7 6] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st38] ip:285 getargn0 
+[...x24 x275 1 st38 6] ip:286 push_1 
+[...x275 1 st38 6 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st38] ip:290 getargn0 
+[...x24 x275 1 st38 6] ip:291 getargn0 
+[...x275 1 st38 6 6] ip:292 dec 
+[...x275 1 st38 6 5] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st51] ip:285 getargn0 
+[...x24 x275 1 st51 5] ip:286 push_1 
+[...x275 1 st51 5 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st51] ip:290 getargn0 
+[...x24 x275 1 st51 5] ip:291 getargn0 
+[...x275 1 st51 5 5] ip:292 dec 
+[...x275 1 st51 5 4] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st64] ip:285 getargn0 
+[...x24 x275 1 st64 4] ip:286 push_1 
+[...x275 1 st64 4 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st64] ip:290 getargn0 
+[...x24 x275 1 st64 4] ip:291 getargn0 
+[...x275 1 st64 4 4] ip:292 dec 
+[...x275 1 st64 4 3] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st77] ip:285 getargn0 
+[...x24 x275 1 st77 3] ip:286 push_1 
+[...x275 1 st77 3 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st77] ip:290 getargn0 
+[...x24 x275 1 st77 3] ip:291 getargn0 
+[...x275 1 st77 3 3] ip:292 dec 
+[...x275 1 st77 3 2] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st90] ip:285 getargn0 
+[...x24 x275 1 st90 2] ip:286 push_1 
+[...x275 1 st90 2 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st90] ip:290 getargn0 
+[...x24 x275 1 st90 2] ip:291 getargn0 
+[...x275 1 st90 2 2] ip:292 dec 
+[...x275 1 st90 2 1] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st103] ip:285 getargn0 
+[...x24 x275 1 st103 1] ip:286 push_1 
+[...x275 1 st103 1 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st103] ip:302 push_1 
+[...x24 x275 1 st103 1] ip:303 retval 
+[...x24 x275 1 st90 2] ip:299 getr0 
+[...x275 1 st90 2 1] ip:300 mul 
+[...x24 x275 1 st90 2] ip:301 retval 
+[...x24 x275 1 st77 3] ip:299 getr0 
+[...x275 1 st77 3 2] ip:300 mul 
+[...x24 x275 1 st77 6] ip:301 retval 
+[...x24 x275 1 st64 4] ip:299 getr0 
+[...x275 1 st64 4 6] ip:300 mul 
+[...x24 x275 1 st64 24] ip:301 retval 
+[...x24 x275 1 st51 5] ip:299 getr0 
+[...x275 1 st51 5 24] ip:300 mul 
+[...x24 x275 1 st51 120] ip:301 retval 
+[...x24 x275 1 st38 6] ip:299 getr0 
+[...x275 1 st38 6 120] ip:300 mul 
+[...x24 x275 1 st38 720] ip:301 retval 
+[...x0 x29 1 st23 7] ip:299 getr0 
+[...x29 1 st23 7 720] ip:300 mul 
+[...x0 x29 1 st23 5040] ip:301 retval 
+[...0 st12 7 5040 1] ip:29 setlcl1r0 local_number: 1
+[...0 st12 7 5040 1] ip:31 pushstr offset: 0
+[...st12 7 5040 1 '0] ip:36 getlcln2 
 [...7 5040 1 '0 1] ip:37 add 
-[...st11 7 5040 1 o4102] ip:38 pushstr offset: 7
+[...st12 7 5040 1 o4102] ip:38 pushstr offset: 7
 [...7 5040 1 o4102 '7] ip:43 add 
-[...st11 7 5040 1 o4103] ip:44 getlcln0 
+[...st12 7 5040 1 o4103] ip:44 getlcln0 
 [...7 5040 1 o4103 7] ip:45 add 
-[...st11 7 5040 1 o4104] ip:46 pushstr offset: 12
+[...st12 7 5040 1 o4104] ip:46 pushstr offset: 12
 [...7 5040 1 o4104 '12] ip:51 add 
-[...st11 7 5040 1 o4105] ip:52 getlcln1 
+[...st12 7 5040 1 o4105] ip:52 getlcln1 
 [...7 5040 1 o4105 5040] ip:53 add 
-[...st11 7 5040 1 o4106] ip:54 pushstr offset: 18
+[...st12 7 5040 1 o4106] ip:54 pushstr offset: 18
 [...7 5040 1 o4106 '18] ip:59 add 
-[...st11 7 5040 1 o4107] ip:60 builtin_c argc: 1 func_index: 0
-[...0 st11 7 5040 1] ip:63 inclcl local_number: 2
-[...0 st11 7 5040 2] ip:66 jmp branch_offset: -55
-[...0 st11 7 5040 2] ip:12 getlcln2 
-[...st11 7 5040 2 2] ip:13 pushint8 val: 5
+[...st12 7 5040 1 o4107] ip:60 builtin_c argc: 1 func_index: 0
+[...0 st12 7 5040 1] ip:63 inclcl local_number: 2
+[...0 st12 7 5040 2] ip:66 jmp branch_offset: -55
+[...0 st12 7 5040 2] ip:12 getlcln2 
+[...st12 7 5040 2 2] ip:13 pushint8 val: 5
 [...7 5040 2 2 5] ip:15 jge branch_offset: 53
-[...0 st11 7 5040 2] ip:18 pushint8 val: 7
-[...st11 7 5040 2 7] ip:20 setlcl1 local_number: 0
-[...0 st11 7 5040 2] ip:22 getlcln0 
-[...st11 7 5040 2 7] ip:23 call arg_count: 1 func_offset: 275
-[...nil x29 x0 1 st21] ip:285 getargn0 
-[...x29 x0 1 st21 7] ip:286 push_1 
-[...x0 1 st21 7 1] ip:287 jle branch_offset: 14
-[...nil x29 x0 1 st21] ip:290 getargn0 
-[...x29 x0 1 st21 7] ip:291 getargn0 
-[...x0 1 st21 7 7] ip:292 dec 
-[...x0 1 st21 7 6] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st35] ip:285 getargn0 
-[...x24 x275 1 st35 6] ip:286 push_1 
-[...x275 1 st35 6 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st35] ip:290 getargn0 
-[...x24 x275 1 st35 6] ip:291 getargn0 
-[...x275 1 st35 6 6] ip:292 dec 
-[...x275 1 st35 6 5] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st47] ip:285 getargn0 
-[...x24 x275 1 st47 5] ip:286 push_1 
-[...x275 1 st47 5 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st47] ip:290 getargn0 
-[...x24 x275 1 st47 5] ip:291 getargn0 
-[...x275 1 st47 5 5] ip:292 dec 
-[...x275 1 st47 5 4] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st59] ip:285 getargn0 
-[...x24 x275 1 st59 4] ip:286 push_1 
-[...x275 1 st59 4 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st59] ip:290 getargn0 
-[...x24 x275 1 st59 4] ip:291 getargn0 
-[...x275 1 st59 4 4] ip:292 dec 
-[...x275 1 st59 4 3] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st71] ip:285 getargn0 
-[...x24 x275 1 st71 3] ip:286 push_1 
-[...x275 1 st71 3 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st71] ip:290 getargn0 
-[...x24 x275 1 st71 3] ip:291 getargn0 
-[...x275 1 st71 3 3] ip:292 dec 
-[...x275 1 st71 3 2] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st83] ip:285 getargn0 
-[...x24 x275 1 st83 2] ip:286 push_1 
-[...x275 1 st83 2 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st83] ip:290 getargn0 
-[...x24 x275 1 st83 2] ip:291 getargn0 
-[...x275 1 st83 2 2] ip:292 dec 
-[...x275 1 st83 2 1] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st95] ip:285 getargn0 
-[...x24 x275 1 st95 1] ip:286 push_1 
-[...x275 1 st95 1 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st95] ip:302 push_1 
-[...x24 x275 1 st95 1] ip:303 retval 
-[...x24 x275 1 st83 2] ip:299 getr0 
-[...x275 1 st83 2 1] ip:300 mul 
-[...x24 x275 1 st83 2] ip:301 retval 
-[...x24 x275 1 st71 3] ip:299 getr0 
-[...x275 1 st71 3 2] ip:300 mul 
-[...x24 x275 1 st71 6] ip:301 retval 
-[...x24 x275 1 st59 4] ip:299 getr0 
-[...x275 1 st59 4 6] ip:300 mul 
-[...x24 x275 1 st59 24] ip:301 retval 
-[...x24 x275 1 st47 5] ip:299 getr0 
-[...x275 1 st47 5 24] ip:300 mul 
-[...x24 x275 1 st47 120] ip:301 retval 
-[...x24 x275 1 st35 6] ip:299 getr0 
-[...x275 1 st35 6 120] ip:300 mul 
-[...x24 x275 1 st35 720] ip:301 retval 
-[...x29 x0 1 st21 7] ip:299 getr0 
-[...x0 1 st21 7 720] ip:300 mul 
-[...x29 x0 1 st21 5040] ip:301 retval 
-[...0 st11 7 5040 2] ip:29 setlcl1r0 local_number: 1
-[...0 st11 7 5040 2] ip:31 pushstr offset: 0
-[...st11 7 5040 2 '0] ip:36 getlcln2 
+[...0 st12 7 5040 2] ip:18 pushint8 val: 7
+[...st12 7 5040 2 7] ip:20 setlcl1 local_number: 0
+[...0 st12 7 5040 2] ip:22 getlcln0 
+[...st12 7 5040 2 7] ip:23 call arg_count: 1 func_offset: 275
+[...# x29 x0 1 st23] ip:285 getargn0 
+[...x29 x0 1 st23 7] ip:286 push_1 
+[...x0 1 st23 7 1] ip:287 jle branch_offset: 14
+[...# x29 x0 1 st23] ip:290 getargn0 
+[...x29 x0 1 st23 7] ip:291 getargn0 
+[...x0 1 st23 7 7] ip:292 dec 
+[...x0 1 st23 7 6] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st38] ip:285 getargn0 
+[...x24 x275 1 st38 6] ip:286 push_1 
+[...x275 1 st38 6 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st38] ip:290 getargn0 
+[...x24 x275 1 st38 6] ip:291 getargn0 
+[...x275 1 st38 6 6] ip:292 dec 
+[...x275 1 st38 6 5] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st51] ip:285 getargn0 
+[...x24 x275 1 st51 5] ip:286 push_1 
+[...x275 1 st51 5 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st51] ip:290 getargn0 
+[...x24 x275 1 st51 5] ip:291 getargn0 
+[...x275 1 st51 5 5] ip:292 dec 
+[...x275 1 st51 5 4] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st64] ip:285 getargn0 
+[...x24 x275 1 st64 4] ip:286 push_1 
+[...x275 1 st64 4 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st64] ip:290 getargn0 
+[...x24 x275 1 st64 4] ip:291 getargn0 
+[...x275 1 st64 4 4] ip:292 dec 
+[...x275 1 st64 4 3] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st77] ip:285 getargn0 
+[...x24 x275 1 st77 3] ip:286 push_1 
+[...x275 1 st77 3 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st77] ip:290 getargn0 
+[...x24 x275 1 st77 3] ip:291 getargn0 
+[...x275 1 st77 3 3] ip:292 dec 
+[...x275 1 st77 3 2] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st90] ip:285 getargn0 
+[...x24 x275 1 st90 2] ip:286 push_1 
+[...x275 1 st90 2 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st90] ip:290 getargn0 
+[...x24 x275 1 st90 2] ip:291 getargn0 
+[...x275 1 st90 2 2] ip:292 dec 
+[...x275 1 st90 2 1] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st103] ip:285 getargn0 
+[...x24 x275 1 st103 1] ip:286 push_1 
+[...x275 1 st103 1 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st103] ip:302 push_1 
+[...x24 x275 1 st103 1] ip:303 retval 
+[...x24 x275 1 st90 2] ip:299 getr0 
+[...x275 1 st90 2 1] ip:300 mul 
+[...x24 x275 1 st90 2] ip:301 retval 
+[...x24 x275 1 st77 3] ip:299 getr0 
+[...x275 1 st77 3 2] ip:300 mul 
+[...x24 x275 1 st77 6] ip:301 retval 
+[...x24 x275 1 st64 4] ip:299 getr0 
+[...x275 1 st64 4 6] ip:300 mul 
+[...x24 x275 1 st64 24] ip:301 retval 
+[...x24 x275 1 st51 5] ip:299 getr0 
+[...x275 1 st51 5 24] ip:300 mul 
+[...x24 x275 1 st51 120] ip:301 retval 
+[...x24 x275 1 st38 6] ip:299 getr0 
+[...x275 1 st38 6 120] ip:300 mul 
+[...x24 x275 1 st38 720] ip:301 retval 
+[...x29 x0 1 st23 7] ip:299 getr0 
+[...x0 1 st23 7 720] ip:300 mul 
+[...x29 x0 1 st23 5040] ip:301 retval 
+[...0 st12 7 5040 2] ip:29 setlcl1r0 local_number: 1
+[...0 st12 7 5040 2] ip:31 pushstr offset: 0
+[...st12 7 5040 2 '0] ip:36 getlcln2 
 [...7 5040 2 '0 2] ip:37 add 
-[...st11 7 5040 2 o4108] ip:38 pushstr offset: 7
+[...st12 7 5040 2 o4108] ip:38 pushstr offset: 7
 [...7 5040 2 o4108 '7] ip:43 add 
-[...st11 7 5040 2 o4109] ip:44 getlcln0 
+[...st12 7 5040 2 o4109] ip:44 getlcln0 
 [...7 5040 2 o4109 7] ip:45 add 
-[...st11 7 5040 2 o4110] ip:46 pushstr offset: 12
+[...st12 7 5040 2 o4110] ip:46 pushstr offset: 12
 [...7 5040 2 o4110 '12] ip:51 add 
-[...st11 7 5040 2 o4111] ip:52 getlcln1 
+[...st12 7 5040 2 o4111] ip:52 getlcln1 
 [...7 5040 2 o4111 5040] ip:53 add 
-[...st11 7 5040 2 o4112] ip:54 pushstr offset: 18
+[...st12 7 5040 2 o4112] ip:54 pushstr offset: 18
 [...7 5040 2 o4112 '18] ip:59 add 
-[...st11 7 5040 2 o4113] ip:60 builtin_c argc: 1 func_index: 0
-[...0 st11 7 5040 2] ip:63 inclcl local_number: 2
-[...0 st11 7 5040 3] ip:66 jmp branch_offset: -55
-[...0 st11 7 5040 3] ip:12 getlcln2 
-[...st11 7 5040 3 3] ip:13 pushint8 val: 5
+[...st12 7 5040 2 o4113] ip:60 builtin_c argc: 1 func_index: 0
+[...0 st12 7 5040 2] ip:63 inclcl local_number: 2
+[...0 st12 7 5040 3] ip:66 jmp branch_offset: -55
+[...0 st12 7 5040 3] ip:12 getlcln2 
+[...st12 7 5040 3 3] ip:13 pushint8 val: 5
 [...7 5040 3 3 5] ip:15 jge branch_offset: 53
-[...0 st11 7 5040 3] ip:18 pushint8 val: 7
-[...st11 7 5040 3 7] ip:20 setlcl1 local_number: 0
-[...0 st11 7 5040 3] ip:22 getlcln0 
-[...st11 7 5040 3 7] ip:23 call arg_count: 1 func_offset: 275
-[...nil x0 x29 1 st21] ip:285 getargn0 
-[...x0 x29 1 st21 7] ip:286 push_1 
-[...x29 1 st21 7 1] ip:287 jle branch_offset: 14
-[...nil x0 x29 1 st21] ip:290 getargn0 
-[...x0 x29 1 st21 7] ip:291 getargn0 
-[...x29 1 st21 7 7] ip:292 dec 
-[...x29 1 st21 7 6] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st35] ip:285 getargn0 
-[...x24 x275 1 st35 6] ip:286 push_1 
-[...x275 1 st35 6 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st35] ip:290 getargn0 
-[...x24 x275 1 st35 6] ip:291 getargn0 
-[...x275 1 st35 6 6] ip:292 dec 
-[...x275 1 st35 6 5] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st47] ip:285 getargn0 
-[...x24 x275 1 st47 5] ip:286 push_1 
-[...x275 1 st47 5 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st47] ip:290 getargn0 
-[...x24 x275 1 st47 5] ip:291 getargn0 
-[...x275 1 st47 5 5] ip:292 dec 
-[...x275 1 st47 5 4] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st59] ip:285 getargn0 
-[...x24 x275 1 st59 4] ip:286 push_1 
-[...x275 1 st59 4 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st59] ip:290 getargn0 
-[...x24 x275 1 st59 4] ip:291 getargn0 
-[...x275 1 st59 4 4] ip:292 dec 
-[...x275 1 st59 4 3] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st71] ip:285 getargn0 
-[...x24 x275 1 st71 3] ip:286 push_1 
-[...x275 1 st71 3 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st71] ip:290 getargn0 
-[...x24 x275 1 st71 3] ip:291 getargn0 
-[...x275 1 st71 3 3] ip:292 dec 
-[...x275 1 st71 3 2] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st83] ip:285 getargn0 
-[...x24 x275 1 st83 2] ip:286 push_1 
-[...x275 1 st83 2 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st83] ip:290 getargn0 
-[...x24 x275 1 st83 2] ip:291 getargn0 
-[...x275 1 st83 2 2] ip:292 dec 
-[...x275 1 st83 2 1] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st95] ip:285 getargn0 
-[...x24 x275 1 st95 1] ip:286 push_1 
-[...x275 1 st95 1 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st95] ip:302 push_1 
-[...x24 x275 1 st95 1] ip:303 retval 
-[...x24 x275 1 st83 2] ip:299 getr0 
-[...x275 1 st83 2 1] ip:300 mul 
-[...x24 x275 1 st83 2] ip:301 retval 
-[...x24 x275 1 st71 3] ip:299 getr0 
-[...x275 1 st71 3 2] ip:300 mul 
-[...x24 x275 1 st71 6] ip:301 retval 
-[...x24 x275 1 st59 4] ip:299 getr0 
-[...x275 1 st59 4 6] ip:300 mul 
-[...x24 x275 1 st59 24] ip:301 retval 
-[...x24 x275 1 st47 5] ip:299 getr0 
-[...x275 1 st47 5 24] ip:300 mul 
-[...x24 x275 1 st47 120] ip:301 retval 
-[...x24 x275 1 st35 6] ip:299 getr0 
-[...x275 1 st35 6 120] ip:300 mul 
-[...x24 x275 1 st35 720] ip:301 retval 
-[...x0 x29 1 st21 7] ip:299 getr0 
-[...x29 1 st21 7 720] ip:300 mul 
-[...x0 x29 1 st21 5040] ip:301 retval 
-[...0 st11 7 5040 3] ip:29 setlcl1r0 local_number: 1
-[...0 st11 7 5040 3] ip:31 pushstr offset: 0
-[...st11 7 5040 3 '0] ip:36 getlcln2 
+[...0 st12 7 5040 3] ip:18 pushint8 val: 7
+[...st12 7 5040 3 7] ip:20 setlcl1 local_number: 0
+[...0 st12 7 5040 3] ip:22 getlcln0 
+[...st12 7 5040 3 7] ip:23 call arg_count: 1 func_offset: 275
+[...# x0 x29 1 st23] ip:285 getargn0 
+[...x0 x29 1 st23 7] ip:286 push_1 
+[...x29 1 st23 7 1] ip:287 jle branch_offset: 14
+[...# x0 x29 1 st23] ip:290 getargn0 
+[...x0 x29 1 st23 7] ip:291 getargn0 
+[...x29 1 st23 7 7] ip:292 dec 
+[...x29 1 st23 7 6] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st38] ip:285 getargn0 
+[...x24 x275 1 st38 6] ip:286 push_1 
+[...x275 1 st38 6 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st38] ip:290 getargn0 
+[...x24 x275 1 st38 6] ip:291 getargn0 
+[...x275 1 st38 6 6] ip:292 dec 
+[...x275 1 st38 6 5] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st51] ip:285 getargn0 
+[...x24 x275 1 st51 5] ip:286 push_1 
+[...x275 1 st51 5 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st51] ip:290 getargn0 
+[...x24 x275 1 st51 5] ip:291 getargn0 
+[...x275 1 st51 5 5] ip:292 dec 
+[...x275 1 st51 5 4] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st64] ip:285 getargn0 
+[...x24 x275 1 st64 4] ip:286 push_1 
+[...x275 1 st64 4 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st64] ip:290 getargn0 
+[...x24 x275 1 st64 4] ip:291 getargn0 
+[...x275 1 st64 4 4] ip:292 dec 
+[...x275 1 st64 4 3] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st77] ip:285 getargn0 
+[...x24 x275 1 st77 3] ip:286 push_1 
+[...x275 1 st77 3 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st77] ip:290 getargn0 
+[...x24 x275 1 st77 3] ip:291 getargn0 
+[...x275 1 st77 3 3] ip:292 dec 
+[...x275 1 st77 3 2] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st90] ip:285 getargn0 
+[...x24 x275 1 st90 2] ip:286 push_1 
+[...x275 1 st90 2 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st90] ip:290 getargn0 
+[...x24 x275 1 st90 2] ip:291 getargn0 
+[...x275 1 st90 2 2] ip:292 dec 
+[...x275 1 st90 2 1] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st103] ip:285 getargn0 
+[...x24 x275 1 st103 1] ip:286 push_1 
+[...x275 1 st103 1 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st103] ip:302 push_1 
+[...x24 x275 1 st103 1] ip:303 retval 
+[...x24 x275 1 st90 2] ip:299 getr0 
+[...x275 1 st90 2 1] ip:300 mul 
+[...x24 x275 1 st90 2] ip:301 retval 
+[...x24 x275 1 st77 3] ip:299 getr0 
+[...x275 1 st77 3 2] ip:300 mul 
+[...x24 x275 1 st77 6] ip:301 retval 
+[...x24 x275 1 st64 4] ip:299 getr0 
+[...x275 1 st64 4 6] ip:300 mul 
+[...x24 x275 1 st64 24] ip:301 retval 
+[...x24 x275 1 st51 5] ip:299 getr0 
+[...x275 1 st51 5 24] ip:300 mul 
+[...x24 x275 1 st51 120] ip:301 retval 
+[...x24 x275 1 st38 6] ip:299 getr0 
+[...x275 1 st38 6 120] ip:300 mul 
+[...x24 x275 1 st38 720] ip:301 retval 
+[...x0 x29 1 st23 7] ip:299 getr0 
+[...x29 1 st23 7 720] ip:300 mul 
+[...x0 x29 1 st23 5040] ip:301 retval 
+[...0 st12 7 5040 3] ip:29 setlcl1r0 local_number: 1
+[...0 st12 7 5040 3] ip:31 pushstr offset: 0
+[...st12 7 5040 3 '0] ip:36 getlcln2 
 [...7 5040 3 '0 3] ip:37 add 
-[...st11 7 5040 3 o4114] ip:38 pushstr offset: 7
+[...st12 7 5040 3 o4114] ip:38 pushstr offset: 7
 [...7 5040 3 o4114 '7] ip:43 add 
-[...st11 7 5040 3 o4115] ip:44 getlcln0 
+[...st12 7 5040 3 o4115] ip:44 getlcln0 
 [...7 5040 3 o4115 7] ip:45 add 
-[...st11 7 5040 3 o4116] ip:46 pushstr offset: 12
+[...st12 7 5040 3 o4116] ip:46 pushstr offset: 12
 [...7 5040 3 o4116 '12] ip:51 add 
-[...st11 7 5040 3 o4117] ip:52 getlcln1 
+[...st12 7 5040 3 o4117] ip:52 getlcln1 
 [...7 5040 3 o4117 5040] ip:53 add 
-[...st11 7 5040 3 o4118] ip:54 pushstr offset: 18
+[...st12 7 5040 3 o4118] ip:54 pushstr offset: 18
 [...7 5040 3 o4118 '18] ip:59 add 
-[...st11 7 5040 3 o4119] ip:60 builtin_c argc: 1 func_index: 0
-[...0 st11 7 5040 3] ip:63 inclcl local_number: 2
-[...0 st11 7 5040 4] ip:66 jmp branch_offset: -55
-[...0 st11 7 5040 4] ip:12 getlcln2 
-[...st11 7 5040 4 4] ip:13 pushint8 val: 5
+[...st12 7 5040 3 o4119] ip:60 builtin_c argc: 1 func_index: 0
+[...0 st12 7 5040 3] ip:63 inclcl local_number: 2
+[...0 st12 7 5040 4] ip:66 jmp branch_offset: -55
+[...0 st12 7 5040 4] ip:12 getlcln2 
+[...st12 7 5040 4 4] ip:13 pushint8 val: 5
 [...7 5040 4 4 5] ip:15 jge branch_offset: 53
-[...0 st11 7 5040 4] ip:18 pushint8 val: 7
-[...st11 7 5040 4 7] ip:20 setlcl1 local_number: 0
-[...0 st11 7 5040 4] ip:22 getlcln0 
-[...st11 7 5040 4 7] ip:23 call arg_count: 1 func_offset: 275
-[...nil x29 x0 1 st21] ip:285 getargn0 
-[...x29 x0 1 st21 7] ip:286 push_1 
-[...x0 1 st21 7 1] ip:287 jle branch_offset: 14
-[...nil x29 x0 1 st21] ip:290 getargn0 
-[...x29 x0 1 st21 7] ip:291 getargn0 
-[...x0 1 st21 7 7] ip:292 dec 
-[...x0 1 st21 7 6] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st35] ip:285 getargn0 
-[...x24 x275 1 st35 6] ip:286 push_1 
-[...x275 1 st35 6 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st35] ip:290 getargn0 
-[...x24 x275 1 st35 6] ip:291 getargn0 
-[...x275 1 st35 6 6] ip:292 dec 
-[...x275 1 st35 6 5] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st47] ip:285 getargn0 
-[...x24 x275 1 st47 5] ip:286 push_1 
-[...x275 1 st47 5 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st47] ip:290 getargn0 
-[...x24 x275 1 st47 5] ip:291 getargn0 
-[...x275 1 st47 5 5] ip:292 dec 
-[...x275 1 st47 5 4] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st59] ip:285 getargn0 
-[...x24 x275 1 st59 4] ip:286 push_1 
-[...x275 1 st59 4 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st59] ip:290 getargn0 
-[...x24 x275 1 st59 4] ip:291 getargn0 
-[...x275 1 st59 4 4] ip:292 dec 
-[...x275 1 st59 4 3] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st71] ip:285 getargn0 
-[...x24 x275 1 st71 3] ip:286 push_1 
-[...x275 1 st71 3 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st71] ip:290 getargn0 
-[...x24 x275 1 st71 3] ip:291 getargn0 
-[...x275 1 st71 3 3] ip:292 dec 
-[...x275 1 st71 3 2] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st83] ip:285 getargn0 
-[...x24 x275 1 st83 2] ip:286 push_1 
-[...x275 1 st83 2 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st83] ip:290 getargn0 
-[...x24 x275 1 st83 2] ip:291 getargn0 
-[...x275 1 st83 2 2] ip:292 dec 
-[...x275 1 st83 2 1] ip:293 call arg_count: 1 func_offset: 275
-[...nil x24 x275 1 st95] ip:285 getargn0 
-[...x24 x275 1 st95 1] ip:286 push_1 
-[...x275 1 st95 1 1] ip:287 jle branch_offset: 14
-[...nil x24 x275 1 st95] ip:302 push_1 
-[...x24 x275 1 st95 1] ip:303 retval 
-[...x24 x275 1 st83 2] ip:299 getr0 
-[...x275 1 st83 2 1] ip:300 mul 
-[...x24 x275 1 st83 2] ip:301 retval 
-[...x24 x275 1 st71 3] ip:299 getr0 
-[...x275 1 st71 3 2] ip:300 mul 
-[...x24 x275 1 st71 6] ip:301 retval 
-[...x24 x275 1 st59 4] ip:299 getr0 
-[...x275 1 st59 4 6] ip:300 mul 
-[...x24 x275 1 st59 24] ip:301 retval 
-[...x24 x275 1 st47 5] ip:299 getr0 
-[...x275 1 st47 5 24] ip:300 mul 
-[...x24 x275 1 st47 120] ip:301 retval 
-[...x24 x275 1 st35 6] ip:299 getr0 
-[...x275 1 st35 6 120] ip:300 mul 
-[...x24 x275 1 st35 720] ip:301 retval 
-[...x29 x0 1 st21 7] ip:299 getr0 
-[...x0 1 st21 7 720] ip:300 mul 
-[...x29 x0 1 st21 5040] ip:301 retval 
-[...0 st11 7 5040 4] ip:29 setlcl1r0 local_number: 1
-[...0 st11 7 5040 4] ip:31 pushstr offset: 0
-[...st11 7 5040 4 '0] ip:36 getlcln2 
+[...0 st12 7 5040 4] ip:18 pushint8 val: 7
+[...st12 7 5040 4 7] ip:20 setlcl1 local_number: 0
+[...0 st12 7 5040 4] ip:22 getlcln0 
+[...st12 7 5040 4 7] ip:23 call arg_count: 1 func_offset: 275
+[...# x29 x0 1 st23] ip:285 getargn0 
+[...x29 x0 1 st23 7] ip:286 push_1 
+[...x0 1 st23 7 1] ip:287 jle branch_offset: 14
+[...# x29 x0 1 st23] ip:290 getargn0 
+[...x29 x0 1 st23 7] ip:291 getargn0 
+[...x0 1 st23 7 7] ip:292 dec 
+[...x0 1 st23 7 6] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st38] ip:285 getargn0 
+[...x24 x275 1 st38 6] ip:286 push_1 
+[...x275 1 st38 6 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st38] ip:290 getargn0 
+[...x24 x275 1 st38 6] ip:291 getargn0 
+[...x275 1 st38 6 6] ip:292 dec 
+[...x275 1 st38 6 5] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st51] ip:285 getargn0 
+[...x24 x275 1 st51 5] ip:286 push_1 
+[...x275 1 st51 5 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st51] ip:290 getargn0 
+[...x24 x275 1 st51 5] ip:291 getargn0 
+[...x275 1 st51 5 5] ip:292 dec 
+[...x275 1 st51 5 4] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st64] ip:285 getargn0 
+[...x24 x275 1 st64 4] ip:286 push_1 
+[...x275 1 st64 4 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st64] ip:290 getargn0 
+[...x24 x275 1 st64 4] ip:291 getargn0 
+[...x275 1 st64 4 4] ip:292 dec 
+[...x275 1 st64 4 3] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st77] ip:285 getargn0 
+[...x24 x275 1 st77 3] ip:286 push_1 
+[...x275 1 st77 3 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st77] ip:290 getargn0 
+[...x24 x275 1 st77 3] ip:291 getargn0 
+[...x275 1 st77 3 3] ip:292 dec 
+[...x275 1 st77 3 2] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st90] ip:285 getargn0 
+[...x24 x275 1 st90 2] ip:286 push_1 
+[...x275 1 st90 2 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st90] ip:290 getargn0 
+[...x24 x275 1 st90 2] ip:291 getargn0 
+[...x275 1 st90 2 2] ip:292 dec 
+[...x275 1 st90 2 1] ip:293 call arg_count: 1 func_offset: 275
+[...# x24 x275 1 st103] ip:285 getargn0 
+[...x24 x275 1 st103 1] ip:286 push_1 
+[...x275 1 st103 1 1] ip:287 jle branch_offset: 14
+[...# x24 x275 1 st103] ip:302 push_1 
+[...x24 x275 1 st103 1] ip:303 retval 
+[...x24 x275 1 st90 2] ip:299 getr0 
+[...x275 1 st90 2 1] ip:300 mul 
+[...x24 x275 1 st90 2] ip:301 retval 
+[...x24 x275 1 st77 3] ip:299 getr0 
+[...x275 1 st77 3 2] ip:300 mul 
+[...x24 x275 1 st77 6] ip:301 retval 
+[...x24 x275 1 st64 4] ip:299 getr0 
+[...x275 1 st64 4 6] ip:300 mul 
+[...x24 x275 1 st64 24] ip:301 retval 
+[...x24 x275 1 st51 5] ip:299 getr0 
+[...x275 1 st51 5 24] ip:300 mul 
+[...x24 x275 1 st51 120] ip:301 retval 
+[...x24 x275 1 st38 6] ip:299 getr0 
+[...x275 1 st38 6 120] ip:300 mul 
+[...x24 x275 1 st38 720] ip:301 retval 
+[...x29 x0 1 st23 7] ip:299 getr0 
+[...x0 1 st23 7 720] ip:300 mul 
+[...x29 x0 1 st23 5040] ip:301 retval 
+[...0 st12 7 5040 4] ip:29 setlcl1r0 local_number: 1
+[...0 st12 7 5040 4] ip:31 pushstr offset: 0
+[...st12 7 5040 4 '0] ip:36 getlcln2 
 [...7 5040 4 '0 4] ip:37 add 
-[...st11 7 5040 4 o4120] ip:38 pushstr offset: 7
+[...st12 7 5040 4 o4120] ip:38 pushstr offset: 7
 [...7 5040 4 o4120 '7] ip:43 add 
-[...st11 7 5040 4 o4121] ip:44 getlcln0 
+[...st12 7 5040 4 o4121] ip:44 getlcln0 
 [...7 5040 4 o4121 7] ip:45 add 
-[...st11 7 5040 4 o4122] ip:46 pushstr offset: 12
+[...st12 7 5040 4 o4122] ip:46 pushstr offset: 12
 [...7 5040 4 o4122 '12] ip:51 add 
-[...st11 7 5040 4 o4123] ip:52 getlcln1 
+[...st12 7 5040 4 o4123] ip:52 getlcln1 
 [...7 5040 4 o4123 5040] ip:53 add 
-[...st11 7 5040 4 o4124] ip:54 pushstr offset: 18
+[...st12 7 5040 4 o4124] ip:54 pushstr offset: 18
 [...7 5040 4 o4124 '18] ip:59 add 
-[...st11 7 5040 4 o4125] ip:60 builtin_c argc: 1 func_index: 0
-[...0 st11 7 5040 4] ip:63 inclcl local_number: 2
-[...0 st11 7 5040 5] ip:66 jmp branch_offset: -55
-[...0 st11 7 5040 5] ip:12 getlcln2 
-[...st11 7 5040 5 5] ip:13 pushint8 val: 5
+[...st12 7 5040 4 o4125] ip:60 builtin_c argc: 1 func_index: 0
+[...0 st12 7 5040 4] ip:63 inclcl local_number: 2
+[...0 st12 7 5040 5] ip:66 jmp branch_offset: -55
+[...0 st12 7 5040 5] ip:12 getlcln2 
+[...st12 7 5040 5 5] ip:13 pushint8 val: 5
 [...7 5040 5 5 5] ip:15 jge branch_offset: 53
-[...0 st11 7 5040 5] ip:69 call arg_count: 0 func_offset: 333
-[...st21 nil nil nil nil] ip:343 pushstr offset: 21
+[...0 st12 7 5040 5] ip:69 call arg_count: 0 func_offset: 333
+[...st23 nil nil nil nil] ip:343 pushstr offset: 21
 [...nil nil nil nil '21] ip:348 setlcl1 local_number: 1
-[...st21 nil '21 nil nil] ip:350 onelcl1 local_number: 2
-[...st21 nil '21 1 nil] ip:352 pushstr offset: 30
+[...st23 nil '21 nil nil] ip:350 onelcl1 local_number: 2
+[...st23 nil '21 1 nil] ip:352 pushstr offset: 30
 [...nil '21 1 nil '30] ip:357 setlcl1 local_number: 0
-[...st21 '30 '21 1 nil] ip:359 pushstr offset: 35
+[...st23 '30 '21 1 nil] ip:359 pushstr offset: 35
 [...'30 '21 1 nil '35] ip:364 setlcl1 local_number: 3
-[...st21 '30 '21 1 '35] ip:366 getlcln2 
+[...st23 '30 '21 1 '35] ip:366 getlcln2 
 [...'30 '21 1 '35 1] ip:367 pushint8 val: 5
 [...'21 1 '35 1 5] ip:369 jge branch_offset: 48
-[...st21 '30 '21 1 '35] ip:372 pushstr offset: 42
+[...st23 '30 '21 1 '35] ip:372 pushstr offset: 42
 [...'30 '21 1 '35 '42] ip:377 getlcln2 
 [...'21 1 '35 '42 1] ip:378 add 
 [...'30 '21 1 '35 o4126] ip:379 pushstr offset: 48
@@ -475,14 +475,14 @@
 [...'30 '21 1 '35 o4130] ip:395 pushstr offset: 18
 [...'21 1 '35 o4130 '18] ip:400 add 
 [...'30 '21 1 '35 o4131] ip:401 builtin_c argc: 1 func_index: 0
-[...st21 '30 '21 1 '35] ip:404 inclcl local_number: 2
-[...st21 '30 '21 2 '35] ip:407 pushstr offset: 64
+[...st23 '30 '21 1 '35] ip:404 inclcl local_number: 2
+[...st23 '30 '21 2 '35] ip:407 pushstr offset: 64
 [...'30 '21 2 '35 '64] ip:412 addtolcl local_number: 0
-[...st21 o4132 '21 2 '35] ip:415 jmp branch_offset: -50
-[...st21 o4132 '21 2 '35] ip:366 getlcln2 
+[...st23 o4132 '21 2 '35] ip:415 jmp branch_offset: -50
+[...st23 o4132 '21 2 '35] ip:366 getlcln2 
 [...o4132 '21 2 '35 2] ip:367 pushint8 val: 5
 [...'21 2 '35 2 5] ip:369 jge branch_offset: 48
-[...st21 o4132 '21 2 '35] ip:372 pushstr offset: 42
+[...st23 o4132 '21 2 '35] ip:372 pushstr offset: 42
 [...o4132 '21 2 '35 '42] ip:377 getlcln2 
 [...'21 2 '35 '42 2] ip:378 add 
 [...o4132 '21 2 '35 o4133] ip:379 pushstr offset: 48
@@ -496,14 +496,14 @@
 [...o4132 '21 2 '35 o4137] ip:395 pushstr offset: 18
 [...'21 2 '35 o4137 '18] ip:400 add 
 [...o4132 '21 2 '35 o4138] ip:401 builtin_c argc: 1 func_index: 0
-[...st21 o4132 '21 2 '35] ip:404 inclcl local_number: 2
-[...st21 o4132 '21 3 '35] ip:407 pushstr offset: 64
+[...st23 o4132 '21 2 '35] ip:404 inclcl local_number: 2
+[...st23 o4132 '21 3 '35] ip:407 pushstr offset: 64
 [...o4132 '21 3 '35 '64] ip:412 addtolcl local_number: 0
-[...st21 o4139 '21 3 '35] ip:415 jmp branch_offset: -50
-[...st21 o4139 '21 3 '35] ip:366 getlcln2 
+[...st23 o4139 '21 3 '35] ip:415 jmp branch_offset: -50
+[...st23 o4139 '21 3 '35] ip:366 getlcln2 
 [...o4139 '21 3 '35 3] ip:367 pushint8 val: 5
 [...'21 3 '35 3 5] ip:369 jge branch_offset: 48
-[...st21 o4139 '21 3 '35] ip:372 pushstr offset: 42
+[...st23 o4139 '21 3 '35] ip:372 pushstr offset: 42
 [...o4139 '21 3 '35 '42] ip:377 getlcln2 
 [...'21 3 '35 '42 3] ip:378 add 
 [...o4139 '21 3 '35 o4140] ip:379 pushstr offset: 48
@@ -517,14 +517,14 @@
 [...o4139 '21 3 '35 o4144] ip:395 pushstr offset: 18
 [...'21 3 '35 o4144 '18] ip:400 add 
 [...o4139 '21 3 '35 o4145] ip:401 builtin_c argc: 1 func_index: 0
-[...st21 o4139 '21 3 '35] ip:404 inclcl local_number: 2
-[...st21 o4139 '21 4 '35] ip:407 pushstr offset: 64
+[...st23 o4139 '21 3 '35] ip:404 inclcl local_number: 2
+[...st23 o4139 '21 4 '35] ip:407 pushstr offset: 64
 [...o4139 '21 4 '35 '64] ip:412 addtolcl local_number: 0
-[...st21 o4146 '21 4 '35] ip:415 jmp branch_offset: -50
-[...st21 o4146 '21 4 '35] ip:366 getlcln2 
+[...st23 o4146 '21 4 '35] ip:415 jmp branch_offset: -50
+[...st23 o4146 '21 4 '35] ip:366 getlcln2 
 [...o4146 '21 4 '35 4] ip:367 pushint8 val: 5
 [...'21 4 '35 4 5] ip:369 jge branch_offset: 48
-[...st21 o4146 '21 4 '35] ip:372 pushstr offset: 42
+[...st23 o4146 '21 4 '35] ip:372 pushstr offset: 42
 [...o4146 '21 4 '35 '42] ip:377 getlcln2 
 [...'21 4 '35 '42 4] ip:378 add 
 [...o4146 '21 4 '35 o4147] ip:379 pushstr offset: 48
@@ -538,617 +538,617 @@
 [...o4146 '21 4 '35 o4151] ip:395 pushstr offset: 18
 [...'21 4 '35 o4151 '18] ip:400 add 
 [...o4146 '21 4 '35 o4152] ip:401 builtin_c argc: 1 func_index: 0
-[...st21 o4146 '21 4 '35] ip:404 inclcl local_number: 2
-[...st21 o4146 '21 5 '35] ip:407 pushstr offset: 64
+[...st23 o4146 '21 4 '35] ip:404 inclcl local_number: 2
+[...st23 o4146 '21 5 '35] ip:407 pushstr offset: 64
 [...o4146 '21 5 '35 '64] ip:412 addtolcl local_number: 0
-[...st21 o4153 '21 5 '35] ip:415 jmp branch_offset: -50
-[...st21 o4153 '21 5 '35] ip:366 getlcln2 
+[...st23 o4153 '21 5 '35] ip:415 jmp branch_offset: -50
+[...st23 o4153 '21 5 '35] ip:366 getlcln2 
 [...o4153 '21 5 '35 5] ip:367 pushint8 val: 5
 [...'21 5 '35 5 5] ip:369 jge branch_offset: 48
-[...st21 o4153 '21 5 '35] ip:418 pushstr offset: 67
+[...st23 o4153 '21 5 '35] ip:418 pushstr offset: 67
 [...o4153 '21 5 '35 '67] ip:423 getlcln1 
 [...'21 5 '35 '67 '21] ip:424 add 
 [...o4153 '21 5 '35 o4154] ip:425 pushstr offset: 18
 [...'21 5 '35 o4154 '18] ip:430 add 
 [...o4153 '21 5 '35 o4155] ip:431 builtin_c argc: 1 func_index: 0
-[...st21 o4153 '21 5 '35] ip:434 retnil 
-[...0 st11 7 5040 5] ip:75 call arg_count: 0 func_offset: 501
-[...x46 0 st21 nil nil] ip:511 onelcl1 local_number: 0
-[...x46 0 st21 1 nil] ip:513 getlcln0 
-[...0 st21 1 nil 1] ip:514 pushint8 val: 10
-[...st21 1 nil 1 10] ip:516 jge branch_offset: 33
-[...x46 0 st21 1 nil] ip:519 pushstr offset: 89
-[...0 st21 1 nil '89] ip:524 getlcln0 
-[...st21 1 nil '89 1] ip:525 add 
-[...0 st21 1 nil o4156] ip:526 pushstr offset: 18
-[...st21 1 nil o4156 '18] ip:531 add 
-[...0 st21 1 nil o4157] ip:532 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 1 nil] ip:535 getlcln0 
-[...0 st21 1 nil 1] ip:536 pushint8 val: 5
-[...st21 1 nil 1 5] ip:538 jne branch_offset: 5
-[...x46 0 st21 1 nil] ip:544 inclcl local_number: 0
-[...x46 0 st21 2 nil] ip:547 jmp branch_offset: -35
-[...x46 0 st21 2 nil] ip:513 getlcln0 
-[...0 st21 2 nil 2] ip:514 pushint8 val: 10
-[...st21 2 nil 2 10] ip:516 jge branch_offset: 33
-[...x46 0 st21 2 nil] ip:519 pushstr offset: 89
-[...0 st21 2 nil '89] ip:524 getlcln0 
-[...st21 2 nil '89 2] ip:525 add 
-[...0 st21 2 nil o4158] ip:526 pushstr offset: 18
-[...st21 2 nil o4158 '18] ip:531 add 
-[...0 st21 2 nil o4159] ip:532 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 2 nil] ip:535 getlcln0 
-[...0 st21 2 nil 2] ip:536 pushint8 val: 5
-[...st21 2 nil 2 5] ip:538 jne branch_offset: 5
-[...x46 0 st21 2 nil] ip:544 inclcl local_number: 0
-[...x46 0 st21 3 nil] ip:547 jmp branch_offset: -35
-[...x46 0 st21 3 nil] ip:513 getlcln0 
-[...0 st21 3 nil 3] ip:514 pushint8 val: 10
-[...st21 3 nil 3 10] ip:516 jge branch_offset: 33
-[...x46 0 st21 3 nil] ip:519 pushstr offset: 89
-[...0 st21 3 nil '89] ip:524 getlcln0 
-[...st21 3 nil '89 3] ip:525 add 
-[...0 st21 3 nil o4160] ip:526 pushstr offset: 18
-[...st21 3 nil o4160 '18] ip:531 add 
-[...0 st21 3 nil o4161] ip:532 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 3 nil] ip:535 getlcln0 
-[...0 st21 3 nil 3] ip:536 pushint8 val: 5
-[...st21 3 nil 3 5] ip:538 jne branch_offset: 5
-[...x46 0 st21 3 nil] ip:544 inclcl local_number: 0
-[...x46 0 st21 4 nil] ip:547 jmp branch_offset: -35
-[...x46 0 st21 4 nil] ip:513 getlcln0 
-[...0 st21 4 nil 4] ip:514 pushint8 val: 10
-[...st21 4 nil 4 10] ip:516 jge branch_offset: 33
-[...x46 0 st21 4 nil] ip:519 pushstr offset: 89
-[...0 st21 4 nil '89] ip:524 getlcln0 
-[...st21 4 nil '89 4] ip:525 add 
-[...0 st21 4 nil o4162] ip:526 pushstr offset: 18
-[...st21 4 nil o4162 '18] ip:531 add 
-[...0 st21 4 nil o4163] ip:532 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 4 nil] ip:535 getlcln0 
-[...0 st21 4 nil 4] ip:536 pushint8 val: 5
-[...st21 4 nil 4 5] ip:538 jne branch_offset: 5
-[...x46 0 st21 4 nil] ip:544 inclcl local_number: 0
-[...x46 0 st21 5 nil] ip:547 jmp branch_offset: -35
-[...x46 0 st21 5 nil] ip:513 getlcln0 
-[...0 st21 5 nil 5] ip:514 pushint8 val: 10
-[...st21 5 nil 5 10] ip:516 jge branch_offset: 33
-[...x46 0 st21 5 nil] ip:519 pushstr offset: 89
-[...0 st21 5 nil '89] ip:524 getlcln0 
-[...st21 5 nil '89 5] ip:525 add 
-[...0 st21 5 nil o4164] ip:526 pushstr offset: 18
-[...st21 5 nil o4164 '18] ip:531 add 
-[...0 st21 5 nil o4165] ip:532 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 nil] ip:535 getlcln0 
-[...0 st21 5 nil 5] ip:536 pushint8 val: 5
-[...st21 5 nil 5 5] ip:538 jne branch_offset: 5
-[...x46 0 st21 5 nil] ip:541 jmp branch_offset: 8
-[...x46 0 st21 5 nil] ip:550 onelcl1 local_number: 1
-[...x46 0 st21 5 1] ip:552 getlcln1 
-[...0 st21 5 1 1] ip:553 pushint8 val: 10
-[...st21 5 1 1 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 1] ip:558 pushstr offset: 108
-[...0 st21 5 1 '108] ip:563 getlcln1 
-[...st21 5 1 '108 1] ip:564 add 
-[...0 st21 5 1 o4166] ip:565 pushstr offset: 18
-[...st21 5 1 o4166 '18] ip:570 add 
-[...0 st21 5 1 o4167] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 1] ip:574 getlcln1 
-[...0 st21 5 1 1] ip:575 pushint8 val: 5
-[...st21 5 1 1 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 1] ip:583 pushstr offset: 130
-[...0 st21 5 1 '130] ip:588 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 1] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 2] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 2] ip:552 getlcln1 
-[...0 st21 5 2 2] ip:553 pushint8 val: 10
-[...st21 5 2 2 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 2] ip:558 pushstr offset: 108
-[...0 st21 5 2 '108] ip:563 getlcln1 
-[...st21 5 2 '108 2] ip:564 add 
-[...0 st21 5 2 o4168] ip:565 pushstr offset: 18
-[...st21 5 2 o4168 '18] ip:570 add 
-[...0 st21 5 2 o4169] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 2] ip:574 getlcln1 
-[...0 st21 5 2 2] ip:575 pushint8 val: 5
-[...st21 5 2 2 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 2] ip:583 pushstr offset: 130
-[...0 st21 5 2 '130] ip:588 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 2] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 3] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 3] ip:552 getlcln1 
-[...0 st21 5 3 3] ip:553 pushint8 val: 10
-[...st21 5 3 3 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 3] ip:558 pushstr offset: 108
-[...0 st21 5 3 '108] ip:563 getlcln1 
-[...st21 5 3 '108 3] ip:564 add 
-[...0 st21 5 3 o4170] ip:565 pushstr offset: 18
-[...st21 5 3 o4170 '18] ip:570 add 
-[...0 st21 5 3 o4171] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 3] ip:574 getlcln1 
-[...0 st21 5 3 3] ip:575 pushint8 val: 5
-[...st21 5 3 3 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 3] ip:583 pushstr offset: 130
-[...0 st21 5 3 '130] ip:588 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 3] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 4] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 4] ip:552 getlcln1 
-[...0 st21 5 4 4] ip:553 pushint8 val: 10
-[...st21 5 4 4 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 4] ip:558 pushstr offset: 108
-[...0 st21 5 4 '108] ip:563 getlcln1 
-[...st21 5 4 '108 4] ip:564 add 
-[...0 st21 5 4 o4172] ip:565 pushstr offset: 18
-[...st21 5 4 o4172 '18] ip:570 add 
-[...0 st21 5 4 o4173] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 4] ip:574 getlcln1 
-[...0 st21 5 4 4] ip:575 pushint8 val: 5
-[...st21 5 4 4 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 4] ip:583 pushstr offset: 130
-[...0 st21 5 4 '130] ip:588 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 4] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 5] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 5] ip:552 getlcln1 
-[...0 st21 5 5 5] ip:553 pushint8 val: 10
-[...st21 5 5 5 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 5] ip:558 pushstr offset: 108
-[...0 st21 5 5 '108] ip:563 getlcln1 
-[...st21 5 5 '108 5] ip:564 add 
-[...0 st21 5 5 o4174] ip:565 pushstr offset: 18
-[...st21 5 5 o4174 '18] ip:570 add 
-[...0 st21 5 5 o4175] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 5] ip:574 getlcln1 
-[...0 st21 5 5 5] ip:575 pushint8 val: 5
-[...st21 5 5 5 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 5] ip:580 jmp branch_offset: 10
-[...x46 0 st21 5 5] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 6] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 6] ip:552 getlcln1 
-[...0 st21 5 6 6] ip:553 pushint8 val: 10
-[...st21 5 6 6 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 6] ip:558 pushstr offset: 108
-[...0 st21 5 6 '108] ip:563 getlcln1 
-[...st21 5 6 '108 6] ip:564 add 
-[...0 st21 5 6 o4176] ip:565 pushstr offset: 18
-[...st21 5 6 o4176 '18] ip:570 add 
-[...0 st21 5 6 o4177] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 6] ip:574 getlcln1 
-[...0 st21 5 6 6] ip:575 pushint8 val: 5
-[...st21 5 6 6 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 6] ip:580 jmp branch_offset: 10
-[...x46 0 st21 5 6] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 7] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 7] ip:552 getlcln1 
-[...0 st21 5 7 7] ip:553 pushint8 val: 10
-[...st21 5 7 7 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 7] ip:558 pushstr offset: 108
-[...0 st21 5 7 '108] ip:563 getlcln1 
-[...st21 5 7 '108 7] ip:564 add 
-[...0 st21 5 7 o4178] ip:565 pushstr offset: 18
-[...st21 5 7 o4178 '18] ip:570 add 
-[...0 st21 5 7 o4179] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 7] ip:574 getlcln1 
-[...0 st21 5 7 7] ip:575 pushint8 val: 5
-[...st21 5 7 7 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 7] ip:580 jmp branch_offset: 10
-[...x46 0 st21 5 7] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 8] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 8] ip:552 getlcln1 
-[...0 st21 5 8 8] ip:553 pushint8 val: 10
-[...st21 5 8 8 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 8] ip:558 pushstr offset: 108
-[...0 st21 5 8 '108] ip:563 getlcln1 
-[...st21 5 8 '108 8] ip:564 add 
-[...0 st21 5 8 o4180] ip:565 pushstr offset: 18
-[...st21 5 8 o4180 '18] ip:570 add 
-[...0 st21 5 8 o4181] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 8] ip:574 getlcln1 
-[...0 st21 5 8 8] ip:575 pushint8 val: 5
-[...st21 5 8 8 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 8] ip:580 jmp branch_offset: 10
-[...x46 0 st21 5 8] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 9] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 9] ip:552 getlcln1 
-[...0 st21 5 9 9] ip:553 pushint8 val: 10
-[...st21 5 9 9 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 9] ip:558 pushstr offset: 108
-[...0 st21 5 9 '108] ip:563 getlcln1 
-[...st21 5 9 '108 9] ip:564 add 
-[...0 st21 5 9 o4182] ip:565 pushstr offset: 18
-[...st21 5 9 o4182 '18] ip:570 add 
-[...0 st21 5 9 o4183] ip:571 builtin_c argc: 1 func_index: 0
-[...x46 0 st21 5 9] ip:574 getlcln1 
-[...0 st21 5 9 9] ip:575 pushint8 val: 5
-[...st21 5 9 9 5] ip:577 jlt branch_offset: 5
-[...x46 0 st21 5 9] ip:580 jmp branch_offset: 10
-[...x46 0 st21 5 9] ip:591 inclcl local_number: 1
-[...x46 0 st21 5 10] ip:594 jmp branch_offset: -43
-[...x46 0 st21 5 10] ip:552 getlcln1 
-[...0 st21 5 10 10] ip:553 pushint8 val: 10
-[...st21 5 10 10 10] ip:555 jge branch_offset: 41
-[...x46 0 st21 5 10] ip:597 retnil 
-[...0 st11 7 5040 5] ip:81 call arg_count: 0 func_offset: 646
-[...x52 x35 0 st21 nil] ip:656 zerolcl1 local_number: 0
-[...x52 x35 0 st21 0] ip:658 getlcln0 
-[...x35 0 st21 0 0] ip:659 pushint8 val: 5
-[...0 st21 0 0 5] ip:661 jge branch_offset: 24
-[...x52 x35 0 st21 0] ip:664 pushstr offset: 161
-[...x35 0 st21 0 '161] ip:669 getlcln0 
-[...0 st21 0 '161 0] ip:670 add 
-[...x35 0 st21 0 o4184] ip:671 pushstr offset: 18
-[...0 st21 0 o4184 '18] ip:676 add 
-[...x35 0 st21 0 o4185] ip:677 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 0] ip:680 inclcl local_number: 0
-[...x52 x35 0 st21 1] ip:683 jmp branch_offset: -26
-[...x52 x35 0 st21 1] ip:658 getlcln0 
-[...x35 0 st21 1 1] ip:659 pushint8 val: 5
-[...0 st21 1 1 5] ip:661 jge branch_offset: 24
-[...x52 x35 0 st21 1] ip:664 pushstr offset: 161
-[...x35 0 st21 1 '161] ip:669 getlcln0 
-[...0 st21 1 '161 1] ip:670 add 
-[...x35 0 st21 1 o4186] ip:671 pushstr offset: 18
-[...0 st21 1 o4186 '18] ip:676 add 
-[...x35 0 st21 1 o4187] ip:677 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 1] ip:680 inclcl local_number: 0
-[...x52 x35 0 st21 2] ip:683 jmp branch_offset: -26
-[...x52 x35 0 st21 2] ip:658 getlcln0 
-[...x35 0 st21 2 2] ip:659 pushint8 val: 5
-[...0 st21 2 2 5] ip:661 jge branch_offset: 24
-[...x52 x35 0 st21 2] ip:664 pushstr offset: 161
-[...x35 0 st21 2 '161] ip:669 getlcln0 
-[...0 st21 2 '161 2] ip:670 add 
-[...x35 0 st21 2 o4188] ip:671 pushstr offset: 18
-[...0 st21 2 o4188 '18] ip:676 add 
-[...x35 0 st21 2 o4189] ip:677 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 2] ip:680 inclcl local_number: 0
-[...x52 x35 0 st21 3] ip:683 jmp branch_offset: -26
-[...x52 x35 0 st21 3] ip:658 getlcln0 
-[...x35 0 st21 3 3] ip:659 pushint8 val: 5
-[...0 st21 3 3 5] ip:661 jge branch_offset: 24
-[...x52 x35 0 st21 3] ip:664 pushstr offset: 161
-[...x35 0 st21 3 '161] ip:669 getlcln0 
-[...0 st21 3 '161 3] ip:670 add 
-[...x35 0 st21 3 o4190] ip:671 pushstr offset: 18
-[...0 st21 3 o4190 '18] ip:676 add 
-[...x35 0 st21 3 o4191] ip:677 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 3] ip:680 inclcl local_number: 0
-[...x52 x35 0 st21 4] ip:683 jmp branch_offset: -26
-[...x52 x35 0 st21 4] ip:658 getlcln0 
-[...x35 0 st21 4 4] ip:659 pushint8 val: 5
-[...0 st21 4 4 5] ip:661 jge branch_offset: 24
-[...x52 x35 0 st21 4] ip:664 pushstr offset: 161
-[...x35 0 st21 4 '161] ip:669 getlcln0 
-[...0 st21 4 '161 4] ip:670 add 
-[...x35 0 st21 4 o4192] ip:671 pushstr offset: 18
-[...0 st21 4 o4192 '18] ip:676 add 
-[...x35 0 st21 4 o4193] ip:677 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 4] ip:680 inclcl local_number: 0
-[...x52 x35 0 st21 5] ip:683 jmp branch_offset: -26
-[...x52 x35 0 st21 5] ip:658 getlcln0 
-[...x35 0 st21 5 5] ip:659 pushint8 val: 5
-[...0 st21 5 5 5] ip:661 jge branch_offset: 24
-[...x52 x35 0 st21 5] ip:686 getlcln0 
-[...x35 0 st21 5 5] ip:687 push_0 
-[...0 st21 5 5 0] ip:688 jle branch_offset: 24
-[...x52 x35 0 st21 5] ip:691 pushstr offset: 193
-[...x35 0 st21 5 '193] ip:696 getlcln0 
-[...0 st21 5 '193 5] ip:697 add 
-[...x35 0 st21 5 o4194] ip:698 pushstr offset: 18
-[...0 st21 5 o4194 '18] ip:703 add 
-[...x35 0 st21 5 o4195] ip:704 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 5] ip:707 jmp branch_offset: 5
-[...x52 x35 0 st21 5] ip:713 getlcln0 
-[...x35 0 st21 5 5] ip:714 push_0 
-[...0 st21 5 5 0] ip:715 jle branch_offset: 36
-[...x52 x35 0 st21 5] ip:718 pushstr offset: 229
-[...x35 0 st21 5 '229] ip:723 getlcln0 
-[...0 st21 5 '229 5] ip:724 add 
-[...x35 0 st21 5 o4196] ip:725 pushstr offset: 18
-[...0 st21 5 o4196 '18] ip:730 add 
-[...x35 0 st21 5 o4197] ip:731 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 5] ip:734 declcl local_number: 0
-[...x52 x35 0 st21 4] ip:737 getlcln0 
-[...x35 0 st21 4 4] ip:738 pushint8 val: 2
-[...0 st21 4 4 2] ip:740 jgt branch_offset: 5
-[...x52 x35 0 st21 4] ip:746 declcl local_number: 0
-[...x52 x35 0 st21 3] ip:749 jmp branch_offset: -37
-[...x52 x35 0 st21 3] ip:713 getlcln0 
-[...x35 0 st21 3 3] ip:714 push_0 
-[...0 st21 3 3 0] ip:715 jle branch_offset: 36
-[...x52 x35 0 st21 3] ip:718 pushstr offset: 229
-[...x35 0 st21 3 '229] ip:723 getlcln0 
-[...0 st21 3 '229 3] ip:724 add 
-[...x35 0 st21 3 o4198] ip:725 pushstr offset: 18
-[...0 st21 3 o4198 '18] ip:730 add 
-[...x35 0 st21 3 o4199] ip:731 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 3] ip:734 declcl local_number: 0
-[...x52 x35 0 st21 2] ip:737 getlcln0 
-[...x35 0 st21 2 2] ip:738 pushint8 val: 2
-[...0 st21 2 2 2] ip:740 jgt branch_offset: 5
-[...x52 x35 0 st21 2] ip:743 jmp branch_offset: -31
-[...x52 x35 0 st21 2] ip:713 getlcln0 
-[...x35 0 st21 2 2] ip:714 push_0 
-[...0 st21 2 2 0] ip:715 jle branch_offset: 36
-[...x52 x35 0 st21 2] ip:718 pushstr offset: 229
-[...x35 0 st21 2 '229] ip:723 getlcln0 
-[...0 st21 2 '229 2] ip:724 add 
-[...x35 0 st21 2 o4200] ip:725 pushstr offset: 18
-[...0 st21 2 o4200 '18] ip:730 add 
-[...x35 0 st21 2 o4201] ip:731 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 2] ip:734 declcl local_number: 0
-[...x52 x35 0 st21 1] ip:737 getlcln0 
-[...x35 0 st21 1 1] ip:738 pushint8 val: 2
-[...0 st21 1 1 2] ip:740 jgt branch_offset: 5
-[...x52 x35 0 st21 1] ip:743 jmp branch_offset: -31
-[...x52 x35 0 st21 1] ip:713 getlcln0 
-[...x35 0 st21 1 1] ip:714 push_0 
-[...0 st21 1 1 0] ip:715 jle branch_offset: 36
-[...x52 x35 0 st21 1] ip:718 pushstr offset: 229
-[...x35 0 st21 1 '229] ip:723 getlcln0 
-[...0 st21 1 '229 1] ip:724 add 
-[...x35 0 st21 1 o4202] ip:725 pushstr offset: 18
-[...0 st21 1 o4202 '18] ip:730 add 
-[...x35 0 st21 1 o4203] ip:731 builtin_c argc: 1 func_index: 0
-[...x52 x35 0 st21 1] ip:734 declcl local_number: 0
-[...x52 x35 0 st21 0] ip:737 getlcln0 
-[...x35 0 st21 0 0] ip:738 pushint8 val: 2
-[...0 st21 0 0 2] ip:740 jgt branch_offset: 5
-[...x52 x35 0 st21 0] ip:743 jmp branch_offset: -31
-[...x52 x35 0 st21 0] ip:713 getlcln0 
-[...x35 0 st21 0 0] ip:714 push_0 
-[...0 st21 0 0 0] ip:715 jle branch_offset: 36
-[...x52 x35 0 st21 0] ip:752 retnil 
-[...0 st11 7 5040 5] ip:87 call arg_count: 0 func_offset: 782
-[...x41 x52 0 st21 nil] ip:792 zerolcl1 local_number: 0
-[...x41 x52 0 st21 0] ip:794 pushstr offset: 265
-[...x52 0 st21 0 '265] ip:799 getlcln0 
-[...0 st21 0 '265 0] ip:800 add 
-[...x52 0 st21 0 o4204] ip:801 pushstr offset: 18
-[...0 st21 0 o4204 '18] ip:806 add 
-[...x52 0 st21 0 o4205] ip:807 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 0] ip:810 getlcln0 
-[...x52 0 st21 0 0] ip:811 inclcl local_number: 0
-[...x52 0 st21 1 0] ip:814 pushint8 val: 5
-[...0 st21 1 0 5] ip:816 jlt branch_offset: -23
-[...x41 x52 0 st21 1] ip:794 pushstr offset: 265
-[...x52 0 st21 1 '265] ip:799 getlcln0 
-[...0 st21 1 '265 1] ip:800 add 
-[...x52 0 st21 1 o4206] ip:801 pushstr offset: 18
-[...0 st21 1 o4206 '18] ip:806 add 
-[...x52 0 st21 1 o4207] ip:807 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 1] ip:810 getlcln0 
-[...x52 0 st21 1 1] ip:811 inclcl local_number: 0
-[...x52 0 st21 2 1] ip:814 pushint8 val: 5
-[...0 st21 2 1 5] ip:816 jlt branch_offset: -23
-[...x41 x52 0 st21 2] ip:794 pushstr offset: 265
-[...x52 0 st21 2 '265] ip:799 getlcln0 
-[...0 st21 2 '265 2] ip:800 add 
-[...x52 0 st21 2 o4208] ip:801 pushstr offset: 18
-[...0 st21 2 o4208 '18] ip:806 add 
-[...x52 0 st21 2 o4209] ip:807 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 2] ip:810 getlcln0 
-[...x52 0 st21 2 2] ip:811 inclcl local_number: 0
-[...x52 0 st21 3 2] ip:814 pushint8 val: 5
-[...0 st21 3 2 5] ip:816 jlt branch_offset: -23
-[...x41 x52 0 st21 3] ip:794 pushstr offset: 265
-[...x52 0 st21 3 '265] ip:799 getlcln0 
-[...0 st21 3 '265 3] ip:800 add 
-[...x52 0 st21 3 o4210] ip:801 pushstr offset: 18
-[...0 st21 3 o4210 '18] ip:806 add 
-[...x52 0 st21 3 o4211] ip:807 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 3] ip:810 getlcln0 
-[...x52 0 st21 3 3] ip:811 inclcl local_number: 0
-[...x52 0 st21 4 3] ip:814 pushint8 val: 5
-[...0 st21 4 3 5] ip:816 jlt branch_offset: -23
-[...x41 x52 0 st21 4] ip:794 pushstr offset: 265
-[...x52 0 st21 4 '265] ip:799 getlcln0 
-[...0 st21 4 '265 4] ip:800 add 
-[...x52 0 st21 4 o4212] ip:801 pushstr offset: 18
-[...0 st21 4 o4212 '18] ip:806 add 
-[...x52 0 st21 4 o4213] ip:807 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 4] ip:810 getlcln0 
-[...x52 0 st21 4 4] ip:811 inclcl local_number: 0
-[...x52 0 st21 5 4] ip:814 pushint8 val: 5
-[...0 st21 5 4 5] ip:816 jlt branch_offset: -23
-[...x41 x52 0 st21 5] ip:794 pushstr offset: 265
-[...x52 0 st21 5 '265] ip:799 getlcln0 
-[...0 st21 5 '265 5] ip:800 add 
-[...x52 0 st21 5 o4214] ip:801 pushstr offset: 18
-[...0 st21 5 o4214 '18] ip:806 add 
-[...x52 0 st21 5 o4215] ip:807 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 5] ip:810 getlcln0 
-[...x52 0 st21 5 5] ip:811 inclcl local_number: 0
-[...x52 0 st21 6 5] ip:814 pushint8 val: 5
-[...0 st21 6 5 5] ip:816 jlt branch_offset: -23
-[...x41 x52 0 st21 6] ip:819 pushstr offset: 296
-[...x52 0 st21 6 '296] ip:824 getlcln0 
-[...0 st21 6 '296 6] ip:825 add 
-[...x52 0 st21 6 o4216] ip:826 pushstr offset: 18
-[...0 st21 6 o4216 '18] ip:831 add 
-[...x52 0 st21 6 o4217] ip:832 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 6] ip:835 getlcln0 
-[...x52 0 st21 6 6] ip:836 pushint8 val: 6
-[...0 st21 6 6 6] ip:838 jle branch_offset: 5
-[...x41 x52 0 st21 6] ip:844 inclcl local_number: 0
-[...x41 x52 0 st21 7] ip:847 getlcln0 
-[...x52 0 st21 7 7] ip:848 pushint8 val: 10
-[...0 st21 7 7 10] ip:850 jlt branch_offset: -32
-[...x41 x52 0 st21 7] ip:819 pushstr offset: 296
-[...x52 0 st21 7 '296] ip:824 getlcln0 
-[...0 st21 7 '296 7] ip:825 add 
-[...x52 0 st21 7 o4218] ip:826 pushstr offset: 18
-[...0 st21 7 o4218 '18] ip:831 add 
-[...x52 0 st21 7 o4219] ip:832 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 7] ip:835 getlcln0 
-[...x52 0 st21 7 7] ip:836 pushint8 val: 6
-[...0 st21 7 7 6] ip:838 jle branch_offset: 5
-[...x41 x52 0 st21 7] ip:841 jmp branch_offset: 11
-[...x41 x52 0 st21 7] ip:853 pushstr offset: 329
-[...x52 0 st21 7 '329] ip:858 getlcln0 
-[...0 st21 7 '329 7] ip:859 add 
-[...x52 0 st21 7 o4220] ip:860 pushstr offset: 18
-[...0 st21 7 o4220 '18] ip:865 add 
-[...x52 0 st21 7 o4221] ip:866 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 7] ip:869 declcl local_number: 0
-[...x41 x52 0 st21 6] ip:872 getlcln0 
-[...x52 0 st21 6 6] ip:873 pushint8 val: 3
-[...0 st21 6 6 3] ip:875 jge branch_offset: 5
-[...x41 x52 0 st21 6] ip:881 declcl local_number: 0
-[...x41 x52 0 st21 5] ip:884 getlcln0 
-[...x52 0 st21 5 5] ip:885 push_0 
-[...0 st21 5 5 0] ip:886 jgt branch_offset: -34
-[...x41 x52 0 st21 5] ip:853 pushstr offset: 329
-[...x52 0 st21 5 '329] ip:858 getlcln0 
-[...0 st21 5 '329 5] ip:859 add 
-[...x52 0 st21 5 o4222] ip:860 pushstr offset: 18
-[...0 st21 5 o4222 '18] ip:865 add 
-[...x52 0 st21 5 o4223] ip:866 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 5] ip:869 declcl local_number: 0
-[...x41 x52 0 st21 4] ip:872 getlcln0 
-[...x52 0 st21 4 4] ip:873 pushint8 val: 3
-[...0 st21 4 4 3] ip:875 jge branch_offset: 5
-[...x41 x52 0 st21 4] ip:881 declcl local_number: 0
-[...x41 x52 0 st21 3] ip:884 getlcln0 
-[...x52 0 st21 3 3] ip:885 push_0 
-[...0 st21 3 3 0] ip:886 jgt branch_offset: -34
-[...x41 x52 0 st21 3] ip:853 pushstr offset: 329
-[...x52 0 st21 3 '329] ip:858 getlcln0 
-[...0 st21 3 '329 3] ip:859 add 
-[...x52 0 st21 3 o4224] ip:860 pushstr offset: 18
-[...0 st21 3 o4224 '18] ip:865 add 
-[...x52 0 st21 3 o4225] ip:866 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 3] ip:869 declcl local_number: 0
-[...x41 x52 0 st21 2] ip:872 getlcln0 
-[...x52 0 st21 2 2] ip:873 pushint8 val: 3
-[...0 st21 2 2 3] ip:875 jge branch_offset: 5
-[...x41 x52 0 st21 2] ip:878 jmp branch_offset: 5
-[...x41 x52 0 st21 2] ip:884 getlcln0 
-[...x52 0 st21 2 2] ip:885 push_0 
-[...0 st21 2 2 0] ip:886 jgt branch_offset: -34
-[...x41 x52 0 st21 2] ip:853 pushstr offset: 329
-[...x52 0 st21 2 '329] ip:858 getlcln0 
-[...0 st21 2 '329 2] ip:859 add 
-[...x52 0 st21 2 o4226] ip:860 pushstr offset: 18
-[...0 st21 2 o4226 '18] ip:865 add 
-[...x52 0 st21 2 o4227] ip:866 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 2] ip:869 declcl local_number: 0
-[...x41 x52 0 st21 1] ip:872 getlcln0 
-[...x52 0 st21 1 1] ip:873 pushint8 val: 3
-[...0 st21 1 1 3] ip:875 jge branch_offset: 5
-[...x41 x52 0 st21 1] ip:878 jmp branch_offset: 5
-[...x41 x52 0 st21 1] ip:884 getlcln0 
-[...x52 0 st21 1 1] ip:885 push_0 
-[...0 st21 1 1 0] ip:886 jgt branch_offset: -34
-[...x41 x52 0 st21 1] ip:853 pushstr offset: 329
-[...x52 0 st21 1 '329] ip:858 getlcln0 
-[...0 st21 1 '329 1] ip:859 add 
-[...x52 0 st21 1 o4228] ip:860 pushstr offset: 18
-[...0 st21 1 o4228 '18] ip:865 add 
-[...x52 0 st21 1 o4229] ip:866 builtin_c argc: 1 func_index: 0
-[...x41 x52 0 st21 1] ip:869 declcl local_number: 0
-[...x41 x52 0 st21 0] ip:872 getlcln0 
-[...x52 0 st21 0 0] ip:873 pushint8 val: 3
-[...0 st21 0 0 3] ip:875 jge branch_offset: 5
-[...x41 x52 0 st21 0] ip:878 jmp branch_offset: 5
-[...x41 x52 0 st21 0] ip:884 getlcln0 
-[...x52 0 st21 0 0] ip:885 push_0 
-[...0 st21 0 0 0] ip:886 jgt branch_offset: -34
-[...x41 x52 0 st21 0] ip:889 retnil 
-[...0 st11 7 5040 5] ip:93 call arg_count: 0 func_offset: 919
-[...x58 x41 0 st21 nil] ip:929 pushint8 val: 3
-[...x41 0 st21 nil 3] ip:931 setlcl1 local_number: 0
-[...x58 x41 0 st21 3] ip:933 pushstr offset: 362
-[...x41 0 st21 3 '362] ip:938 getlcln0 
-[...0 st21 3 '362 3] ip:939 add 
-[...x41 0 st21 3 o4230] ip:940 pushstr offset: 18
-[...0 st21 3 o4230 '18] ip:945 add 
-[...x41 0 st21 3 o4231] ip:946 builtin_c argc: 1 func_index: 0
-[...x58 x41 0 st21 3] ip:949 getlcln0 
-[...x41 0 st21 3 3] ip:950 switch switch-instruction: {:count 5, :cases ({:case-branch 32, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 1}} {:case-branch 33, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 2}} {:case-branch 34, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 3}} {:case-branch 35, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 4}} {:case-branch 36, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 5}}), :default 42}
-[...x58 x41 0 st21 3] ip:1006 pushstr offset: 398
-[...x41 0 st21 3 '398] ip:1011 builtin_c argc: 1 func_index: 0
-[...x58 x41 0 st21 3] ip:1014 pushstr offset: 407
-[...x41 0 st21 3 '407] ip:1019 builtin_c argc: 1 func_index: 0
-[...x58 x41 0 st21 3] ip:1022 pushstr offset: 416
-[...x41 0 st21 3 '416] ip:1027 builtin_c argc: 1 func_index: 0
-[...x58 x41 0 st21 3] ip:1030 pushstr offset: 425
-[...x41 0 st21 3 '425] ip:1035 builtin_c argc: 1 func_index: 0
-[...x58 x41 0 st21 3] ip:1038 pushint8 val: 2
-[...x41 0 st21 3 2] ip:1040 setlcl1 local_number: 0
-[...x58 x41 0 st21 2] ip:1042 pushstr offset: 437
-[...x41 0 st21 2 '437] ip:1047 getlcln0 
-[...0 st21 2 '437 2] ip:1048 add 
-[...x41 0 st21 2 o4232] ip:1049 pushstr offset: 18
-[...0 st21 2 o4232 '18] ip:1054 add 
-[...x41 0 st21 2 o4233] ip:1055 builtin_c argc: 1 func_index: 0
-[...x58 x41 0 st21 2] ip:1058 getlcln0 
-[...x41 0 st21 2 2] ip:1059 switch switch-instruction: {:count 5, :cases ({:case-branch 32, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 1}} {:case-branch 36, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 2}} {:case-branch 40, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 3}} {:case-branch 44, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 4}} {:case-branch 48, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 5}}), :default 54}
-[...x58 x41 0 st21 2] ip:1110 pushstr offset: 389
-[...x41 0 st21 2 '389] ip:1115 builtin_c argc: 1 func_index: 0
-[...x58 x41 0 st21 2] ip:1118 retnil 
-[...0 st11 7 5040 5] ip:99 call arg_count: 0 func_offset: 1292
-[...x47 x58 0 st21 nil] ip:1302 pushstr offset: 457
-[...x58 0 st21 nil '457] ip:1307 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 nil] ip:1310 pushstr offset: 479
-[...x58 0 st21 nil '479] ip:1315 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 nil] ip:1318 pushstr offset: 496
-[...x58 0 st21 nil '496] ip:1323 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 nil] ip:1326 pushstr offset: 519
-[...x58 0 st21 nil '519] ip:1331 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 nil] ip:1334 jmp branch_offset: 10
-[...x47 x58 0 st21 nil] ip:1345 pushstr offset: 564
-[...x58 0 st21 nil '564] ip:1350 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 nil] ip:1353 pushstr offset: 589
-[...x58 0 st21 nil '589] ip:1358 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 nil] ip:1361 onelcl1 local_number: 0
-[...x47 x58 0 st21 1] ip:1363 getlcln0 
-[...x58 0 st21 1 1] ip:1364 pushint8 val: 5
-[...0 st21 1 1 5] ip:1366 jge branch_offset: 33
-[...x47 x58 0 st21 1] ip:1369 pushstr offset: 606
-[...x58 0 st21 1 '606] ip:1374 getlcln0 
-[...0 st21 1 '606 1] ip:1375 add 
-[...x58 0 st21 1 o4234] ip:1376 pushstr offset: 18
-[...0 st21 1 o4234 '18] ip:1381 add 
-[...x58 0 st21 1 o4235] ip:1382 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 1] ip:1385 getlcln0 
-[...x58 0 st21 1 1] ip:1386 pushint8 val: 3
-[...0 st21 1 1 3] ip:1388 jne branch_offset: 5
-[...x47 x58 0 st21 1] ip:1394 inclcl local_number: 0
-[...x47 x58 0 st21 2] ip:1397 jmp branch_offset: -35
-[...x47 x58 0 st21 2] ip:1363 getlcln0 
-[...x58 0 st21 2 2] ip:1364 pushint8 val: 5
-[...0 st21 2 2 5] ip:1366 jge branch_offset: 33
-[...x47 x58 0 st21 2] ip:1369 pushstr offset: 606
-[...x58 0 st21 2 '606] ip:1374 getlcln0 
-[...0 st21 2 '606 2] ip:1375 add 
-[...x58 0 st21 2 o4236] ip:1376 pushstr offset: 18
-[...0 st21 2 o4236 '18] ip:1381 add 
-[...x58 0 st21 2 o4237] ip:1382 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 2] ip:1385 getlcln0 
-[...x58 0 st21 2 2] ip:1386 pushint8 val: 3
-[...0 st21 2 2 3] ip:1388 jne branch_offset: 5
-[...x47 x58 0 st21 2] ip:1394 inclcl local_number: 0
-[...x47 x58 0 st21 3] ip:1397 jmp branch_offset: -35
-[...x47 x58 0 st21 3] ip:1363 getlcln0 
-[...x58 0 st21 3 3] ip:1364 pushint8 val: 5
-[...0 st21 3 3 5] ip:1366 jge branch_offset: 33
-[...x47 x58 0 st21 3] ip:1369 pushstr offset: 606
-[...x58 0 st21 3 '606] ip:1374 getlcln0 
-[...0 st21 3 '606 3] ip:1375 add 
-[...x58 0 st21 3 o4238] ip:1376 pushstr offset: 18
-[...0 st21 3 o4238 '18] ip:1381 add 
-[...x58 0 st21 3 o4239] ip:1382 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 3] ip:1385 getlcln0 
-[...x58 0 st21 3 3] ip:1386 pushint8 val: 3
-[...0 st21 3 3 3] ip:1388 jne branch_offset: 5
-[...x47 x58 0 st21 3] ip:1391 jmp branch_offset: 16
-[...x47 x58 0 st21 3] ip:1408 pushstr offset: 638
-[...x58 0 st21 3 '638] ip:1413 builtin_c argc: 1 func_index: 0
-[...x47 x58 0 st21 3] ip:1416 retnil 
-[...0 st11 7 5040 5] ip:105 retnil 
-[...nil x0 x0 1 st0] ip:1470 pushstr offset: 677
+[...st23 o4153 '21 5 '35] ip:434 retnil 
+[...0 st12 7 5040 5] ip:75 call arg_count: 0 func_offset: 501
+[...x46 0 st23 nil nil] ip:511 onelcl1 local_number: 0
+[...x46 0 st23 1 nil] ip:513 getlcln0 
+[...0 st23 1 nil 1] ip:514 pushint8 val: 10
+[...st23 1 nil 1 10] ip:516 jge branch_offset: 33
+[...x46 0 st23 1 nil] ip:519 pushstr offset: 89
+[...0 st23 1 nil '89] ip:524 getlcln0 
+[...st23 1 nil '89 1] ip:525 add 
+[...0 st23 1 nil o4156] ip:526 pushstr offset: 18
+[...st23 1 nil o4156 '18] ip:531 add 
+[...0 st23 1 nil o4157] ip:532 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 1 nil] ip:535 getlcln0 
+[...0 st23 1 nil 1] ip:536 pushint8 val: 5
+[...st23 1 nil 1 5] ip:538 jne branch_offset: 5
+[...x46 0 st23 1 nil] ip:544 inclcl local_number: 0
+[...x46 0 st23 2 nil] ip:547 jmp branch_offset: -35
+[...x46 0 st23 2 nil] ip:513 getlcln0 
+[...0 st23 2 nil 2] ip:514 pushint8 val: 10
+[...st23 2 nil 2 10] ip:516 jge branch_offset: 33
+[...x46 0 st23 2 nil] ip:519 pushstr offset: 89
+[...0 st23 2 nil '89] ip:524 getlcln0 
+[...st23 2 nil '89 2] ip:525 add 
+[...0 st23 2 nil o4158] ip:526 pushstr offset: 18
+[...st23 2 nil o4158 '18] ip:531 add 
+[...0 st23 2 nil o4159] ip:532 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 2 nil] ip:535 getlcln0 
+[...0 st23 2 nil 2] ip:536 pushint8 val: 5
+[...st23 2 nil 2 5] ip:538 jne branch_offset: 5
+[...x46 0 st23 2 nil] ip:544 inclcl local_number: 0
+[...x46 0 st23 3 nil] ip:547 jmp branch_offset: -35
+[...x46 0 st23 3 nil] ip:513 getlcln0 
+[...0 st23 3 nil 3] ip:514 pushint8 val: 10
+[...st23 3 nil 3 10] ip:516 jge branch_offset: 33
+[...x46 0 st23 3 nil] ip:519 pushstr offset: 89
+[...0 st23 3 nil '89] ip:524 getlcln0 
+[...st23 3 nil '89 3] ip:525 add 
+[...0 st23 3 nil o4160] ip:526 pushstr offset: 18
+[...st23 3 nil o4160 '18] ip:531 add 
+[...0 st23 3 nil o4161] ip:532 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 3 nil] ip:535 getlcln0 
+[...0 st23 3 nil 3] ip:536 pushint8 val: 5
+[...st23 3 nil 3 5] ip:538 jne branch_offset: 5
+[...x46 0 st23 3 nil] ip:544 inclcl local_number: 0
+[...x46 0 st23 4 nil] ip:547 jmp branch_offset: -35
+[...x46 0 st23 4 nil] ip:513 getlcln0 
+[...0 st23 4 nil 4] ip:514 pushint8 val: 10
+[...st23 4 nil 4 10] ip:516 jge branch_offset: 33
+[...x46 0 st23 4 nil] ip:519 pushstr offset: 89
+[...0 st23 4 nil '89] ip:524 getlcln0 
+[...st23 4 nil '89 4] ip:525 add 
+[...0 st23 4 nil o4162] ip:526 pushstr offset: 18
+[...st23 4 nil o4162 '18] ip:531 add 
+[...0 st23 4 nil o4163] ip:532 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 4 nil] ip:535 getlcln0 
+[...0 st23 4 nil 4] ip:536 pushint8 val: 5
+[...st23 4 nil 4 5] ip:538 jne branch_offset: 5
+[...x46 0 st23 4 nil] ip:544 inclcl local_number: 0
+[...x46 0 st23 5 nil] ip:547 jmp branch_offset: -35
+[...x46 0 st23 5 nil] ip:513 getlcln0 
+[...0 st23 5 nil 5] ip:514 pushint8 val: 10
+[...st23 5 nil 5 10] ip:516 jge branch_offset: 33
+[...x46 0 st23 5 nil] ip:519 pushstr offset: 89
+[...0 st23 5 nil '89] ip:524 getlcln0 
+[...st23 5 nil '89 5] ip:525 add 
+[...0 st23 5 nil o4164] ip:526 pushstr offset: 18
+[...st23 5 nil o4164 '18] ip:531 add 
+[...0 st23 5 nil o4165] ip:532 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 nil] ip:535 getlcln0 
+[...0 st23 5 nil 5] ip:536 pushint8 val: 5
+[...st23 5 nil 5 5] ip:538 jne branch_offset: 5
+[...x46 0 st23 5 nil] ip:541 jmp branch_offset: 8
+[...x46 0 st23 5 nil] ip:550 onelcl1 local_number: 1
+[...x46 0 st23 5 1] ip:552 getlcln1 
+[...0 st23 5 1 1] ip:553 pushint8 val: 10
+[...st23 5 1 1 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 1] ip:558 pushstr offset: 108
+[...0 st23 5 1 '108] ip:563 getlcln1 
+[...st23 5 1 '108 1] ip:564 add 
+[...0 st23 5 1 o4166] ip:565 pushstr offset: 18
+[...st23 5 1 o4166 '18] ip:570 add 
+[...0 st23 5 1 o4167] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 1] ip:574 getlcln1 
+[...0 st23 5 1 1] ip:575 pushint8 val: 5
+[...st23 5 1 1 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 1] ip:583 pushstr offset: 130
+[...0 st23 5 1 '130] ip:588 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 1] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 2] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 2] ip:552 getlcln1 
+[...0 st23 5 2 2] ip:553 pushint8 val: 10
+[...st23 5 2 2 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 2] ip:558 pushstr offset: 108
+[...0 st23 5 2 '108] ip:563 getlcln1 
+[...st23 5 2 '108 2] ip:564 add 
+[...0 st23 5 2 o4168] ip:565 pushstr offset: 18
+[...st23 5 2 o4168 '18] ip:570 add 
+[...0 st23 5 2 o4169] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 2] ip:574 getlcln1 
+[...0 st23 5 2 2] ip:575 pushint8 val: 5
+[...st23 5 2 2 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 2] ip:583 pushstr offset: 130
+[...0 st23 5 2 '130] ip:588 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 2] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 3] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 3] ip:552 getlcln1 
+[...0 st23 5 3 3] ip:553 pushint8 val: 10
+[...st23 5 3 3 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 3] ip:558 pushstr offset: 108
+[...0 st23 5 3 '108] ip:563 getlcln1 
+[...st23 5 3 '108 3] ip:564 add 
+[...0 st23 5 3 o4170] ip:565 pushstr offset: 18
+[...st23 5 3 o4170 '18] ip:570 add 
+[...0 st23 5 3 o4171] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 3] ip:574 getlcln1 
+[...0 st23 5 3 3] ip:575 pushint8 val: 5
+[...st23 5 3 3 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 3] ip:583 pushstr offset: 130
+[...0 st23 5 3 '130] ip:588 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 3] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 4] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 4] ip:552 getlcln1 
+[...0 st23 5 4 4] ip:553 pushint8 val: 10
+[...st23 5 4 4 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 4] ip:558 pushstr offset: 108
+[...0 st23 5 4 '108] ip:563 getlcln1 
+[...st23 5 4 '108 4] ip:564 add 
+[...0 st23 5 4 o4172] ip:565 pushstr offset: 18
+[...st23 5 4 o4172 '18] ip:570 add 
+[...0 st23 5 4 o4173] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 4] ip:574 getlcln1 
+[...0 st23 5 4 4] ip:575 pushint8 val: 5
+[...st23 5 4 4 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 4] ip:583 pushstr offset: 130
+[...0 st23 5 4 '130] ip:588 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 4] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 5] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 5] ip:552 getlcln1 
+[...0 st23 5 5 5] ip:553 pushint8 val: 10
+[...st23 5 5 5 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 5] ip:558 pushstr offset: 108
+[...0 st23 5 5 '108] ip:563 getlcln1 
+[...st23 5 5 '108 5] ip:564 add 
+[...0 st23 5 5 o4174] ip:565 pushstr offset: 18
+[...st23 5 5 o4174 '18] ip:570 add 
+[...0 st23 5 5 o4175] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 5] ip:574 getlcln1 
+[...0 st23 5 5 5] ip:575 pushint8 val: 5
+[...st23 5 5 5 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 5] ip:580 jmp branch_offset: 10
+[...x46 0 st23 5 5] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 6] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 6] ip:552 getlcln1 
+[...0 st23 5 6 6] ip:553 pushint8 val: 10
+[...st23 5 6 6 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 6] ip:558 pushstr offset: 108
+[...0 st23 5 6 '108] ip:563 getlcln1 
+[...st23 5 6 '108 6] ip:564 add 
+[...0 st23 5 6 o4176] ip:565 pushstr offset: 18
+[...st23 5 6 o4176 '18] ip:570 add 
+[...0 st23 5 6 o4177] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 6] ip:574 getlcln1 
+[...0 st23 5 6 6] ip:575 pushint8 val: 5
+[...st23 5 6 6 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 6] ip:580 jmp branch_offset: 10
+[...x46 0 st23 5 6] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 7] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 7] ip:552 getlcln1 
+[...0 st23 5 7 7] ip:553 pushint8 val: 10
+[...st23 5 7 7 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 7] ip:558 pushstr offset: 108
+[...0 st23 5 7 '108] ip:563 getlcln1 
+[...st23 5 7 '108 7] ip:564 add 
+[...0 st23 5 7 o4178] ip:565 pushstr offset: 18
+[...st23 5 7 o4178 '18] ip:570 add 
+[...0 st23 5 7 o4179] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 7] ip:574 getlcln1 
+[...0 st23 5 7 7] ip:575 pushint8 val: 5
+[...st23 5 7 7 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 7] ip:580 jmp branch_offset: 10
+[...x46 0 st23 5 7] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 8] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 8] ip:552 getlcln1 
+[...0 st23 5 8 8] ip:553 pushint8 val: 10
+[...st23 5 8 8 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 8] ip:558 pushstr offset: 108
+[...0 st23 5 8 '108] ip:563 getlcln1 
+[...st23 5 8 '108 8] ip:564 add 
+[...0 st23 5 8 o4180] ip:565 pushstr offset: 18
+[...st23 5 8 o4180 '18] ip:570 add 
+[...0 st23 5 8 o4181] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 8] ip:574 getlcln1 
+[...0 st23 5 8 8] ip:575 pushint8 val: 5
+[...st23 5 8 8 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 8] ip:580 jmp branch_offset: 10
+[...x46 0 st23 5 8] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 9] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 9] ip:552 getlcln1 
+[...0 st23 5 9 9] ip:553 pushint8 val: 10
+[...st23 5 9 9 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 9] ip:558 pushstr offset: 108
+[...0 st23 5 9 '108] ip:563 getlcln1 
+[...st23 5 9 '108 9] ip:564 add 
+[...0 st23 5 9 o4182] ip:565 pushstr offset: 18
+[...st23 5 9 o4182 '18] ip:570 add 
+[...0 st23 5 9 o4183] ip:571 builtin_c argc: 1 func_index: 0
+[...x46 0 st23 5 9] ip:574 getlcln1 
+[...0 st23 5 9 9] ip:575 pushint8 val: 5
+[...st23 5 9 9 5] ip:577 jlt branch_offset: 5
+[...x46 0 st23 5 9] ip:580 jmp branch_offset: 10
+[...x46 0 st23 5 9] ip:591 inclcl local_number: 1
+[...x46 0 st23 5 10] ip:594 jmp branch_offset: -43
+[...x46 0 st23 5 10] ip:552 getlcln1 
+[...0 st23 5 10 10] ip:553 pushint8 val: 10
+[...st23 5 10 10 10] ip:555 jge branch_offset: 41
+[...x46 0 st23 5 10] ip:597 retnil 
+[...0 st12 7 5040 5] ip:81 call arg_count: 0 func_offset: 646
+[...x52 x35 0 st23 nil] ip:656 zerolcl1 local_number: 0
+[...x52 x35 0 st23 0] ip:658 getlcln0 
+[...x35 0 st23 0 0] ip:659 pushint8 val: 5
+[...0 st23 0 0 5] ip:661 jge branch_offset: 24
+[...x52 x35 0 st23 0] ip:664 pushstr offset: 161
+[...x35 0 st23 0 '161] ip:669 getlcln0 
+[...0 st23 0 '161 0] ip:670 add 
+[...x35 0 st23 0 o4184] ip:671 pushstr offset: 18
+[...0 st23 0 o4184 '18] ip:676 add 
+[...x35 0 st23 0 o4185] ip:677 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 0] ip:680 inclcl local_number: 0
+[...x52 x35 0 st23 1] ip:683 jmp branch_offset: -26
+[...x52 x35 0 st23 1] ip:658 getlcln0 
+[...x35 0 st23 1 1] ip:659 pushint8 val: 5
+[...0 st23 1 1 5] ip:661 jge branch_offset: 24
+[...x52 x35 0 st23 1] ip:664 pushstr offset: 161
+[...x35 0 st23 1 '161] ip:669 getlcln0 
+[...0 st23 1 '161 1] ip:670 add 
+[...x35 0 st23 1 o4186] ip:671 pushstr offset: 18
+[...0 st23 1 o4186 '18] ip:676 add 
+[...x35 0 st23 1 o4187] ip:677 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 1] ip:680 inclcl local_number: 0
+[...x52 x35 0 st23 2] ip:683 jmp branch_offset: -26
+[...x52 x35 0 st23 2] ip:658 getlcln0 
+[...x35 0 st23 2 2] ip:659 pushint8 val: 5
+[...0 st23 2 2 5] ip:661 jge branch_offset: 24
+[...x52 x35 0 st23 2] ip:664 pushstr offset: 161
+[...x35 0 st23 2 '161] ip:669 getlcln0 
+[...0 st23 2 '161 2] ip:670 add 
+[...x35 0 st23 2 o4188] ip:671 pushstr offset: 18
+[...0 st23 2 o4188 '18] ip:676 add 
+[...x35 0 st23 2 o4189] ip:677 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 2] ip:680 inclcl local_number: 0
+[...x52 x35 0 st23 3] ip:683 jmp branch_offset: -26
+[...x52 x35 0 st23 3] ip:658 getlcln0 
+[...x35 0 st23 3 3] ip:659 pushint8 val: 5
+[...0 st23 3 3 5] ip:661 jge branch_offset: 24
+[...x52 x35 0 st23 3] ip:664 pushstr offset: 161
+[...x35 0 st23 3 '161] ip:669 getlcln0 
+[...0 st23 3 '161 3] ip:670 add 
+[...x35 0 st23 3 o4190] ip:671 pushstr offset: 18
+[...0 st23 3 o4190 '18] ip:676 add 
+[...x35 0 st23 3 o4191] ip:677 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 3] ip:680 inclcl local_number: 0
+[...x52 x35 0 st23 4] ip:683 jmp branch_offset: -26
+[...x52 x35 0 st23 4] ip:658 getlcln0 
+[...x35 0 st23 4 4] ip:659 pushint8 val: 5
+[...0 st23 4 4 5] ip:661 jge branch_offset: 24
+[...x52 x35 0 st23 4] ip:664 pushstr offset: 161
+[...x35 0 st23 4 '161] ip:669 getlcln0 
+[...0 st23 4 '161 4] ip:670 add 
+[...x35 0 st23 4 o4192] ip:671 pushstr offset: 18
+[...0 st23 4 o4192 '18] ip:676 add 
+[...x35 0 st23 4 o4193] ip:677 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 4] ip:680 inclcl local_number: 0
+[...x52 x35 0 st23 5] ip:683 jmp branch_offset: -26
+[...x52 x35 0 st23 5] ip:658 getlcln0 
+[...x35 0 st23 5 5] ip:659 pushint8 val: 5
+[...0 st23 5 5 5] ip:661 jge branch_offset: 24
+[...x52 x35 0 st23 5] ip:686 getlcln0 
+[...x35 0 st23 5 5] ip:687 push_0 
+[...0 st23 5 5 0] ip:688 jle branch_offset: 24
+[...x52 x35 0 st23 5] ip:691 pushstr offset: 193
+[...x35 0 st23 5 '193] ip:696 getlcln0 
+[...0 st23 5 '193 5] ip:697 add 
+[...x35 0 st23 5 o4194] ip:698 pushstr offset: 18
+[...0 st23 5 o4194 '18] ip:703 add 
+[...x35 0 st23 5 o4195] ip:704 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 5] ip:707 jmp branch_offset: 5
+[...x52 x35 0 st23 5] ip:713 getlcln0 
+[...x35 0 st23 5 5] ip:714 push_0 
+[...0 st23 5 5 0] ip:715 jle branch_offset: 36
+[...x52 x35 0 st23 5] ip:718 pushstr offset: 229
+[...x35 0 st23 5 '229] ip:723 getlcln0 
+[...0 st23 5 '229 5] ip:724 add 
+[...x35 0 st23 5 o4196] ip:725 pushstr offset: 18
+[...0 st23 5 o4196 '18] ip:730 add 
+[...x35 0 st23 5 o4197] ip:731 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 5] ip:734 declcl local_number: 0
+[...x52 x35 0 st23 4] ip:737 getlcln0 
+[...x35 0 st23 4 4] ip:738 pushint8 val: 2
+[...0 st23 4 4 2] ip:740 jgt branch_offset: 5
+[...x52 x35 0 st23 4] ip:746 declcl local_number: 0
+[...x52 x35 0 st23 3] ip:749 jmp branch_offset: -37
+[...x52 x35 0 st23 3] ip:713 getlcln0 
+[...x35 0 st23 3 3] ip:714 push_0 
+[...0 st23 3 3 0] ip:715 jle branch_offset: 36
+[...x52 x35 0 st23 3] ip:718 pushstr offset: 229
+[...x35 0 st23 3 '229] ip:723 getlcln0 
+[...0 st23 3 '229 3] ip:724 add 
+[...x35 0 st23 3 o4198] ip:725 pushstr offset: 18
+[...0 st23 3 o4198 '18] ip:730 add 
+[...x35 0 st23 3 o4199] ip:731 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 3] ip:734 declcl local_number: 0
+[...x52 x35 0 st23 2] ip:737 getlcln0 
+[...x35 0 st23 2 2] ip:738 pushint8 val: 2
+[...0 st23 2 2 2] ip:740 jgt branch_offset: 5
+[...x52 x35 0 st23 2] ip:743 jmp branch_offset: -31
+[...x52 x35 0 st23 2] ip:713 getlcln0 
+[...x35 0 st23 2 2] ip:714 push_0 
+[...0 st23 2 2 0] ip:715 jle branch_offset: 36
+[...x52 x35 0 st23 2] ip:718 pushstr offset: 229
+[...x35 0 st23 2 '229] ip:723 getlcln0 
+[...0 st23 2 '229 2] ip:724 add 
+[...x35 0 st23 2 o4200] ip:725 pushstr offset: 18
+[...0 st23 2 o4200 '18] ip:730 add 
+[...x35 0 st23 2 o4201] ip:731 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 2] ip:734 declcl local_number: 0
+[...x52 x35 0 st23 1] ip:737 getlcln0 
+[...x35 0 st23 1 1] ip:738 pushint8 val: 2
+[...0 st23 1 1 2] ip:740 jgt branch_offset: 5
+[...x52 x35 0 st23 1] ip:743 jmp branch_offset: -31
+[...x52 x35 0 st23 1] ip:713 getlcln0 
+[...x35 0 st23 1 1] ip:714 push_0 
+[...0 st23 1 1 0] ip:715 jle branch_offset: 36
+[...x52 x35 0 st23 1] ip:718 pushstr offset: 229
+[...x35 0 st23 1 '229] ip:723 getlcln0 
+[...0 st23 1 '229 1] ip:724 add 
+[...x35 0 st23 1 o4202] ip:725 pushstr offset: 18
+[...0 st23 1 o4202 '18] ip:730 add 
+[...x35 0 st23 1 o4203] ip:731 builtin_c argc: 1 func_index: 0
+[...x52 x35 0 st23 1] ip:734 declcl local_number: 0
+[...x52 x35 0 st23 0] ip:737 getlcln0 
+[...x35 0 st23 0 0] ip:738 pushint8 val: 2
+[...0 st23 0 0 2] ip:740 jgt branch_offset: 5
+[...x52 x35 0 st23 0] ip:743 jmp branch_offset: -31
+[...x52 x35 0 st23 0] ip:713 getlcln0 
+[...x35 0 st23 0 0] ip:714 push_0 
+[...0 st23 0 0 0] ip:715 jle branch_offset: 36
+[...x52 x35 0 st23 0] ip:752 retnil 
+[...0 st12 7 5040 5] ip:87 call arg_count: 0 func_offset: 782
+[...x41 x52 0 st23 nil] ip:792 zerolcl1 local_number: 0
+[...x41 x52 0 st23 0] ip:794 pushstr offset: 265
+[...x52 0 st23 0 '265] ip:799 getlcln0 
+[...0 st23 0 '265 0] ip:800 add 
+[...x52 0 st23 0 o4204] ip:801 pushstr offset: 18
+[...0 st23 0 o4204 '18] ip:806 add 
+[...x52 0 st23 0 o4205] ip:807 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 0] ip:810 getlcln0 
+[...x52 0 st23 0 0] ip:811 inclcl local_number: 0
+[...x52 0 st23 1 0] ip:814 pushint8 val: 5
+[...0 st23 1 0 5] ip:816 jlt branch_offset: -23
+[...x41 x52 0 st23 1] ip:794 pushstr offset: 265
+[...x52 0 st23 1 '265] ip:799 getlcln0 
+[...0 st23 1 '265 1] ip:800 add 
+[...x52 0 st23 1 o4206] ip:801 pushstr offset: 18
+[...0 st23 1 o4206 '18] ip:806 add 
+[...x52 0 st23 1 o4207] ip:807 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 1] ip:810 getlcln0 
+[...x52 0 st23 1 1] ip:811 inclcl local_number: 0
+[...x52 0 st23 2 1] ip:814 pushint8 val: 5
+[...0 st23 2 1 5] ip:816 jlt branch_offset: -23
+[...x41 x52 0 st23 2] ip:794 pushstr offset: 265
+[...x52 0 st23 2 '265] ip:799 getlcln0 
+[...0 st23 2 '265 2] ip:800 add 
+[...x52 0 st23 2 o4208] ip:801 pushstr offset: 18
+[...0 st23 2 o4208 '18] ip:806 add 
+[...x52 0 st23 2 o4209] ip:807 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 2] ip:810 getlcln0 
+[...x52 0 st23 2 2] ip:811 inclcl local_number: 0
+[...x52 0 st23 3 2] ip:814 pushint8 val: 5
+[...0 st23 3 2 5] ip:816 jlt branch_offset: -23
+[...x41 x52 0 st23 3] ip:794 pushstr offset: 265
+[...x52 0 st23 3 '265] ip:799 getlcln0 
+[...0 st23 3 '265 3] ip:800 add 
+[...x52 0 st23 3 o4210] ip:801 pushstr offset: 18
+[...0 st23 3 o4210 '18] ip:806 add 
+[...x52 0 st23 3 o4211] ip:807 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 3] ip:810 getlcln0 
+[...x52 0 st23 3 3] ip:811 inclcl local_number: 0
+[...x52 0 st23 4 3] ip:814 pushint8 val: 5
+[...0 st23 4 3 5] ip:816 jlt branch_offset: -23
+[...x41 x52 0 st23 4] ip:794 pushstr offset: 265
+[...x52 0 st23 4 '265] ip:799 getlcln0 
+[...0 st23 4 '265 4] ip:800 add 
+[...x52 0 st23 4 o4212] ip:801 pushstr offset: 18
+[...0 st23 4 o4212 '18] ip:806 add 
+[...x52 0 st23 4 o4213] ip:807 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 4] ip:810 getlcln0 
+[...x52 0 st23 4 4] ip:811 inclcl local_number: 0
+[...x52 0 st23 5 4] ip:814 pushint8 val: 5
+[...0 st23 5 4 5] ip:816 jlt branch_offset: -23
+[...x41 x52 0 st23 5] ip:794 pushstr offset: 265
+[...x52 0 st23 5 '265] ip:799 getlcln0 
+[...0 st23 5 '265 5] ip:800 add 
+[...x52 0 st23 5 o4214] ip:801 pushstr offset: 18
+[...0 st23 5 o4214 '18] ip:806 add 
+[...x52 0 st23 5 o4215] ip:807 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 5] ip:810 getlcln0 
+[...x52 0 st23 5 5] ip:811 inclcl local_number: 0
+[...x52 0 st23 6 5] ip:814 pushint8 val: 5
+[...0 st23 6 5 5] ip:816 jlt branch_offset: -23
+[...x41 x52 0 st23 6] ip:819 pushstr offset: 296
+[...x52 0 st23 6 '296] ip:824 getlcln0 
+[...0 st23 6 '296 6] ip:825 add 
+[...x52 0 st23 6 o4216] ip:826 pushstr offset: 18
+[...0 st23 6 o4216 '18] ip:831 add 
+[...x52 0 st23 6 o4217] ip:832 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 6] ip:835 getlcln0 
+[...x52 0 st23 6 6] ip:836 pushint8 val: 6
+[...0 st23 6 6 6] ip:838 jle branch_offset: 5
+[...x41 x52 0 st23 6] ip:844 inclcl local_number: 0
+[...x41 x52 0 st23 7] ip:847 getlcln0 
+[...x52 0 st23 7 7] ip:848 pushint8 val: 10
+[...0 st23 7 7 10] ip:850 jlt branch_offset: -32
+[...x41 x52 0 st23 7] ip:819 pushstr offset: 296
+[...x52 0 st23 7 '296] ip:824 getlcln0 
+[...0 st23 7 '296 7] ip:825 add 
+[...x52 0 st23 7 o4218] ip:826 pushstr offset: 18
+[...0 st23 7 o4218 '18] ip:831 add 
+[...x52 0 st23 7 o4219] ip:832 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 7] ip:835 getlcln0 
+[...x52 0 st23 7 7] ip:836 pushint8 val: 6
+[...0 st23 7 7 6] ip:838 jle branch_offset: 5
+[...x41 x52 0 st23 7] ip:841 jmp branch_offset: 11
+[...x41 x52 0 st23 7] ip:853 pushstr offset: 329
+[...x52 0 st23 7 '329] ip:858 getlcln0 
+[...0 st23 7 '329 7] ip:859 add 
+[...x52 0 st23 7 o4220] ip:860 pushstr offset: 18
+[...0 st23 7 o4220 '18] ip:865 add 
+[...x52 0 st23 7 o4221] ip:866 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 7] ip:869 declcl local_number: 0
+[...x41 x52 0 st23 6] ip:872 getlcln0 
+[...x52 0 st23 6 6] ip:873 pushint8 val: 3
+[...0 st23 6 6 3] ip:875 jge branch_offset: 5
+[...x41 x52 0 st23 6] ip:881 declcl local_number: 0
+[...x41 x52 0 st23 5] ip:884 getlcln0 
+[...x52 0 st23 5 5] ip:885 push_0 
+[...0 st23 5 5 0] ip:886 jgt branch_offset: -34
+[...x41 x52 0 st23 5] ip:853 pushstr offset: 329
+[...x52 0 st23 5 '329] ip:858 getlcln0 
+[...0 st23 5 '329 5] ip:859 add 
+[...x52 0 st23 5 o4222] ip:860 pushstr offset: 18
+[...0 st23 5 o4222 '18] ip:865 add 
+[...x52 0 st23 5 o4223] ip:866 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 5] ip:869 declcl local_number: 0
+[...x41 x52 0 st23 4] ip:872 getlcln0 
+[...x52 0 st23 4 4] ip:873 pushint8 val: 3
+[...0 st23 4 4 3] ip:875 jge branch_offset: 5
+[...x41 x52 0 st23 4] ip:881 declcl local_number: 0
+[...x41 x52 0 st23 3] ip:884 getlcln0 
+[...x52 0 st23 3 3] ip:885 push_0 
+[...0 st23 3 3 0] ip:886 jgt branch_offset: -34
+[...x41 x52 0 st23 3] ip:853 pushstr offset: 329
+[...x52 0 st23 3 '329] ip:858 getlcln0 
+[...0 st23 3 '329 3] ip:859 add 
+[...x52 0 st23 3 o4224] ip:860 pushstr offset: 18
+[...0 st23 3 o4224 '18] ip:865 add 
+[...x52 0 st23 3 o4225] ip:866 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 3] ip:869 declcl local_number: 0
+[...x41 x52 0 st23 2] ip:872 getlcln0 
+[...x52 0 st23 2 2] ip:873 pushint8 val: 3
+[...0 st23 2 2 3] ip:875 jge branch_offset: 5
+[...x41 x52 0 st23 2] ip:878 jmp branch_offset: 5
+[...x41 x52 0 st23 2] ip:884 getlcln0 
+[...x52 0 st23 2 2] ip:885 push_0 
+[...0 st23 2 2 0] ip:886 jgt branch_offset: -34
+[...x41 x52 0 st23 2] ip:853 pushstr offset: 329
+[...x52 0 st23 2 '329] ip:858 getlcln0 
+[...0 st23 2 '329 2] ip:859 add 
+[...x52 0 st23 2 o4226] ip:860 pushstr offset: 18
+[...0 st23 2 o4226 '18] ip:865 add 
+[...x52 0 st23 2 o4227] ip:866 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 2] ip:869 declcl local_number: 0
+[...x41 x52 0 st23 1] ip:872 getlcln0 
+[...x52 0 st23 1 1] ip:873 pushint8 val: 3
+[...0 st23 1 1 3] ip:875 jge branch_offset: 5
+[...x41 x52 0 st23 1] ip:878 jmp branch_offset: 5
+[...x41 x52 0 st23 1] ip:884 getlcln0 
+[...x52 0 st23 1 1] ip:885 push_0 
+[...0 st23 1 1 0] ip:886 jgt branch_offset: -34
+[...x41 x52 0 st23 1] ip:853 pushstr offset: 329
+[...x52 0 st23 1 '329] ip:858 getlcln0 
+[...0 st23 1 '329 1] ip:859 add 
+[...x52 0 st23 1 o4228] ip:860 pushstr offset: 18
+[...0 st23 1 o4228 '18] ip:865 add 
+[...x52 0 st23 1 o4229] ip:866 builtin_c argc: 1 func_index: 0
+[...x41 x52 0 st23 1] ip:869 declcl local_number: 0
+[...x41 x52 0 st23 0] ip:872 getlcln0 
+[...x52 0 st23 0 0] ip:873 pushint8 val: 3
+[...0 st23 0 0 3] ip:875 jge branch_offset: 5
+[...x41 x52 0 st23 0] ip:878 jmp branch_offset: 5
+[...x41 x52 0 st23 0] ip:884 getlcln0 
+[...x52 0 st23 0 0] ip:885 push_0 
+[...0 st23 0 0 0] ip:886 jgt branch_offset: -34
+[...x41 x52 0 st23 0] ip:889 retnil 
+[...0 st12 7 5040 5] ip:93 call arg_count: 0 func_offset: 919
+[...x58 x41 0 st23 nil] ip:929 pushint8 val: 3
+[...x41 0 st23 nil 3] ip:931 setlcl1 local_number: 0
+[...x58 x41 0 st23 3] ip:933 pushstr offset: 362
+[...x41 0 st23 3 '362] ip:938 getlcln0 
+[...0 st23 3 '362 3] ip:939 add 
+[...x41 0 st23 3 o4230] ip:940 pushstr offset: 18
+[...0 st23 3 o4230 '18] ip:945 add 
+[...x41 0 st23 3 o4231] ip:946 builtin_c argc: 1 func_index: 0
+[...x58 x41 0 st23 3] ip:949 getlcln0 
+[...x41 0 st23 3 3] ip:950 switch switch-instruction: {:count 5, :cases ({:case-branch 32, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 1}} {:case-branch 33, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 2}} {:case-branch 34, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 3}} {:case-branch 35, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 4}} {:case-branch 36, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 5}}), :default 42}
+[...x58 x41 0 st23 3] ip:1006 pushstr offset: 398
+[...x41 0 st23 3 '398] ip:1011 builtin_c argc: 1 func_index: 0
+[...x58 x41 0 st23 3] ip:1014 pushstr offset: 407
+[...x41 0 st23 3 '407] ip:1019 builtin_c argc: 1 func_index: 0
+[...x58 x41 0 st23 3] ip:1022 pushstr offset: 416
+[...x41 0 st23 3 '416] ip:1027 builtin_c argc: 1 func_index: 0
+[...x58 x41 0 st23 3] ip:1030 pushstr offset: 425
+[...x41 0 st23 3 '425] ip:1035 builtin_c argc: 1 func_index: 0
+[...x58 x41 0 st23 3] ip:1038 pushint8 val: 2
+[...x41 0 st23 3 2] ip:1040 setlcl1 local_number: 0
+[...x58 x41 0 st23 2] ip:1042 pushstr offset: 437
+[...x41 0 st23 2 '437] ip:1047 getlcln0 
+[...0 st23 2 '437 2] ip:1048 add 
+[...x41 0 st23 2 o4232] ip:1049 pushstr offset: 18
+[...0 st23 2 o4232 '18] ip:1054 add 
+[...x41 0 st23 2 o4233] ip:1055 builtin_c argc: 1 func_index: 0
+[...x58 x41 0 st23 2] ip:1058 getlcln0 
+[...x41 0 st23 2 2] ip:1059 switch switch-instruction: {:count 5, :cases ({:case-branch 32, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 1}} {:case-branch 36, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 2}} {:case-branch 40, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 3}} {:case-branch 44, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 4}} {:case-branch 48, :case-val #t3chnique.primitive.TypedValue{:type 7, :value 5}}), :default 54}
+[...x58 x41 0 st23 2] ip:1110 pushstr offset: 389
+[...x41 0 st23 2 '389] ip:1115 builtin_c argc: 1 func_index: 0
+[...x58 x41 0 st23 2] ip:1118 retnil 
+[...0 st12 7 5040 5] ip:99 call arg_count: 0 func_offset: 1292
+[...x47 x58 0 st23 nil] ip:1302 pushstr offset: 457
+[...x58 0 st23 nil '457] ip:1307 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 nil] ip:1310 pushstr offset: 479
+[...x58 0 st23 nil '479] ip:1315 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 nil] ip:1318 pushstr offset: 496
+[...x58 0 st23 nil '496] ip:1323 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 nil] ip:1326 pushstr offset: 519
+[...x58 0 st23 nil '519] ip:1331 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 nil] ip:1334 jmp branch_offset: 10
+[...x47 x58 0 st23 nil] ip:1345 pushstr offset: 564
+[...x58 0 st23 nil '564] ip:1350 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 nil] ip:1353 pushstr offset: 589
+[...x58 0 st23 nil '589] ip:1358 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 nil] ip:1361 onelcl1 local_number: 0
+[...x47 x58 0 st23 1] ip:1363 getlcln0 
+[...x58 0 st23 1 1] ip:1364 pushint8 val: 5
+[...0 st23 1 1 5] ip:1366 jge branch_offset: 33
+[...x47 x58 0 st23 1] ip:1369 pushstr offset: 606
+[...x58 0 st23 1 '606] ip:1374 getlcln0 
+[...0 st23 1 '606 1] ip:1375 add 
+[...x58 0 st23 1 o4234] ip:1376 pushstr offset: 18
+[...0 st23 1 o4234 '18] ip:1381 add 
+[...x58 0 st23 1 o4235] ip:1382 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 1] ip:1385 getlcln0 
+[...x58 0 st23 1 1] ip:1386 pushint8 val: 3
+[...0 st23 1 1 3] ip:1388 jne branch_offset: 5
+[...x47 x58 0 st23 1] ip:1394 inclcl local_number: 0
+[...x47 x58 0 st23 2] ip:1397 jmp branch_offset: -35
+[...x47 x58 0 st23 2] ip:1363 getlcln0 
+[...x58 0 st23 2 2] ip:1364 pushint8 val: 5
+[...0 st23 2 2 5] ip:1366 jge branch_offset: 33
+[...x47 x58 0 st23 2] ip:1369 pushstr offset: 606
+[...x58 0 st23 2 '606] ip:1374 getlcln0 
+[...0 st23 2 '606 2] ip:1375 add 
+[...x58 0 st23 2 o4236] ip:1376 pushstr offset: 18
+[...0 st23 2 o4236 '18] ip:1381 add 
+[...x58 0 st23 2 o4237] ip:1382 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 2] ip:1385 getlcln0 
+[...x58 0 st23 2 2] ip:1386 pushint8 val: 3
+[...0 st23 2 2 3] ip:1388 jne branch_offset: 5
+[...x47 x58 0 st23 2] ip:1394 inclcl local_number: 0
+[...x47 x58 0 st23 3] ip:1397 jmp branch_offset: -35
+[...x47 x58 0 st23 3] ip:1363 getlcln0 
+[...x58 0 st23 3 3] ip:1364 pushint8 val: 5
+[...0 st23 3 3 5] ip:1366 jge branch_offset: 33
+[...x47 x58 0 st23 3] ip:1369 pushstr offset: 606
+[...x58 0 st23 3 '606] ip:1374 getlcln0 
+[...0 st23 3 '606 3] ip:1375 add 
+[...x58 0 st23 3 o4238] ip:1376 pushstr offset: 18
+[...0 st23 3 o4238 '18] ip:1381 add 
+[...x58 0 st23 3 o4239] ip:1382 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 3] ip:1385 getlcln0 
+[...x58 0 st23 3 3] ip:1386 pushint8 val: 3
+[...0 st23 3 3 3] ip:1388 jne branch_offset: 5
+[...x47 x58 0 st23 3] ip:1391 jmp branch_offset: 16
+[...x47 x58 0 st23 3] ip:1408 pushstr offset: 638
+[...x58 0 st23 3 '638] ip:1413 builtin_c argc: 1 func_index: 0
+[...x47 x58 0 st23 3] ip:1416 retnil 
+[...0 st12 7 5040 5] ip:105 retnil 
+[...# x0 x0 1 st0] ip:1470 pushstr offset: 677
 [...x0 x0 1 st0 '677] ip:1475 builtin_c argc: 1 func_index: 0
-[...nil x0 x0 1 st0] ip:1478 retnil 
+[...# x0 x0 1 st0] ip:1478 retnil 
 [...] ip:0  
 
 stack: 

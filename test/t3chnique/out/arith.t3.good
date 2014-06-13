@@ -6,185 +6,185 @@
 [...x0 x0 1 st0 nil] ip:463 jr0t branch_offset: 30
 [...x0 x0 1 st0 nil] ip:466 getargn0 
 [...x0 1 st0 nil []0] ip:467 call arg_count: 1 func_offset: 0
-[...x418 1 st11 nil nil] ip:10 pushint val: 678
-[...1 st11 nil nil 678] ip:15 setlcl1 local_number: 0
-[...x418 1 st11 678 nil] ip:17 pushint val: 531
-[...1 st11 678 nil 531] ip:22 setlcl1 local_number: 1
-[...x418 1 st11 678 531] ip:24 say offset: 0
-[...nil x29 x0 1 st23] ip:383 getargn0 
-[...x29 x0 1 st23 '0] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x29 x0 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:29 getlcln0 
-[...1 st11 678 531 678] ip:30 sayval 
-[...nil x2 x29 1 st23] ip:383 getargn0 
-[...x2 x29 1 st23 678] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x2 x29 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:31 say offset: 6
-[...nil x34 x2 1 st23] ip:383 getargn0 
-[...x34 x2 1 st23 '6] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x34 x2 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:36 getlcln1 
-[...1 st11 678 531 531] ip:37 sayval 
-[...nil x4 x34 1 st23] ip:383 getargn0 
-[...x4 x34 1 st23 531] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x4 x34 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:38 say offset: 14
-[...nil x39 x4 1 st23] ip:383 getargn0 
-[...x39 x4 1 st23 '14] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x39 x4 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:43 getlcln0 
-[...1 st11 678 531 678] ip:44 getlcln1 
-[...st11 678 531 678 531] ip:45 add 
-[...1 st11 678 531 1209] ip:46 sayval 
-[...nil x8 x39 1 st23] ip:383 getargn0 
-[...x8 x39 1 st23 1209] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x8 x39 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:47 say offset: 24
-[...nil x44 x8 1 st23] ip:383 getargn0 
-[...x44 x8 1 st23 '24] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x44 x8 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:52 getlcln0 
-[...1 st11 678 531 678] ip:53 getlcln1 
-[...st11 678 531 678 531] ip:54 sub 
-[...1 st11 678 531 147] ip:55 sayval 
-[...nil x12 x44 1 st23] ip:383 getargn0 
-[...x12 x44 1 st23 147] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x12 x44 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:56 say offset: 34
-[...nil x49 x12 1 st23] ip:383 getargn0 
-[...x49 x12 1 st23 '34] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x49 x12 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:61 say offset: 37
-[...nil x17 x49 1 st23] ip:383 getargn0 
-[...x17 x49 1 st23 '37] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x17 x49 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:66 getlcln0 
-[...1 st11 678 531 678] ip:67 getlcln1 
-[...st11 678 531 678 531] ip:68 mul 
-[...1 st11 678 531 360018] ip:69 sayval 
-[...nil x53 x17 1 st23] ip:383 getargn0 
-[...x53 x17 1 st23 360018] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x53 x17 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:70 say offset: 45
-[...nil x22 x53 1 st23] ip:383 getargn0 
-[...x22 x53 1 st23 '45] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x22 x53 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:75 getlcln0 
-[...1 st11 678 531 678] ip:76 getlcln1 
-[...st11 678 531 678 531] ip:77 div 
-[...1 st11 678 531 226/177] ip:78 sayval 
-[...nil x57 x22 1 st23] ip:383 getargn0 
-[...x57 x22 1 st23 226/177] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x57 x22 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:79 say offset: 55
-[...nil x27 x57 1 st23] ip:383 getargn0 
-[...x27 x57 1 st23 '55] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x27 x57 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:84 getlcln0 
-[...1 st11 678 531 678] ip:85 getlcln1 
-[...st11 678 531 678 531] ip:86 mod 
-[...1 st11 678 531 147] ip:87 sayval 
-[...nil x61 x27 1 st23] ip:383 getargn0 
-[...x61 x27 1 st23 147] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x61 x27 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:88 say offset: 34
-[...nil x32 x61 1 st23] ip:383 getargn0 
-[...x32 x61 1 st23 '34] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x32 x61 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:93 say offset: 65
-[...nil x66 x32 1 st23] ip:383 getargn0 
-[...x66 x32 1 st23 '65] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x66 x32 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:98 objgetprop obj_id: 4 prop_id: 126
-[...x418 1 st11 678 531] ip:105 getr0 
-[...1 st11 678 531 123] ip:106 sayval 
-[...nil x41 x66 1 st23] ip:383 getargn0 
-[...x41 x66 1 st23 123] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x41 x66 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:107 say offset: 74
-[...nil x71 x41 1 st23] ip:383 getargn0 
-[...x71 x41 1 st23 '74] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x71 x41 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:112 objgetprop obj_id: 4 prop_id: 127
-[...x418 1 st11 678 531] ip:119 getr0 
-[...1 st11 678 531 456] ip:120 sayval 
-[...nil x50 x71 1 st23] ip:383 getargn0 
-[...x50 x71 1 st23 456] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x50 x71 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:121 say offset: 85
-[...nil x76 x50 1 st23] ip:383 getargn0 
-[...x76 x50 1 st23 '85] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x76 x50 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:126 objgetprop obj_id: 4 prop_id: 126
-[...x418 1 st11 678 531] ip:133 getr0 
-[...1 st11 678 531 123] ip:134 objgetprop obj_id: 4 prop_id: 127
-[...1 st11 678 531 123] ip:141 getr0 
-[...st11 678 531 123 456] ip:142 add 
-[...1 st11 678 531 579] ip:143 sayval 
-[...nil x68 x76 1 st23] ip:383 getargn0 
-[...x68 x76 1 st23 579] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x68 x76 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:144 say offset: 101
-[...nil x81 x68 1 st23] ip:383 getargn0 
-[...x81 x68 1 st23 '101] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x81 x68 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:149 objgetprop obj_id: 4 prop_id: 126
-[...x418 1 st11 678 531] ip:156 getr0 
-[...1 st11 678 531 123] ip:157 objgetprop obj_id: 4 prop_id: 127
-[...1 st11 678 531 123] ip:164 getr0 
-[...st11 678 531 123 456] ip:165 sub 
-[...1 st11 678 531 -333] ip:166 sayval 
-[...nil x86 x81 1 st23] ip:383 getargn0 
-[...x86 x81 1 st23 -333] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x86 x81 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:167 say offset: 34
-[...nil x86 x86 1 st23] ip:383 getargn0 
-[...x86 x86 1 st23 '34] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x86 x86 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:172 say offset: 117
-[...nil x91 x86 1 st23] ip:383 getargn0 
-[...x91 x86 1 st23 '117] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x91 x86 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:177 objgetprop obj_id: 4 prop_id: 126
-[...x418 1 st11 678 531] ip:184 getr0 
-[...1 st11 678 531 123] ip:185 objgetprop obj_id: 4 prop_id: 127
-[...1 st11 678 531 123] ip:192 getr0 
-[...st11 678 531 123 456] ip:193 mul 
-[...1 st11 678 531 56088] ip:194 sayval 
-[...nil x104 x91 1 st23] ip:383 getargn0 
-[...x104 x91 1 st23 56088] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x104 x91 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:195 say offset: 131
-[...nil x96 x104 1 st23] ip:383 getargn0 
-[...x96 x104 1 st23 '131] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x96 x104 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:200 objgetprop obj_id: 4 prop_id: 126
-[...x418 1 st11 678 531] ip:207 getr0 
-[...1 st11 678 531 123] ip:208 objgetprop obj_id: 4 prop_id: 127
-[...1 st11 678 531 123] ip:215 getr0 
-[...st11 678 531 123 456] ip:216 div 
-[...1 st11 678 531 41/152] ip:217 sayval 
-[...nil x122 x96 1 st23] ip:383 getargn0 
-[...x122 x96 1 st23 41/152] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x122 x96 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:218 say offset: 147
-[...nil x101 x122 1 st23] ip:383 getargn0 
-[...x101 x122 1 st23 '147] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x101 x122 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:223 objgetprop obj_id: 4 prop_id: 126
-[...x418 1 st11 678 531] ip:230 getr0 
-[...1 st11 678 531 123] ip:231 objgetprop obj_id: 4 prop_id: 127
-[...1 st11 678 531 123] ip:238 getr0 
-[...st11 678 531 123 456] ip:239 mod 
-[...1 st11 678 531 123] ip:240 sayval 
-[...nil x140 x101 1 st23] ip:383 getargn0 
-[...x140 x101 1 st23 123] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x140 x101 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:241 say offset: 34
-[...nil x106 x140 1 st23] ip:383 getargn0 
-[...x106 x140 1 st23 '34] ip:384 builtin_c argc: 1 func_index: 0
-[...nil x106 x140 1 st23] ip:387 retnil 
-[...x418 1 st11 678 531] ip:246 retnil 
+[...x418 1 st12 nil nil] ip:10 pushint val: 678
+[...1 st12 nil nil 678] ip:15 setlcl1 local_number: 0
+[...x418 1 st12 678 nil] ip:17 pushint val: 531
+[...1 st12 678 nil 531] ip:22 setlcl1 local_number: 1
+[...x418 1 st12 678 531] ip:24 say offset: 0
+[...# x29 x0 1 st25] ip:383 getargn0 
+[...x29 x0 1 st25 '0] ip:384 builtin_c argc: 1 func_index: 0
+[...# x29 x0 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:29 getlcln0 
+[...1 st12 678 531 678] ip:30 sayval 
+[...# x2 x29 1 st25] ip:383 getargn0 
+[...x2 x29 1 st25 678] ip:384 builtin_c argc: 1 func_index: 0
+[...# x2 x29 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:31 say offset: 6
+[...# x34 x2 1 st25] ip:383 getargn0 
+[...x34 x2 1 st25 '6] ip:384 builtin_c argc: 1 func_index: 0
+[...# x34 x2 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:36 getlcln1 
+[...1 st12 678 531 531] ip:37 sayval 
+[...# x4 x34 1 st25] ip:383 getargn0 
+[...x4 x34 1 st25 531] ip:384 builtin_c argc: 1 func_index: 0
+[...# x4 x34 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:38 say offset: 14
+[...# x39 x4 1 st25] ip:383 getargn0 
+[...x39 x4 1 st25 '14] ip:384 builtin_c argc: 1 func_index: 0
+[...# x39 x4 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:43 getlcln0 
+[...1 st12 678 531 678] ip:44 getlcln1 
+[...st12 678 531 678 531] ip:45 add 
+[...1 st12 678 531 1209] ip:46 sayval 
+[...# x8 x39 1 st25] ip:383 getargn0 
+[...x8 x39 1 st25 1209] ip:384 builtin_c argc: 1 func_index: 0
+[...# x8 x39 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:47 say offset: 24
+[...# x44 x8 1 st25] ip:383 getargn0 
+[...x44 x8 1 st25 '24] ip:384 builtin_c argc: 1 func_index: 0
+[...# x44 x8 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:52 getlcln0 
+[...1 st12 678 531 678] ip:53 getlcln1 
+[...st12 678 531 678 531] ip:54 sub 
+[...1 st12 678 531 147] ip:55 sayval 
+[...# x12 x44 1 st25] ip:383 getargn0 
+[...x12 x44 1 st25 147] ip:384 builtin_c argc: 1 func_index: 0
+[...# x12 x44 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:56 say offset: 34
+[...# x49 x12 1 st25] ip:383 getargn0 
+[...x49 x12 1 st25 '34] ip:384 builtin_c argc: 1 func_index: 0
+[...# x49 x12 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:61 say offset: 37
+[...# x17 x49 1 st25] ip:383 getargn0 
+[...x17 x49 1 st25 '37] ip:384 builtin_c argc: 1 func_index: 0
+[...# x17 x49 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:66 getlcln0 
+[...1 st12 678 531 678] ip:67 getlcln1 
+[...st12 678 531 678 531] ip:68 mul 
+[...1 st12 678 531 360018] ip:69 sayval 
+[...# x53 x17 1 st25] ip:383 getargn0 
+[...x53 x17 1 st25 360018] ip:384 builtin_c argc: 1 func_index: 0
+[...# x53 x17 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:70 say offset: 45
+[...# x22 x53 1 st25] ip:383 getargn0 
+[...x22 x53 1 st25 '45] ip:384 builtin_c argc: 1 func_index: 0
+[...# x22 x53 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:75 getlcln0 
+[...1 st12 678 531 678] ip:76 getlcln1 
+[...st12 678 531 678 531] ip:77 div 
+[...1 st12 678 531 226/177] ip:78 sayval 
+[...# x57 x22 1 st25] ip:383 getargn0 
+[...x57 x22 1 st25 226/177] ip:384 builtin_c argc: 1 func_index: 0
+[...# x57 x22 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:79 say offset: 55
+[...# x27 x57 1 st25] ip:383 getargn0 
+[...x27 x57 1 st25 '55] ip:384 builtin_c argc: 1 func_index: 0
+[...# x27 x57 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:84 getlcln0 
+[...1 st12 678 531 678] ip:85 getlcln1 
+[...st12 678 531 678 531] ip:86 mod 
+[...1 st12 678 531 147] ip:87 sayval 
+[...# x61 x27 1 st25] ip:383 getargn0 
+[...x61 x27 1 st25 147] ip:384 builtin_c argc: 1 func_index: 0
+[...# x61 x27 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:88 say offset: 34
+[...# x32 x61 1 st25] ip:383 getargn0 
+[...x32 x61 1 st25 '34] ip:384 builtin_c argc: 1 func_index: 0
+[...# x32 x61 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:93 say offset: 65
+[...# x66 x32 1 st25] ip:383 getargn0 
+[...x66 x32 1 st25 '65] ip:384 builtin_c argc: 1 func_index: 0
+[...# x66 x32 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:98 objgetprop obj_id: 4 prop_id: 126
+[...x418 1 st12 678 531] ip:105 getr0 
+[...1 st12 678 531 123] ip:106 sayval 
+[...# x41 x66 1 st25] ip:383 getargn0 
+[...x41 x66 1 st25 123] ip:384 builtin_c argc: 1 func_index: 0
+[...# x41 x66 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:107 say offset: 74
+[...# x71 x41 1 st25] ip:383 getargn0 
+[...x71 x41 1 st25 '74] ip:384 builtin_c argc: 1 func_index: 0
+[...# x71 x41 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:112 objgetprop obj_id: 4 prop_id: 127
+[...x418 1 st12 678 531] ip:119 getr0 
+[...1 st12 678 531 456] ip:120 sayval 
+[...# x50 x71 1 st25] ip:383 getargn0 
+[...x50 x71 1 st25 456] ip:384 builtin_c argc: 1 func_index: 0
+[...# x50 x71 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:121 say offset: 85
+[...# x76 x50 1 st25] ip:383 getargn0 
+[...x76 x50 1 st25 '85] ip:384 builtin_c argc: 1 func_index: 0
+[...# x76 x50 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:126 objgetprop obj_id: 4 prop_id: 126
+[...x418 1 st12 678 531] ip:133 getr0 
+[...1 st12 678 531 123] ip:134 objgetprop obj_id: 4 prop_id: 127
+[...1 st12 678 531 123] ip:141 getr0 
+[...st12 678 531 123 456] ip:142 add 
+[...1 st12 678 531 579] ip:143 sayval 
+[...# x68 x76 1 st25] ip:383 getargn0 
+[...x68 x76 1 st25 579] ip:384 builtin_c argc: 1 func_index: 0
+[...# x68 x76 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:144 say offset: 101
+[...# x81 x68 1 st25] ip:383 getargn0 
+[...x81 x68 1 st25 '101] ip:384 builtin_c argc: 1 func_index: 0
+[...# x81 x68 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:149 objgetprop obj_id: 4 prop_id: 126
+[...x418 1 st12 678 531] ip:156 getr0 
+[...1 st12 678 531 123] ip:157 objgetprop obj_id: 4 prop_id: 127
+[...1 st12 678 531 123] ip:164 getr0 
+[...st12 678 531 123 456] ip:165 sub 
+[...1 st12 678 531 -333] ip:166 sayval 
+[...# x86 x81 1 st25] ip:383 getargn0 
+[...x86 x81 1 st25 -333] ip:384 builtin_c argc: 1 func_index: 0
+[...# x86 x81 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:167 say offset: 34
+[...# x86 x86 1 st25] ip:383 getargn0 
+[...x86 x86 1 st25 '34] ip:384 builtin_c argc: 1 func_index: 0
+[...# x86 x86 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:172 say offset: 117
+[...# x91 x86 1 st25] ip:383 getargn0 
+[...x91 x86 1 st25 '117] ip:384 builtin_c argc: 1 func_index: 0
+[...# x91 x86 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:177 objgetprop obj_id: 4 prop_id: 126
+[...x418 1 st12 678 531] ip:184 getr0 
+[...1 st12 678 531 123] ip:185 objgetprop obj_id: 4 prop_id: 127
+[...1 st12 678 531 123] ip:192 getr0 
+[...st12 678 531 123 456] ip:193 mul 
+[...1 st12 678 531 56088] ip:194 sayval 
+[...# x104 x91 1 st25] ip:383 getargn0 
+[...x104 x91 1 st25 56088] ip:384 builtin_c argc: 1 func_index: 0
+[...# x104 x91 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:195 say offset: 131
+[...# x96 x104 1 st25] ip:383 getargn0 
+[...x96 x104 1 st25 '131] ip:384 builtin_c argc: 1 func_index: 0
+[...# x96 x104 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:200 objgetprop obj_id: 4 prop_id: 126
+[...x418 1 st12 678 531] ip:207 getr0 
+[...1 st12 678 531 123] ip:208 objgetprop obj_id: 4 prop_id: 127
+[...1 st12 678 531 123] ip:215 getr0 
+[...st12 678 531 123 456] ip:216 div 
+[...1 st12 678 531 41/152] ip:217 sayval 
+[...# x122 x96 1 st25] ip:383 getargn0 
+[...x122 x96 1 st25 41/152] ip:384 builtin_c argc: 1 func_index: 0
+[...# x122 x96 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:218 say offset: 147
+[...# x101 x122 1 st25] ip:383 getargn0 
+[...x101 x122 1 st25 '147] ip:384 builtin_c argc: 1 func_index: 0
+[...# x101 x122 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:223 objgetprop obj_id: 4 prop_id: 126
+[...x418 1 st12 678 531] ip:230 getr0 
+[...1 st12 678 531 123] ip:231 objgetprop obj_id: 4 prop_id: 127
+[...1 st12 678 531 123] ip:238 getr0 
+[...st12 678 531 123 456] ip:239 mod 
+[...1 st12 678 531 123] ip:240 sayval 
+[...# x140 x101 1 st25] ip:383 getargn0 
+[...x140 x101 1 st25 123] ip:384 builtin_c argc: 1 func_index: 0
+[...# x140 x101 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:241 say offset: 34
+[...# x106 x140 1 st25] ip:383 getargn0 
+[...x106 x140 1 st25 '34] ip:384 builtin_c argc: 1 func_index: 0
+[...# x106 x140 1 st25] ip:387 retnil 
+[...x418 1 st12 678 531] ip:246 retnil 
 [...x0 x0 1 st0 nil] ip:473 retnil 
 [...] ip:0 push_0 
 
