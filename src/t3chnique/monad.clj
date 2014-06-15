@@ -1,4 +1,6 @@
 (ns t3chnique.monad
+  (:require [monads.state :as st]
+            [monads.core :refer :all])
   (:require [clojure.algo.monads :as monads]))
 
 (def vm-m monads/state-m)

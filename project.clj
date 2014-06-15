@@ -7,6 +7,7 @@
   :main t3chnique.main
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
+                 [bwo/monads "0.2.0"]
                  [org.clojure/algo.monads "0.1.5"]
                  [org.clojure/tools.cli "0.3.1"]
                  [org.clojure/java.classpath "0.2.2"]
