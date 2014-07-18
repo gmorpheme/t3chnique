@@ -3,7 +3,8 @@ and function set protocols."}
     t3chnique.vm
   (:use [t3chnique.primitive]
         [t3chnique.monad])
-  (:require [t3chnique.parse :as parse]
+  (:require [monads.core :as m]
+            [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
             [clojure.tools.logging :refer [spy debug info trace error]])
@@ -12,8 +13,16 @@ and function set protocols."}
 
 (set! *warn-on-reflection* true)
 
-;; The VM has an awkward circular relationship with string and list
-;; metaclasses. This is a temporary workaround for the circular dependencies
+;;; The VM has an awkward circular relationship with string and list
+;;; metaclasses. In general the core vm should depend only on the
+;;; metaclass protocols and individual metaclass implementations are
+;;; then layered on top. However TADS3 also has for "constant" strings
+;;; and lists as well which share implementation with the string and
+;;; list metaclasses and the VM needs a more intimate relationship with
+;;; these than just using the metaclass API.
+;;;
+;;; This is a workaround for the circular dependencies until a better
+;;; solution can be found.
 (do (in-ns 't3chnique.metaclass.string)
     (clojure.core/declare add-to-str)
     (clojure.core/declare create)
@@ -21,10 +30,12 @@ and function set protocols."}
     (clojure.core/declare tads-list)
     (in-ns 't3chnique.vm))
 
-;; vm-m implementation
-;;
-;; vm state:
-(defn vm-state []
+;;; The representation of VM state is simply a map. Registers are top level
+;;; keys, various image blocks are represented in varying degrees of structure
+;;; in other keys.
+(defn vm-state
+  "Initialise a blank VM state map."
+  []
   {
    ;; stack and registers
    
@@ -61,8 +72,9 @@ and function set protocols."}
    :sequence 0 ; sequence number in VM history
    })
 
-;; image loading
-
+;;;;
+;;;; Image loading
+;;;;
 (defmulti load-image-block
   "Takes block from parsed image and loads the data into VM state. Dispatches
 on block type."
@@ -87,9 +99,13 @@ on block type."
     (assoc-in s [:code-pages pool-index] page)
     (assoc-in s [:const-pages pool-index] page)))
 
+;; Assoc the metaclasses into the state map and link up the records
+;; with their implementations.
 (defmethod load-image-block "MCLD" [s b]
   (assoc s :mcld (mc/wire-up-metaclasses (:entries b))))
 
+;; Assoc the objects into the state map and if they're intrinsic class
+;; objects, link them up to the related metaclass implementations.
 (defmethod load-image-block "OBJS" [s b]
   (let [objs (mc/read-object-block (:mcld s) b)
         _ (trace "loaded objects: " (keys objs))
@@ -98,18 +114,28 @@ on block type."
         (merge-with merge s {:objs objs})
       :mcld mcld)))
 
+;; End of image file, so initialise up any counters etc.
 (defmethod load-image-block "EOF " [s b]
   (assoc s :next-oid (inc (apply max (keys (:objs s))))))
 
 (defmethod load-image-block "MRES" [s b]
   s)
 
-(defn vm-from-image [bs]
+(defn vm-from-image
+  "Load a VM image file and translate into a state map."
+  [bs]
   (info "===*** Loading new VM image ***===")
   (reduce load-image-block (vm-state) bs))
 
+;;; Most of the core VM is implemented as a set of opcodes, each of which
+;;; defines a value in the VM state monad.
+
+;;; We define op structure, definition macro and opcode table for lookup
+;;; by code.
 (defrecord OpCode [code mnemonic parse-spec run-fn])
 
+;; TODO - no need for this to be an atom, use var and alter bindings
+;; as ops are defined.
 (defonce table (atom {}))
 
 (declare runop)
@@ -154,20 +180,19 @@ the VM execution."
   [{:keys [const-page-size const-pages]} ptr]
   [(:bytes (nth const-pages (/ ptr const-page-size))) (mod ptr const-page-size)])
 
-(defn parse-op
+(def parse-op
   "Parser for reading op code and args from offset into code pool."
-  []
-  (domonad parse/byteparser-m
-    [opcode (parse/ubyte)
-     :let [op (@table opcode)]
-     args (parse/spec (:parse-spec op))]
-    [op args]))
+  (m/mdo
+   opcode <- parse/ubyte
+   let op = (@table opcode)
+   args <- (parse/spec (:parse-spec op))
+   (m/return [op args])))
 
 (defn read-op
   "Read the operation in the supplied buffer position.
 Return opcode map, args map and byte length of compete instruction."
   [[b i]]
-  (let [[[op args] [b' i']] ((parse-op) [b i])]
+  (let [[[op args] [b' i']] (parse/run-parse parse-op [b i])]
     [op args (- i' i)]))
 
 (defn parse-op-at-ip []
@@ -270,7 +295,7 @@ instruction is complete."
 (defn get-method-header
   "Read method header at specified offset."
   [ptr]
-  (let [f (fn [x] (first ((parse/method-header (:method-header-size x)) (offset x ptr))))]
+  (let [f (fn [x] (parse/parse-at (parse/method-header (:method-header-size x)) (offset x ptr)))]
     (fn [s]
       [(f s) s])))
 
@@ -296,7 +321,7 @@ instruction is complete."
   "Read a string (prefixed utf-8) from the constant pool."
   [state address]
   (let [[buf idx] (const-offset state address)]
-    (first ((parse/prefixed-utf8) [buf idx]))))
+    (parse/parse-at parse/prefixed-utf8 buf idx)))
 
 (defn as-string
   "Get actual string from sstring or object string."
@@ -309,7 +334,7 @@ instruction is complete."
   "Read a list (prefixed) from the constant pool."
   [state address]
   (let [[buf idx] (const-offset state address)]
-    (first ((parse/lst) [buf idx]))))
+    (parse/parse-at parse/lst buf idx)))
 
 (defn as-list
   "Get seq from list or object list"
@@ -331,7 +356,7 @@ instruction is complete."
    (vm-true? v) (in-vm (m-result "true"))
    :else (abort (str "TODO other string conversions: value: " (mnemonise v)))))
 
-; TODO non-numerics
+;; TODO non-numerics
 (defn- vm-lift2
   ([op retf]
      (fn [a b]
@@ -398,8 +423,9 @@ instruction is complete."
    (vm-enum? a) (and (vm-enum? b (= (value a) (value b))))
    :else (abort "eq not implemented for type")))
 
-;;; Op codes
-
+;;;;
+;;;; Op codes
+;;;;
 (defop push_0 0x01 []
   (stack-push (vm-int 0)))
 
@@ -440,16 +466,16 @@ instruction is complete."
     obj-store (oid s)]
    (vm-obj s)))
 
-; TODO
+;; TODO pushparlst
 (defop pushparlst 0x0D [:ubyte fixed_arg_count])
 
-; TODO
+;; TODO makelstpar
 (defop makelstpar 0x0E [])
 
 (defop pushenum 0x0F [:int4 val]
   (stack-push (vm-enum val)))
 
-; TODO
+; TODO pushbifptr
 (defop pushbifptr 0x10 [:uint2 function_index :uint2 set_index])
 
 ; TODO non-numerics
@@ -958,15 +984,13 @@ items if available."
 ;;
 ;; http://www.tads.org/t3doc/doc/techman/t3spec/opcode.htm#opc_switch 
 (def switch-instruction-parser
-  (domonad parse/byteparser-m
-    [count (parse/uint2)
-     cases (parse/times count
-                        (parse/record :case-val (parse/data-holder)
-                                      :case-branch (parse/int2)))
-     default (parse/int2)]
-    {:count count
-     :cases cases
-     :default default}))
+  (m/mdo
+   count <- parse/uint2
+   cases <- (parse/times count
+                         (parse/record :case-val parse/data-holder
+                                       :case-branch parse/int2))
+   default <- parse/uint2
+   (m/return {:count count :cases cases :default default})))
 
 (defn resolve-offsets
   "Throughout the instruction the program counter points just past the
@@ -1003,8 +1027,9 @@ them to account for the difference."
       _ (jump-from-ip (find-offset val))]
      (do pc nil))))
 
-;; Various jump and branch operations
-
+;;;
+;;; Various jump and branch operations
+;;;
 (defop jmp 0x91 [:int2 branch_offset]
   (jump-from-ip (inc branch_offset)))
 
@@ -1061,7 +1086,7 @@ them to account for the difference."
                      (stack-pop))]
            nil))
 
-;; Local jumps
+;; TODO Local jumps
 
 (defop ljsr 0x9C [:int2 branch_offset])
 (defop lret 0x9D [:int2 local_variable_number])
@@ -1141,7 +1166,7 @@ them to account for the difference."
 (defop callext 0xB7 []
   (abort "callext not implemented"))
 
-; TODO implement
+;; TODO throw
 (defop throw 0xB8 []
   (do-vm
     [ep (reg-get :ep)
@@ -1184,7 +1209,7 @@ them to account for the difference."
     _ (apply-index obj index_val)]
    nil))
 
-;; TODO byte code construction
+;; TODO byte code construction - new1
 (defop new1 0xC0 [:ubyte arg_count :ubyte metaclass_id]
   (do-vm
    [proto (m-apply #(mc/prototype % metaclass_id))
@@ -1195,13 +1220,14 @@ them to account for the difference."
     _ (return (vm-obj id))]
    nil))
 
+;; TODO byte code construction - new2
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id]
   )
 
-;; TODO
+;; TODO byte code construction - trnew1
 (defop trnew1 0xC2 [:ubyte arg_count :ubyte metaclass_id])
 
-;; TODO
+;; TODO byte code construction - trnew2
 (defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id])
 
 (defn- setlcl [i v]
@@ -1225,9 +1251,6 @@ them to account for the difference."
 
 (defop inclcl 0xD0 [:uint2 local_number]
   (updlcl local_number vm-inc))
-
-; TODO
-(defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id])
 
 (defop declcl 0xD1 [:uint2 local_number]
   (updlcl local_number vm-dec))
@@ -1352,13 +1375,14 @@ with property set as specified. oid, pid numbers. val primitive."
 (defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val]
   )
 
-;; TODO debugger
+;; TODO debugger - bp
 (defop bp 0xF1 [])
 
 (defop nop 0xF2 [])
 
-;; control
-
+;;;
+;;; Overall control.
+;;;
 (defn enter
   "Set up vm at initial entry point."
   [host]

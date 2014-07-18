@@ -5,9 +5,9 @@
             [t3chnique.primitive :as p]
             [t3chnique.metaclass.collection :as coll]
             [t3chnique.metaclass.object :as obj]
+            [monads.core :refer [>>= mdo]]
             [clojure.tools.logging :refer [trace]])
-  (:use [clojure.algo.monads :only [domonad]]
-        [t3chnique.parse :only [uint2 byteparser-m data-holder times]]))
+  (:use [t3chnique.parse :only [parse uint2 data-holder times]]))
 
 #_(fn getp-subset
   [self argc]
@@ -57,10 +57,9 @@
 
   ;; Byte format is simple prefixed list of data holders
   (mc/load-from-image [self buf o]
-    (first ((domonad byteparser-m
-              [n (uint2)
-               values (times n (data-holder))]
-              (TadsList. values)) [buf o])))
+    (parse
+     (>>= uint2 #(times % data-holder) #(TadsList. %))
+     [buf o]))
 
   ;; Get property - intrinsics and superclass properties only
   (mc/get-property [self propid argc]

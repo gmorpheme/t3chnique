@@ -8,8 +8,7 @@
             [t3chnique.metaclass.object :as obj]
             [clojure.tools.logging :refer [trace]])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
-        [t3chnique.monad :only [vm-m do-vm m-apply]]
-        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
+        [t3chnique.monad :only [vm-m do-vm m-apply]]))
 
 (def vec-table
   [

@@ -5,7 +5,7 @@
             [t3chnique.primitive :as p]
             [clojure.tools.logging :refer [trace]]
             [clojure.algo.monads :refer [domonad with-monad m-seq fetch-val]]
-            [t3chnique.parse :refer [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
+            [t3chnique.parse :refer [parse prefixed-utf8]]))
 
 (declare add-to-str)
 
@@ -46,8 +46,7 @@
   mc/MetaClass
   
   (load-from-image [self buf o]
-    (with-monad byteparser-m
-      (TadsString. (first ((prefixed-utf8) [buf o])))))
+    (TadsString. (parse prefixed-utf8 [buf o])))
 
   (get-as-string [_] text)
 

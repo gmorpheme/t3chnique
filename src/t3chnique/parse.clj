@@ -93,6 +93,15 @@
 (defn parse [parser buffer]
   (st/eval-state parser (init-state buffer)))
 
+(defn run-parse [parser state]
+  (st/run-state parser state))
+
+(defn parse-at
+  ([parser state]
+     (st/eval-state parser state))
+  ([parser buffer offset]
+     (parse-at parser [buffer offset])))
+
 (defn skip [n]
   (modify (fn [[b i]] [b (+ i n)])))
 

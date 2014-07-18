@@ -1,6 +1,7 @@
 (ns t3chnique.main
   (:gen-class)
   (:use [clojure.tools.cli :only [cli]]
+        [monads.core :refer [mdo return]]
         [clojure.algo.monads :only [domonad fetch-state]]
         [clojure.main :only [repl]])
   (:require [t3chnique.all]
@@ -54,13 +55,13 @@
   (+ index (max code-offset etable-offset dtable-offset)))
 
 (defn disassemble-method [s m-addr]
-  (-> (vm/offset s m-addr)
-      ((domonad parse/byteparser-m
-         [[_ i] (fetch-state)
-          hdr (parse/method-header (:method-header-size s))
-          ops (parse/repeat-up-to (max (+ i 100) (method-limit i hdr)) (vm/parse-op))]
-         (merge hdr {:ops ops})))
-      (first)))
+  (parse/parse-at
+   (mdo
+    i <- parse/get-index
+    hdr <- (parse/method-header (:method-header-size s))
+    ops <- (parse/repeat-up-to (max (+ i 100) (method-limit i hdr (vm/parse-op))))
+    (return (merge hdr {:ops ops})) )
+   (vm/offset s m-addr)))
 
 (defn dis
   "Print disassembled code at offset"

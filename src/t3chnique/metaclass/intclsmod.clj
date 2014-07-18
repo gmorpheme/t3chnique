@@ -4,8 +4,7 @@
             [t3chnique.monad :as m]
             [t3chnique.primitive :as p]
             [clojure.tools.logging :refer [trace]])
-  (:use [clojure.algo.monads :only [domonad]]
-        [t3chnique.parse :only [uint2 byteparser-m data-holder times]]))
+  (:use [clojure.algo.monads :only [domonad]]))
 
 (defrecord IntrinsicClassModifier []
   mc/MetaClass

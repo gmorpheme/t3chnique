@@ -3,21 +3,21 @@
             [t3chnique.vm :as vm]
             [t3chnique.monad :as m]
             [t3chnique.primitive :as p]
+            [monads.core :refer [mdo return]]
             [clojure.tools.logging :refer [trace]])
-  (:use [clojure.algo.monads :only [domonad]]
-        [t3chnique.parse :only [skip uint2 uint4 byteparser-m]]))
+  (:use [t3chnique.parse :only [parse-at skip uint2 uint4]]))
 
 (defrecord IntrinsicClass [metaclass-index modifier-class]
   mc/MetaClass
 
   (mc/load-from-image [self buf o]
-    (first
-     ((domonad byteparser-m
-        [_ (skip 2)
-         meta-id (uint2)
-         modifier (uint4)] ; TODO state
-        (IntrinsicClass. meta-id modifier))
-      [buf o])))
+    (parse-at
+     (mdo
+      (skip 2)
+      mc-id <- uint2
+      modifier <- uint4
+      (return (IntrinsicClass. mc-id modifier)))
+     buf o))
 
   (mc/is-instance? [self val]
     (m/in-vm (m-result false))) ; TODO metaclass subclassing?

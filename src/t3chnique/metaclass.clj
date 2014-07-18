@@ -6,7 +6,7 @@
             [t3chnique.common :refer [indexed positions]]
             [clojure.tools.logging :refer [trace info spy]])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
-        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8]]))
+        [t3chnique.parse :only [uint2 uint4 data-holder times record prefixed-utf8]]))
 
 (defprotocol MetaClass
   "Operations available to the VM for each metaclass."
@@ -59,9 +59,7 @@ and alternative strategies should be attempted (op overloading).")
 
 (defn unknown-metaclass [] (Unimplemented.))
 
-(defonce metaclasses (atom {
-                            :collection unknown-metaclass
-                            :iterator unknown-metaclass
+(defonce metaclasses (atom {:iterator unknown-metaclass
                             :indexed-iterator unknown-metaclass
                             :character-set unknown-metaclass
                             :bytearray unknown-metaclass

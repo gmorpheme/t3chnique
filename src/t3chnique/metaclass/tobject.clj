@@ -1,23 +1,27 @@
-(ns t3chnique.metaclass.tobject
+(ns ^{:doc "The TADS Object metaclass. A prototypal object implementation 
+where each object references base objects / classes and contains properties."}
+  t3chnique.metaclass.tobject
   (:require [t3chnique.metaclass :as mc]
             [t3chnique.primitive :as p]
             [t3chnique.metaclass.object :as obj]
             [t3chnique.monad :as m]
-            [clojure.tools.logging :refer [trace]])
+            [clojure.tools.logging :refer [trace]]
+            [monads.core :refer [mdo return]]
+            [monads.util :refer [sequence-m]])
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val fetch-state]]
-        [t3chnique.parse :only [uint2 uint4 data-holder times record byteparser-m prefixed-utf8 binary]]))
+        [t3chnique.parse :only [parse-at uint2 uint4 data-holder times prefixed-utf8 binary]]))
 
 (def tobj-table
   [
-   (fn tobj-undef [argc] (m/abort "todo tobj-undef"))
-   (fn tobj-create-instance [argc] (m/abort "todo tobj-create-instance"))
-   (fn tobj-create-clone [argc] (m/abort "todo tobj-create-clone"))
-   (fn tobj-create-trans-instance [argc] (m/abort "todo tobj-create-trans-instance"))
-   (fn tobj-create-instance-of [argc] (m/abort "todo tobj-create-instance-of"))
-   (fn tobj-create-trans-instance-of [argc] (m/abort "todo tobj-create-trans-instance-of"))
-   (fn tobj-set-sc-list [argc] (m/abort "todo tobj-set-sc-list"))
-   (fn tobj-get-method [argc] (m/abort "todo tobj-get-method"))
-   (fn tobj-set-method [argc] (m/abort "todo tobj-set-method"))
+   (fn tobj-undef [argc] (m/abort "TODO tobj-undef"))
+   (fn tobj-create-instance [argc] (m/abort "TODO tobj-create-instance"))
+   (fn tobj-create-clone [argc] (m/abort "TODO tobj-create-clone"))
+   (fn tobj-create-trans-instance [argc] (m/abort "TODO tobj-create-trans-instance"))
+   (fn tobj-create-instance-of [argc] (m/abort "TODO tobj-create-instance-of"))
+   (fn tobj-create-trans-instance-of [argc] (m/abort "TODO tobj-create-trans-instance-of"))
+   (fn tobj-set-sc-list [argc] (m/abort "TODO tobj-set-sc-list"))
+   (fn tobj-get-method [argc] (m/abort "TODO tobj-get-method"))
+   (fn tobj-set-method [argc] (m/abort "TODO tobj-set-method"))
    ])
 
 (defn dedupe-chain-backwards
@@ -80,20 +84,18 @@ final instance remains in the sequence."
   mc/MetaClass
 
   (mc/load-from-image [self buf o]
-    (first
-     ((domonad byteparser-m
-
-        [base-count (uint2)
-         prop-count (uint2)
-         flags (uint2)
-         bases (times base-count (uint4))
-         properties (times prop-count (m-seq [(uint2) (data-holder)]))]
-        (TadsObject.
-         (= (bit-and flags 1) 1)
-         bases
-         (if (seq properties)
-           (apply assoc {} (flatten properties))
-           {}))) [buf o])))
+    (parse-at
+     (mdo
+      base-count <- uint2
+      prop-count <- uint2
+      flags <- uint2
+      bases <- (times base-count uint4)
+      properties <- (times prop-count (sequence-m [uint2 data-holder]))
+      (return (TadsObject. (= (bit-and flags 1) 1)
+                           bases
+                           (if (seq properties)
+                             (apply assoc {} (flatten properties))
+                             {})))) buf o))
 
   (mc/get-property [self propid argc]
     {:pre [(number? propid)]}
