@@ -11,8 +11,8 @@
   (fn [s] [false s]))
 
 (def property-table [getp-undef
-                     (fn getp_create_iter [self argc])
-                     (fn getp_create_live_iter [self argc])])
+                     (fn getp_create_iter [self argc] (m/abort "TODO getp-create-iter"))
+                     (fn getp_create_live_iter [self argc] (m/abort "TODO getp-create-live-iter"))])
 
 (defrecord Collection [])
 

@@ -169,9 +169,11 @@ a monadic value.
     (loop [[[name prop-table] & more] pairs]
       (when name
         (let [{pids :pids intcls :intrinsic-class-oid} (find-metaclass-by-id mcld name)]
+          (trace "PIDS: " pids " IntCls: " intcls)
           (if-let [property-index (first (positions #{propid} pids))] ; zero is undef prop
-            (do (trace "Property Index: " (inc property-index))
-                [(p/vm-obj intcls) (p/vm-native-code (get prop-table (inc property-index)))])
+            (let [f (get prop-table (inc property-index))]
+              (trace "Intrinsic Method: " f)
+              [(p/vm-obj intcls) (p/vm-native-code f)])
             (recur more)))))))
 
 (defn lookup-intrinsic-m
