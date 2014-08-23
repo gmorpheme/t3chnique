@@ -19,3 +19,4 @@
      (Dictionary2.)))
 
 (mc/register-metaclass! "dictionary2/030001" dictionary)
+(mc/register-data-reader! 't3chnique.metaclass.dictionary2.Dictionary2 map->Dictionary2)

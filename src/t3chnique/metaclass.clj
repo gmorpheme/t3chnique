@@ -59,9 +59,7 @@ and alternative strategies should be attempted (op overloading).")
 
 (defn unknown-metaclass [] (Unimplemented.))
 
-(defonce metaclasses (atom {:iterator unknown-metaclass
-                            :indexed-iterator unknown-metaclass
-                            :character-set unknown-metaclass
+(defonce metaclasses (atom {:character-set unknown-metaclass
                             :bytearray unknown-metaclass
                             :regex-pattern unknown-metaclass
                             :weakreflookuptable unknown-metaclass
@@ -71,11 +69,20 @@ and alternative strategies should be attempted (op overloading).")
                             :bignumber unknown-metaclass
                             :stringbuffer unknown-metaclass}))
 
+(defonce data-readers (atom {}))
+
 (defn register-metaclass! [metaclass-id constructor]
   (let [[id version] (bif/parse-id metaclass-id)
         kw (keyword id)]
     (info "Registering metaclass:" metaclass-id)
     (swap! metaclasses assoc kw constructor)))
+
+(defn register-data-reader!
+  "Registers a data-reader for reading the record from dump files."
+  [symbol map-constructor]
+  (swap! data-readers #(assoc % symbol map-constructor)))
+
+(register-data-reader! 't3chnique.metaclass.Unimplemented map->Unimplemented)
 
 (defn- find-metaclass-index-by-id
   "Find metaclass in mcld by full id match."
@@ -93,24 +100,32 @@ and alternative strategies should be attempted (op overloading).")
     #(= metaclass-id (:metaclass-id %))
     mcld)))
 
+(defn hydrate-mcld [s]
+  (assoc s :mcld
+         (for [{:keys [metaclass-id] :as metaclass} (:mcld s)]
+           (let [ctor (metaclass-id @metaclasses)
+                 prototype (ctor)]
+             (assoc metaclass :_prototype prototype)))))
+
 (defn wire-up-metaclasses
   "Takes MCLD block from image and wires in metaclass implementations"
   [mcld]
   (trace "Metaclass table: " mcld)
   (for [{:keys [name pids]} mcld]
     (let [[n version-required] (string/split name #"/")
-          k (keyword n)
-          ctor (k @metaclasses)]
+          k (keyword n)]
       (info "Wiring up metaclass: " name)
-      (when (nil? ctor)
-        (throw (RuntimeException. (str "Metaclass " k " not available. Known metaclasses: " (keys @metaclasses)))))
-      {:metaclass-id k :pids pids :metaclass ctor :_prototype (ctor)})))
+      (if-let [ctor (k @metaclasses)]
+        (let [prototype (ctor)]
+          (info "Prototype is: " prototype)
+          {:metaclass-id k :pids pids :_prototype prototype})
+        (throw (RuntimeException. (str "Metaclass " k " not available. Known metaclasses: " (keys @metaclasses))))))))
 
 (defn prototype
   "Return a metaclass prototype by state and index."
   [{:keys [mcld] :as state} index]
   (let [mcld-entry (nth mcld index)]
-    (or (:_prototype mcld-entry) ((:metaclass mcld-entry)))))
+    (:_prototype mcld-entry)))
 
 (defn read-object-block
   "Read an image object block and represent as map of oid to obj
@@ -121,9 +136,7 @@ metaclass and oid keys.
   (let [mcld-index (:mcld-index oblock)
         _ (trace "reading object block : " oblock)
         _ (trace "Metaclass table now: " mcld)
-        mclass-ctor (:metaclass (nth mcld mcld-index))
-        _ (trace "constructor : " mclass-ctor)
-        prototype (mclass-ctor)]
+        prototype (:_prototype (nth mcld mcld-index))]
     (into {} (map (fn [obj] [(:oid obj)
                             (-> (load-from-image prototype (:bytes obj) 0)
                                 (assoc :metaclass mcld-index)
@@ -179,3 +192,13 @@ a monadic value.
 (defn lookup-intrinsic-m
   [propid & mc-table-pairs]
   (m/m-apply #(apply lookup-intrinsic % propid mc-table-pairs)))
+
+(defn default-get-property [self propid argc & mc-table-pairs]
+  {:pre [(number? propid)]}
+  (trace "default-get-property" propid argc)
+  (m/do-vm
+   [[intcls method] (apply lookup-intrinsic-m
+                           propid
+                           mc-table-pairs)
+    r ((p/value method) self argc)]
+   [intcls r]))

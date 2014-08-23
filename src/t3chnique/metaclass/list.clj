@@ -3,6 +3,7 @@
             [t3chnique.vm :as vm]
             [t3chnique.monad :as m]
             [t3chnique.primitive :as p]
+            [t3chnique.metaclass.iterator :as iter]
             [t3chnique.metaclass.collection :as coll]
             [t3chnique.metaclass.object :as obj]
             [monads.core :refer [>>= mdo]]
@@ -61,20 +62,22 @@
      (>>= uint2 #(times % data-holder) #(TadsList. %))
      [buf o]))
 
-  ;; Get property - intrinsics and superclass properties only
+  ;; Search superclasses for intrinsics methods
   (mc/get-property [self propid argc]
-    {:pre [(number? propid)]}
-    (trace "TadsList/get-property" propid argc)
-    (m/do-vm
-     [[intcls method] (mc/lookup-intrinsic-m propid
-                                             :list property-table
-                                             :collection coll/property-table
-                                             :root-object obj/property-table)
-      r ((p/value method) self argc)]
-     [intcls r])) ; this needs to be the class obj of the metaclass that defined it
+    (mc/default-get-property
+      self propid argc
+      :list property-table
+      :collection coll/property-table
+      :root-object obj/property-table))
   
   (mc/get-as-seq [self]
-    val))
+    val)
+
+  ;; Provide index iterators
+  coll/TadsIterable
+
+  (create-iterator [self]
+    (iter/create-for-collection self)))
 
 (defn tads-list
   "Create non-interned list (no :oid or :metaclass)."
@@ -82,7 +85,7 @@
      (trace "creat tads-list")
      (TadsList. nil))
   ([elems]
-     (trace "create tads-list(elems)")
+     (trace "create tads-list" elems)
      (TadsList. elems)))
 
 (defn create [elems]
@@ -92,3 +95,4 @@
    (p/vm-obj oid)))
 
 (mc/register-metaclass! "list/030008" tads-list)
+(mc/register-data-reader! 't3chnique.metaclass.list.TadsList map->TadsList)

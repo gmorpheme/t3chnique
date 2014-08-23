@@ -127,6 +127,12 @@ on block type."
   (info "===*** Loading new VM image ***===")
   (reduce load-image-block (vm-state) bs))
 
+(defn hydrate-state
+  "VM state has transient items pruned when dumped. Hydrate to set these
+   up again after load."
+  [s]
+  (->> s (mc/hydrate-mcld)))
+
 ;;; Most of the core VM is implemented as a set of opcodes, each of which
 ;;; defines a value in the VM state monad.
 
@@ -184,7 +190,7 @@ the VM execution."
   "Parser for reading op code and args from offset into code pool."
   (m/mdo
    opcode <- parse/ubyte
-   let op = (@table opcode)
+   let op = (or (@table opcode) (throw (RuntimeException. "Unknown opcode")))
    args <- (parse/spec (:parse-spec op))
    (m/return [op args])))
 
@@ -286,6 +292,12 @@ instruction is complete."
 (defn obj-store [oid o]
   (trace "obj-store" oid)
   (update-val :objs #(assoc % oid o)))
+
+(defn obj-intern [o]
+  (do-vm
+   [oid (new-obj-id)
+    _ (obj-store oid o)]
+   (vm-obj oid)))
 
 (defn obj-retrieve [oid]
   {:pre [(number? oid)]}
@@ -718,7 +730,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 property value directly."
   [target defining self pid prop-val argc]
   (trace "vm/eval-prop" self pid prop-val argc)
-  (if prop-val
+  (if prop-val ;; TODO vm-truthy
     (cond
      (not (vm-auto-eval? prop-val)) (return prop-val)
      (vm-dstring? prop-val) (m->>
@@ -1231,6 +1243,7 @@ them to account for the difference."
 (defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id])
 
 (defn- setlcl [i v]
+  (trace "setlcl: " i v)
   (do-vm [fp (reg-get :fp)
           _ (stack-set (+ fp i) v)]
          nil))
@@ -1436,3 +1449,4 @@ error-fn takes state and exception."
         (if-let [e (or newr (:exc new-state))]
           [e new-state]
           (recur new-state))))))
+

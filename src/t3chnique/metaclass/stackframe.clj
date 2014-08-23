@@ -28,4 +28,7 @@
      (StackFrameRef.)))
 
 (mc/register-metaclass! "stack-frame-desc/030000" stack-frame-desc)
+(mc/register-data-reader! 't3chnique.metaclass.stackframe.StackFrameDesc map->StackFrameDesc)
+
 (mc/register-metaclass! "stack-frame-ref/030000" stack-frame-ref)
+(mc/register-data-reader! 't3chnique.metaclass.stackframe.StackFrameRef map->StackFrameRef)

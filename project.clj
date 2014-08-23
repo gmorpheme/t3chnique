@@ -32,7 +32,7 @@
                           :password :env/ARTIFACTORY_PASSWORD}]]
 
   ;; add t3 tests to resources for
-  :profiles {:dev {:repl-options {:init-ns t3chnique.user}
+  :profiles {:dev {:repl-options {:init-ns user}
                    :source-paths ["dev"]
                    :resource-paths ["t3"]
                    :dependencies [[org.clojure/tools.trace "0.7.8"]

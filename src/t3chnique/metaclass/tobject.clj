@@ -144,4 +144,4 @@ final instance remains in the sequence."
      (TadsObject. is-class bases properties)))
 
 (mc/register-metaclass! "tads-object/030005" tads-object)
-
+(mc/register-data-reader! 't3chnique.metaclass.tobject.TadsObject map->TadsObject)

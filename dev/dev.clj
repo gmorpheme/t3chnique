@@ -5,6 +5,7 @@
             [t3chnique.primitive :as p]
             [t3chnique.monad :as m]
             [t3chnique.metaclass :as mc]
+            [t3chnique.dump :refer [dump-state load-state]]
             [t3chnique.all]
             [clojure.pprint :refer (pprint pp)]
             [clojure.repl :refer :all]

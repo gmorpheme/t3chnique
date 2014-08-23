@@ -19,3 +19,4 @@
      (LookupTable.)))
 
 (mc/register-metaclass! "lookuptable/030003" lookup-table)
+(mc/register-data-reader! 't3chnique.metaclass.lookup.LookupTable map->LookupTable)

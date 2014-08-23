@@ -31,3 +31,4 @@
      (RootObject.)))
 
 (mc/register-metaclass! "root-object/030004" root)
+(mc/register-data-reader! 't3chnique.metaclass.object.RootObject map->RootObject)

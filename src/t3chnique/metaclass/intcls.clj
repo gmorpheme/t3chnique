@@ -30,3 +30,4 @@
      (IntrinsicClass. nil nil)))
 
 (mc/register-metaclass! "intrinsic-class/030001" int-cls)
+(mc/register-data-reader! 't3chnique.metaclass.intcls.IntrinsicClass map->IntrinsicClass)

@@ -99,3 +99,4 @@
      (Vector. src)))
 
 (mc/register-metaclass! "vector/030005" tads-vector)
+(mc/register-data-reader! 't3chnique.metaclass.vector.Vector map->Vector)

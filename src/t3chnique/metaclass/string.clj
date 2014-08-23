@@ -65,6 +65,8 @@
      (TadsString. text)))
 
 (mc/register-metaclass! "string/030008" tads-string)
+(mc/register-data-reader! 't3chnique.metaclass.string.TadsString map->TadsString)
+
 
 (defn create [text]
   (m/do-vm

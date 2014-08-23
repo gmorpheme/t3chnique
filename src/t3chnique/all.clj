@@ -16,6 +16,7 @@ and intrinstic function sets."}
             t3chnique.metaclass.lookup
             t3chnique.metaclass.stackframe
             t3chnique.metaclass.tobject
+            t3chnique.metaclass.iterator
             [t3chnique.intrinsics :as bif]
             [t3chnique.intrinsics.t3vm :as t3vm]
             [t3chnique.intrinsics.gen :as gen]))

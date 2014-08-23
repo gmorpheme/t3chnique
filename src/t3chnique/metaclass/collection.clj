@@ -10,9 +10,18 @@
   (trace "coll/getp-undef")
   (fn [s] [false s]))
 
-(def property-table [getp-undef
-                     (fn getp_create_iter [self argc] (m/abort "TODO getp-create-iter"))
-                     (fn getp_create_live_iter [self argc] (m/abort "TODO getp-create-live-iter"))])
+(defprotocol TadsIterable
+  (create-iterator [coll])
+  (create-live-iterator [coll]))
+
+(def property-table
+  [nil
+   
+   (fn getp_create_iter [self argc]
+     (vm/obj-intern (create-iterator self)))
+   
+   (fn getp_create_live_iter [self argc]
+     (vm/obj-intern (create-live-iterator self)))])
 
 (defrecord Collection [])
 
@@ -22,3 +31,4 @@
      (Collection.)))
 
 (mc/register-metaclass! "collection/030000" collection)
+(mc/register-data-reader! 't3chnique.metaclass.collection.Collection map->Collection)

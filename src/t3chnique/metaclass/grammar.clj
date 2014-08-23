@@ -16,3 +16,5 @@
      (GrammarProduction.)))
 
 (mc/register-metaclass! "grammar-production/030002" grammar)
+(mc/register-data-reader! 't3chnique.metaclass.grammar.GrammarProduction
+                          map->GrammarProduction)

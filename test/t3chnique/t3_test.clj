@@ -8,14 +8,13 @@
             [t3chnique.intrinsics :as bif]
             [t3chnique.intrinsics.t3vm :as t3vm]
             [t3chnique.intrinsics.gen :as gen]
+            [t3chnique.dump :refer [dump-state]]
             t3chnique.all
             [clojure.algo.monads :refer (update-val fetch-val m-seq m-chain)]
             [clojure.pprint :refer (pprint)]
             [clojure.string :as string]
             [clojure.java.io :as io]
             [clojure.tools.logging :refer [trace debug info]])
-  (:import [java.util Date]
-           [java.text DateFormat])
   (:use [midje.sweet]))
 
 (defrecord TraceHost [])
@@ -70,20 +69,12 @@
 (defn trace-host []
   (TraceHost.))
 
-(defn dump-state [s]
-  (let [fmt (DateFormat/getDateTimeInstance DateFormat/SHORT DateFormat/SHORT)
-        now (Date.)
-        filename (string/replace
-                  (str "state-" (.format fmt now) ".edn")
-                  #"[ :/]"
-                  "_")]
-    (spit filename (pr-str s))))
-
 (defn trace-step
   [host]
   (vm/step
    host
    (fn [op args ip]
+     (trace "@" ip ":" (:mnemonic op))
      (m/do-vm
       [stack (fetch-val :stack)
        _ (update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))]
@@ -114,6 +105,7 @@
 
 (defn trace-execution [name]
   (let [m0 (vm/vm-from-image (parse/parse-resource name))]
+    (trace "===> Executing " name)
     (let [host (trace-host)
           m1 (m/exec-vm (vm/enter host) m0)
           m2 (assoc m1 :_trace [])
@@ -154,6 +146,6 @@
   (let [s (run "dstr")]
     (compare-trace "dstr") => true))
 
-(future-fact "cube"
+(fact "cube"
   (let [s (run "cube")]
     (compare-trace "cube") => true))

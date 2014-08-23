@@ -19,3 +19,4 @@
      (AnonFunctionPtr.)))
 
 (mc/register-metaclass! "anon-func-ptr/030000" anon-fn)
+(mc/register-data-reader! 't3chnique.metaclass.anonfn.AnonFunctionPtr map->AnonFunctionPtr)
