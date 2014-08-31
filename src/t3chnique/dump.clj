@@ -13,6 +13,8 @@
            [java.text DateFormat]
            [java.io PushbackReader]))
 
+
+;; Print byte arrays using a #bytes tagged literal
 (defmethod print-method (type (byte-array [])) [ba ^java.io.Writer w]
   (.write w "#bytes ")
   (.write w (pr-str (into [] ba))))
@@ -32,8 +34,9 @@
     item))
 
 (defn clean-state
+  "Remove transient items."
   [s]
-  (postwalk (comp prune-underscore-keys) s))
+  (postwalk prune-underscore-keys s))
 
 (defn dump-state
   "Dump VM state as EDN to filename (automatically crete based on datetime

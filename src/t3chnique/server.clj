@@ -23,6 +23,9 @@
             [clojure.tools.logging :refer (info debug debugf trace error spy)]
             [t3chnique.all :refer [default-host]]))
 
+(defn pre-trace-step [op args ip]
+  (trace "@" ip ":" (:mnemonic op)))
+
 (defn vm-actions
   "Return the actions available for the vm at its current state"
   [vm]
@@ -361,6 +364,7 @@ useful information for tooling UIs."
 (defn vm-new!
   "Create a new VM for the game specified"
   [system game-id]
+  (trace "vm-new!" game-id)
   (let [name (:name (game-get system game-id))
         prefix (first (string/split name #"\W"))
         histories (:vm-histories system)
@@ -397,7 +401,7 @@ useful information for tooling UIs."
         host (vm-host system id)]
     (debug "Stepping VM: " id " from sequence " (:sequence initial-state))
     (try
-      (let [[e s] ((t3vm/step host) initial-state)]
+      (let [[e s] ((t3vm/step host pre-trace-step) initial-state)]
         (debugf "Updating store with %s/%d" id (:sequence s))
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
@@ -416,9 +420,13 @@ useful information for tooling UIs."
   "Run VM until an error is hit or input is required."
   [system id]
   (let [initial-state (vm-get system id)
-        host (vm-host system id)]
+        host (vm-host system id)
+        step (t3vm/step host pre-trace-step)
+        error-handler (fn [s e]
+                        (error e)
+                        [e s])]
     (try
-      (let [[e s] ((t3vm/run-state host) (vm-get system id))]
+      (let [[e s] (t3vm/execute step initial-state error-handler)]
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
         (swap! (:vm-histories system) update-in [id] conj (assoc initial-state :exc (with-out-str (st/print-stack-trace t))))))

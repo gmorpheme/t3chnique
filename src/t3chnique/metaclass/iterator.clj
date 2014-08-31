@@ -6,23 +6,11 @@
             [t3chnique.monad :as m]
             [clojure.tools.logging :refer [trace]]))
 
-(defprotocol Iteration
-
-  (iter-next [self] "Return [item new-iterator]")
-  (has-next? [self])
-  (reset [self])
-  (current-key [self])
-  (current-value [self]))
-
 (def property-table
   [nil
 
-   (fn getp-get-next [self argc]
-     (vm/obj-intern (next self)))
-   
-   (fn getp-get-is-next-avail [self argc]
-     (vm/obj-intern (has-next? self)))
-   
+   (fn getp-get-next [self argc])
+   (fn getp-get-is-next-avail [self argc])
    (fn getp-get-reset-iter [self argc] (m/abort "TODO getp-get-reset-iter"))
    (fn getp-get-cur-key [self argc] (m/abort "TODO getp-get-cur-key"))
    (fn getp-get-cur-val [self argc] (m/abort "TODO getp-get-cur-val"))])
@@ -51,10 +39,10 @@
       :iterator property-table
       :root-object obj/property-table))
 
-  Iteration
+  mc/Iteration
 
   (iter-next [self]
-    [ (IndexIterator. coll (inc idx))])
+    [nil (IndexIterator. coll (inc idx))])
 
   (has-next? [self]
     )

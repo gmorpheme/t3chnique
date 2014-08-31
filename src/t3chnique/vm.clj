@@ -8,7 +8,7 @@ and function set protocols."}
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
             [clojure.tools.logging :refer [spy debug info trace error]])
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until m-result m-chain]])
+  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until m-result m-chain m-bind]])
   (:import [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
@@ -190,7 +190,7 @@ the VM execution."
   "Parser for reading op code and args from offset into code pool."
   (m/mdo
    opcode <- parse/ubyte
-   let op = (or (@table opcode) (throw (RuntimeException. "Unknown opcode")))
+   let op = (or (@table opcode) (throw (RuntimeException. (format "Unknown opcode: 0x%x" opcode))))
    args <- (parse/spec (:parse-spec op))
    (m/return [op args])))
 
@@ -1119,11 +1119,33 @@ them to account for the difference."
           _ (m-when (vm-falsey? r0) (jump-from-ip (inc branch_offset)))]
          nil))
 
-(defop getspn 0xA6 [:ubyte index]
-  (copy :sp #(- % (inc index))))
+(defn run-intrinsic-method
+  "Most intrinsic methods are obj -> [ret obj]. This wraps to update in place."
+  [object method]
+  {:pre [(vm-obj? object)]}
+  (let [oid (value object)]
+    (do-vm [instance (obj-retrieve oid)
+            [ret new-instance] (method instance)
+            _ (obj-store oid new-instance)]
+           ret)))
 
 (defn- getlcl [i]
   (copy :fp (partial + i)))
+
+(defop iternext 0xA2 [:uint2 local_number :int2 offset]
+  (do-vm [iterator (getlcl local_number)
+          _ (if (vm-obj? iterator)
+              (m-bind (run-intrinsic-method iterator mc/iter-next) stack-push)
+              (jump-from-ip (+ 5 offset)))]
+         nil))
+
+;; #define OPC_ITERNEXT     0xA2                              /* iterator next */
+;; #define OPC_GETSETLCL1R0 0xA3 /* set local from R0 and leave value on stack */
+;; #define OPC_GETSETLCL1   0xA4         /* set local and leave value on stack */
+;; #define OPC_DUPR0        0xA5                              /* push R0 twice */
+
+(defop getspn 0xA6 [:ubyte index]
+  (copy :sp #(- % (inc index))))
 
 (defop getlcln0 0xAA []
   (getlcl 0))
@@ -1412,20 +1434,19 @@ with property set as specified. oid, pid numbers. val primitive."
   [host pre-action]
   (do-vm
    [
-    
-    ;; parse op and set pc
-    [op args len] (parse-op-at-ip)
     ip (reg-get :ip)
-    _ (set-pc (+ ip len))
-
-    ;; pre-action
-    _ (pre-action op args ip)
-
-    ;; run, commit pc, return
     ret (if (or (nil? ip) (zero? ip))
           (reg-get :r0)
-          (apply (:run-fn op) (cons host (vals args))))
-    _ (commit-pc)]
+          (do-vm [
+                  ;; parse op and set pc
+                  [op args len] (parse-op-at-ip)
+                  _ (set-pc (+ ip len))
+
+                  ;; pre-action
+                  _ (pre-action op args ip)
+                  ret (apply (:run-fn op) (cons host (vals args)))
+                  _ (commit-pc)]
+                 ret))]
    ret))
 
 (defn execute
@@ -1437,16 +1458,4 @@ error-fn takes state and exception."
       (if r
         [r s+]
         (recur s+)))))
-
-(defn run-state
-  "Run until an error occurs. Explicitly in the state monad!"
-  [host]
-  (fn [s]
-    (loop [state s]
-      (assert state)
-      (let [[newr new-state] ((step host) state)]
-        (assert new-state)
-        (if-let [e (or newr (:exc new-state))]
-          [e new-state]
-          (recur new-state))))))
 

@@ -8,6 +8,12 @@
   (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
         [t3chnique.parse :only [uint2 uint4 data-holder times record prefixed-utf8]]))
 
+;; Protocols for APIs which need to be exposed to the VM
+;; implementation itself.
+;;
+;; MetaClass is basic facilities required by all objects. In addition,
+;; Iteration is provided (as required by iternext op code).
+
 (defprotocol MetaClass
   "Operations available to the VM for each metaclass."
 
@@ -51,6 +57,14 @@ and alternative strategies should be attempted (op overloading).")
   (set-property [self pid val]
     "Monadic value to set property pid to value val. pid passed as number. Returns new obj.")
   )
+
+(defprotocol Iteration
+
+  (iter-next [self] "Return [item new-iterator]")
+  (has-next? [self])
+  (reset [self])
+  (current-key [self])
+  (current-value [self]))
 
 (defrecord Unimplemented []
   MetaClass

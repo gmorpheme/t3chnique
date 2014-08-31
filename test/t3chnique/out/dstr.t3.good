@@ -240,7 +240,6 @@
 [...x112 x48 1 st12 '293] ip:11 builtin_c argc: 1 func_index: 0
 [...# x112 x48 1 st12] ip:14 retnil 
 [...1 st0 []0 5 11] ip:160 retnil 
-[...] ip:0 push_0 
 
 stack: 
 

@@ -1149,7 +1149,6 @@
 [...# x0 x0 1 st0] ip:1470 pushstr offset: 677
 [...x0 x0 1 st0 '677] ip:1475 builtin_c argc: 1 func_index: 0
 [...# x0 x0 1 st0] ip:1478 retnil 
-[...] ip:0  
 
 stack: 
 

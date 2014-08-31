@@ -145,7 +145,6 @@
 [...x257 x83 1 st12 '481] ip:136 builtin_c argc: 1 func_index: 0
 [...# x257 x83 1 st12] ip:139 retnil 
 [...# x0 x0 1 st0] ip:340 retnil 
-[...] ip:0 push_1 
 
 stack: 
 
