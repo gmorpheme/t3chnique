@@ -1,14 +1,14 @@
 (ns ^{:doc "Main VM implementation including state and ops. Depends on metaclass
 and function set protocols."}
     t3chnique.vm
-  (:use [t3chnique.primitive]
-        [t3chnique.monad])
-  (:require [monads.core :as m]
+  (:use [t3chnique.primitive])
+  (:require [monads.core :as m :refer [mdo return modify get-state put-state >> >>=]]
+            [monads.util :as u :refer [sequence-m]]
+            [monads.state :refer [run-state]]
             [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
             [clojure.tools.logging :refer [spy debug info trace error]])
-  (:use [clojure.algo.monads :only [state-m domonad with-monad fetch-val set-val update-val m-seq m-when update-state fetch-state m-until m-result m-chain m-bind]])
   (:import [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
@@ -157,8 +157,7 @@ the VM execution."
         param-types (vec (map first param-defs))
         param-syms (vec (cons 'host (map second param-defs)))
         spec (vec (apply concat (for [[t s] param-defs] [t (keyword s)])))
-        op-fn-name (symbol (str "op-" op))
-        exprs (or exprs `((abort (str '~op " not implemented"))))]
+        op-fn-name (symbol (str "op-" op))]
     `(do
        (defn ^{:opcode ~cd} ~op-fn-name ~param-syms
          (trace '~op ~(vec (rest param-syms)))
@@ -169,10 +168,12 @@ the VM execution."
 (defmacro with-stack
   "Bind symbols to values popped of top of stack and push result of exprs back on"
   [syms exprs]
-  `(do-vm
-    [~(vec (reverse syms)) (m-seq ~(vec (repeat (count syms) '(stack-pop))))
-     _# (m-seq (map stack-push ~exprs))]
-    nil))
+  (let [binds (vec (reverse syms))
+        pops (vec (repeat (count syms) 'stack-pop))
+        pushes (for [e exprs] (list 'stack-push e))]
+    `(mdo
+      ~binds ~'<- (u/sequence-m ~pops)
+      ~@pushes)))
 
 (defn offset
   "Translate code pointer to buffer / offset pair."
@@ -201,60 +202,70 @@ Return opcode map, args map and byte length of compete instruction."
   (let [[[op args] [b' i']] (parse/run-parse parse-op [b i])]
     [op args (- i' i)]))
 
-(defn parse-op-at-ip []
-  (fn [s]
-    [(read-op (offset s (:ip s))) s]))
+(def parse-op-at-ip
+  "Action to parse operation at current instruction pointer."
+  #(return (read-op (offset %))))
 
 ;; We leave :ip pointing at the current instruction during processing.
 ;; Should opcodes need to jump, they set :pc instead and this will be
 ;; committed to :ip at the end of the step.
 
-(def set-pc (partial set-val :pc))
-(defn pc []
-  (fn [s]
-    [(or (:pc s) (:ip s)) s]))
+(defn set-val [key val]
+  (modify #(assoc % key val)))
+
+(defn get-val [key]
+  (mdo
+   st <- get-state
+   (return (key st))))
+
+(defn rm-val [key]
+  (modify #(dissoc % key)))
+
+(defn update-val [key f]
+  (modify #(assoc % key (f (key %)))))
+
+(defn set-pc [val]
+  (modify #(assoc % :pc val)))
+
+(defn pc [] (get-val :pc))
 
 (defn commit-pc
   "Commit the in-progress program counter back to ip."
   []
-  (do-vm
-   [pc (fetch-val :pc)
-    _ (set-val :ip pc)
-    _ (update-state #(dissoc % :pc))]
-   nil))
+  (mdo
+   pc (pc)
+   (set-val :ip pc)
+   (rm-val :pc)))
 
-(defn dump-state [] (fn [s] (println s) [nil s]))
-(defn dump-vals [& keys] (fn [s] (println (select-keys s keys)) [nil s]))
-(defn get-say-method [] (fetch-val :say-method))
+(def get-say-method (get-val :say-method))
 (def set-say-method (partial set-val :say-method))
-(defn get-say-function [] (fetch-val :say-function))
+(def get-say-function (get-val :say-function))
 (def set-say-function (partial set-val :say-function))
 
-(defn stack-push [val]
-  (do-vm
-   [_ (update-val :stack #(conj % val))
-    _ (update-val :sp inc)]
-   nil))
+;; Stack actions
 
-(defn stack-peek []
-  (do-vm
-   [stack (fetch-val :stack)]
-   (last stack)))
+(defn stack-push
+  "Action to push value onto the VM stack."
+  [val]
+  (>> (update-val :stack #(conj % val))
+      (update-val :sp inc)))
 
-(defn stack-pop []
-  (do-vm
-   [top (stack-peek)
-    _ (update-val :stack pop)
-    _ (update-val :sp dec)]
-   top))
+(def stack-peek
+  "Action to return value at top of stack"
+  (get-val (comp last :stack)))
+
+(def stack-pop
+  (mdo
+   top <- stack-peek
+   (update-val :stack pop)
+   (update-val :sp dec)
+   (return top)))
 
 (defn stack-set [idx val]
   (update-val :stack #(assoc % idx val)))
 
 (defn stack-get [idx]
-  (do-vm
-   [stack (fetch-val :stack)]
-   (nth stack idx)))
+  (>>= (get-val :stack) #(return (nth % idx))))
 
 (defn stack-update [idx f]
   (update-val :stack #(update-in % [idx] f)))
@@ -269,123 +280,150 @@ Return opcode map, args map and byte length of compete instruction."
 setting the program counter (pc) - this will be committed to ip once the
 instruction is complete."
   [offset-from-ip]
-  (do-vm
-   [ip (fetch-val :ip)
-    _ (set-pc (+ ip offset-from-ip))]
-   nil))
+  (>>= (get-val :ip) #(set-pc (+ % offset-from-ip))))
 
-(def reg-get fetch-val)
-(defn reg-set [reg val] (fn [s] [nil (assoc s reg val)]))
-(def return (partial reg-set :r0))
+(def reg-get get-val)
+
+(defn reg-set [reg val] (set-val reg val))
+
+(def vm-return (partial reg-set :r0))
 
 (defn symbol-value [sym]
-  (do-vm
-   [stab (fetch-val :symd)]
-   (get stab sym)))
+  {:pre [(string? sym)]
+   :post [vm-primitive?]}
+  (>>=
+   (get-val :symd)
+   #(return (get % sym))))
 
 (defn new-obj-id []
-  (do-vm
-   [oid (fetch-val :next-oid)
-    _ (update-val :next-oid inc)]
-   oid))
+  {:post [integer?]}
+  (mdo
+   oid <- (get-val :next-oid)
+   (update-val :next-oid inc)
+   (return oid)))
 
 (defn obj-store [oid o]
-  (trace "obj-store" oid)
+  {:pre [(integer? oid)]}
   (update-val :objs #(assoc % oid o)))
 
 (defn obj-intern [o]
-  (do-vm
-   [oid (new-obj-id)
-    _ (obj-store oid o)]
-   (vm-obj oid)))
+  {:pre [(record? o)]
+   :post [vm-primitive?]}
+  (mdo
+   oid <- (new-obj-id)
+   (obj-store oid o)
+   (return (vm-obj oid))))
 
 (defn obj-retrieve [oid]
-  {:pre [(number? oid)]}
+  {:pre [(number? oid)]
+   :post [record?]}
   (trace "obj-retrieve" oid)
-  (m-apply get-in [:objs oid]))
+  (get-val #(get-in % [:objs oid])))
 
 (defn get-method-header
   "Read method header at specified offset."
   [ptr]
-  (let [f (fn [x] (parse/parse-at (parse/method-header (:method-header-size x)) (offset x ptr)))]
-    (fn [s]
-      [(f s) s])))
+  {:pre [(integer? ptr)]}
+  (>>=
+   get-state
+   #(parse/parse-at (parse/method-header (:method-header-size %)) (offset % ptr))))
 
 (defn get-exception-table
   "Read exception table at specified offset."
   [ptr]
-  (m-apply
+  {:pre [(integer? ptr)]}
+  (>>=
+   get-state
    #((first ((parse/exception-table)
              (offset % ptr))))))
 
+(def tick
+  "Action to update sequence number in state."
+  (update-val :sequence inc))
+
 (defn runop
-  "Sets up program counter for a single operations implementation and handles
-   exceptions, rollback etc."
   [op]
-  (do-vm
-    [exc (op)
-     _ (update-val :sequence inc)]
-    exc))
+  (mdo
+   exception <- (op)
+   tick
+   (return exception)))
 
 ;; Operations on primitives / op overloads
 
 (defn load-string-constant
   "Read a string (prefixed utf-8) from the constant pool."
   [state address]
+  {:pre [(integer? address)]}
   (let [[buf idx] (const-offset state address)]
     (parse/parse-at parse/prefixed-utf8 buf idx)))
 
 (defn as-string
   "Get actual string from sstring or object string."
   [v]
+  {:pre [(vm-primitive? v)]}
   (cond
    (vm-sstring? v) (fn [s] [(load-string-constant s (value v)) s])
-   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-string obj))))
+   (vm-obj? v) (>>= (obj-retrieve (value v)) mc/get-as-string)))
 
 (defn load-list-constant
   "Read a list (prefixed) from the constant pool."
   [state address]
+  {:pre [(integer? address)]}
   (let [[buf idx] (const-offset state address)]
     (parse/parse-at parse/lst buf idx)))
 
 (defn as-list
   "Get seq from list or object list"
   [v]
+  {:pre [(vm-primitive? v)]
+   :post [#(or (record? %) (nil? %))]}
   (cond
    (vm-list? v) (fn [s] [(load-list-constant s (value v)) s])
-   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-seq obj))))
+   (vm-obj? v) (>>= (obj-retrieve (value v)) mc/get-as-seq)
+   :else nil))
 
-;; TODO other types
-;; should this be in string metaclass
+;; TODO should this be in string metaclass?
 (defn convert-to-string 
   "Return internal string representation (not vm-sstring)."
   [v]
+  {:pre [(vm-primitive? v)]}
   (cond
-   (vm-sstring? v) (fn [s] [(load-string-constant s (value v)) s])
-   (vm-obj? v) (do-vm [obj (obj-retrieve (value v))] (mc/get-as-string obj)) ;TODO metaclass cast_to_string
-   (vm-int? v) (in-vm (m-result (str (value v))))
-   (vm-nil? v) (in-vm (m-result "nil"))
-   (vm-true? v) (in-vm (m-result "true"))
-   :else (abort (str "TODO other string conversions: value: " (mnemonise v)))))
+   (vm-sstring? v) (get-val #(load-string-constant % (value v)))
+   
+   (vm-obj? v) (mdo
+                obj <- (obj-retrieve (value v))
+                (return (mc/get-as-string obj))) ;TODO metaclass cast_to_string
+
+   (vm-int? v) (return (str (value v)))
+
+   (vm-nil? v) (return "nil")
+   
+   (vm-true? v) (return "true")
+   
+   :else (throw (ex-info ("TODO other string conversions" {:value (mnemonise v)})))))
 
 ;; TODO non-numerics
 (defn- vm-lift2
+  "Lift an operation to apply to VM primitives"
   ([op retf]
      (fn [a b]
+       {:pre [(vm-primitive? a) (vm-primitive? b)]}
        (cond
         (vm-int? a) (if (vm-int? b)
                       (retf (op (value a) (value b)))
-                      (abort "invalid numeric op"))
-        :else (abort "NUM_VAL_REQD"))))
+                      (throw (ex-info "Operands not numeric" {:code :NUM_VAL_REQD :left a :right b})))
+        :else (throw (ex-info "NUM_VAL_REQD" {:code :NUM_VAL_REQD :left a :right b})))))
   ([op]
      (vm-lift2 op identity)))
 
 (defn- vm-lift1
+  "Life an operator to apply to VM primitive."
   ([op retf]
      (fn [a]
+       {:pre [(vm-primitive? a)]}
        (cond
         (vm-int? a) (retf (op (value a)))
-        :else (abort "NUM_VAL_REQD")))))
+        :else (throw (ex-info "Numeric arg required" {:code :NUM_VAL_REQD :value a}))))))
 
 ;; comparisons operating on type values but returning raw booleans
 
@@ -403,7 +441,7 @@ instruction is complete."
 
 
 ;; TODO non numerics
-
+(def vm-+ (vm-lift2 + vm-int))
 (def vm-- (vm-lift2 - vm-int))
 (def vm-* (vm-lift2 * vm-int))
 (def vm-div (vm-lift2 / vm-int)) ; TODO div by zero
@@ -412,28 +450,26 @@ instruction is complete."
 (def vm->> (vm-lift2 bit-shift-right vm-int))
 (def vm-inc (vm-lift1 inc vm-int))
 (def vm-dec (vm-lift1 dec vm-int))
-
-;; Clojure doesn't expose java's >>>, this is from http://pastebin.com/4PgeHmPJ
-(defn logical-shift-right [n s]
-  (if (neg? n)
-    (bit-or (bit-shift-right (bit-and n 0x7fffffff) s)
-            (bit-shift-right 0x40000000 (dec s)))
-    (bit-shift-right n s)))
-
-(def vm->>> (vm-lift2 logical-shift-right vm-int))
+(def vm->>> (vm-lift2 unsigned-bit-shift-right vm-int))
 (def vm-xor (vm-lift2 bit-xor vm-int))
 
-(defn- vm-falsey? [val]
-  (or (vm-nil? val) (and (vm-int? val) (vm-zero? val))))
+(defn vm-falsey? [val]
+  {:pre [(vm-primitive? val)]}
+  (or (vm-nil? val)
+      (and (vm-int? val) (vm-zero? val))))
+
+(defn vm-truthy? [val]
+  (not (vm-falsey? val)))
 
 ; TODO non numeric
 (defn vm-eq? [a b]
+  {:pre [(vm-primitive? a) (vm-primitive? b)]}
   (cond
    (vm-nil? a) (vm-nil? b)
    (vm-true? a) (vm-true? b)
    (vm-int? a) (and (vm-int? b) (= (value a) (value b)))
    (vm-enum? a) (and (vm-enum? b (= (value a) (value b))))
-   :else (abort "eq not implemented for type")))
+   :else (throw (ex-info "TODO: vm-eq? not implemented for type" {:left a :right b}))))
 
 ;;;;
 ;;;; Op codes
@@ -472,33 +508,29 @@ instruction is complete."
   (stack-push (vm-funcptr code_offset)))
 
 (defop pushstri 0x0C [:pref-utf8 string_bytes]
-  (do-vm
-   [s (t3chnique.metaclass.string/create string_bytes)
-    oid (new-obj-id)
-    obj-store (oid s)]
-   (vm-obj s)))
+  (obj-intern (t3chnique.metaclass.string/create string_bytes)))
 
-;; TODO pushparlst
-(defop pushparlst 0x0D [:ubyte fixed_arg_count])
+(defop pushparlst 0x0D [:ubyte fixed_arg_count]
+  (throw (ex-info "TODO: implement pushparlst")))
 
-;; TODO makelstpar
-(defop makelstpar 0x0E [])
+(defop makelstpar 0x0E []
+  (throw (ex-info "TODO: implement makelstpar")))
 
 (defop pushenum 0x0F [:int4 val]
   (stack-push (vm-enum val)))
 
-; TODO pushbifptr
-(defop pushbifptr 0x10 [:uint2 function_index :uint2 set_index])
+(defop pushbifptr 0x10 [:uint2 function_index :uint2 set_index]
+  (throw (ex-info "TODO: implement pushbifptr")))
 
-; TODO non-numerics
 (defop neg 0x20 []
   (with-stack [val]
-    [(if (vm-int? val) (vm-int (- (value val))) (abort "non-numerics"))]))
+    [(if (vm-int? val) (vm-int (- (value val))) (throw (ex-info "TODO: neg for non-numerics" {:value val})))]))
 
 (defn vm-bnot [val]
+  {:pre [(vm-primitive? val)]}
   (if (vm-int? val)
     (vm-int (bit-and 0xffffffff (bit-not (value val))))
-    (abort "bnot non-numberics")))
+    (throw (ex-info "TODO: bnot non-numberics" {:value val}))))
 
 (defn- stack-op1 [op]
   (with-stack [val] [(op val)]))
@@ -510,22 +542,19 @@ instruction is complete."
   (stack-op1 vm-bnot))
 
 (defn- compute-sum [a b]
-  (in-vm
-   (cond
-    (vm-int? a) (if (vm-int? b)
-                  (m-result (vm-int (+ (value a) (value b))))
-                  (abort "NUM_VAL_REQD"))
-    (vm-sstring? a) (t3chnique.metaclass.string/add-to-str a b)
-    (vm-obj? a) (t3chnique.metaclass.string/add-to-str a b)
-    ;; create string
-    :else (abort "BAD_TYPE_ADD"))))
+  {:pre [(vm-primitive? a) (vm-primitive? b)]
+   :post [vm-primitive?]}
+  (trace "Compute sum " a b)
+  (cond
+   (vm-int? a) (vm-+ a b)
+   (vm-sstring? a) (t3chnique.metaclass.string/add-to-str a b)
+   (vm-obj? a) (t3chnique.metaclass.string/add-to-str a b)
+   :else (throw (ex-info "BAD_TYPE_ADD" {:code :BAD_TYPE_ADD :left a :right b}))))
 
 (defop add 0x22 []
-  (do-vm
-   [[right left] (m-seq (repeat 2 (stack-pop)))
-    ret (compute-sum left right)
-    _ (stack-push ret)]
-   nil))
+  (mdo
+   [r l] <- (sequence-m (repeat 2 stack-pop))
+   (stack-push (compute-sum l r))))
 
 (defop sub 0x23 []
   (stack-op2 vm--))
@@ -583,70 +612,62 @@ instruction is complete."
 (defop ge 0x45 []
   (stack-op2 vm->=))
 
-(defn unwind []
-  (do-vm
-   [sp (reg-get :sp)
-    fp (reg-get :fp)
-    _ (m-seq (repeat (- sp fp) (stack-pop)))
-    fp (stack-pop)
-    ac (stack-pop)
-    of (stack-pop)
-    ep (stack-pop)
-    rc (stack-pop)
-    _ (m-seq (repeat (+ 6 (value ac)) (stack-pop)))
-    _ (reg-set :fp (value fp))
-    _ (reg-set :ep (value ep))
-    _ (set-pc (+ (value ep) (value of)))]
-   nil))
+(def unwind
+  "Unwind stack on function exit and restore calling frame."
+  (mdo
+   sp <- (reg-get :sp)
+   fp <- (reg-get :fp)
+   (sequence-m (repeat (- sp fp) stack-pop))
+   fp <- stack-pop
+   ac <- stack-pop
+   of <- stack-pop
+   ep <- stack-pop
+   rc <- stack-pop
+   (sequence-m (repeat (+ 6 (value ac)) stack-pop))
+   (reg-set :fp (value fp))
+   (reg-set :ep (value ep))
+   (set-pc (+ (value ep) (value of)))))
 
 (defop retval 0x50 []
-  (do-vm
-   [rv (stack-pop)
-    _ (return rv)
-    _ (unwind)]
-   nil))
+  (>> (>>= stack-pop vm-return) unwind))
 
 (defop retnil 0x51 []
-  (do-vm
-   [_ (return (vm-nil))
-    _ (unwind)]
-   nil))
+  (>> (vm-return (vm-nil)) unwind))
 
 (defop rettrue 0x52 []
-  (do-vm
-   [_ (return (vm-true))
-    _ (unwind)]
-   nil))
+  (>> (vm-return (vm-true)) unwind))
 
 (defop ret 0x54 []
-  (unwind))
+  unwind)
 
-; TODO implement
-(defop namedargptr 0x56 [:ubyte named_arg_count :uint2 table_offset])
+(defop namedargptr 0x56 [:ubyte named_arg_count :uint2 table_offset]
+  (throw (ex-info "TODO: implement namedargptr")))
 
-; TODO implement
-(defop namedargtab 0x57 [:named-arg-args args])
-
-(defn check-argc [{:keys [param-count opt-param-count]} ac]
-  (let [varags (not= (bit-and param-count 0x80) 0)
-        varmin (bit-and param-count 0x7f)]
-    (if varags
-      (>= ac varmin)
-      (= ac param-count))))
+(defop namedargtab 0x57 [:named-arg-args args]
+  (throw (ex-info "TODO: implement namedargtab")))
 
 (def FRAME-SIZE 11)
 
 (defn- get-stack-self []
-  (do-vm
-   [fp (reg-get :fp)
-    self (stack-get (- fp (- FRAME-SIZE 3)))]
-   (if (vm-obj? self) self (vm-obj nil))))
+  (mdo
+   fp <- (reg-get :fp)
+   self <- (stack-get (- fp (- FRAME-SIZE 3)))
+   (return (if (vm-obj? self) self (vm-obj)))))
 
 (defn- get-stack-local [i]
-  (do-vm
-   [fp (reg-get :fp)
-    target (stack-get (+ fp i))]
-   target))
+  (mdo
+   fp <- (reg-get :fp)
+   target <- (stack-get (+ fp i))
+   (return target)))
+
+;;;
+;;; Function / property calling
+;;; 
+
+;;
+;; Recursive calls into the VM are supported; calling stack contains
+;; a record of how the recursive call was initiated so as to restore
+;; the calling context in the calling VM.
 
 (defrecord RecursiveCallContext [bif self idx argc argp caller-addr])
 
@@ -655,7 +676,6 @@ instruction is complete."
 
 (defn recurse-from-intrinsic-class [self idx argc]
   (RecursiveCallContext. nil self idx argc nil nil))
-
 
 (defn prepare-frame
   "Prepare stack frame for call. target-pid is (vm-prop), objs are
@@ -668,32 +688,30 @@ instance of RecursiveCallContext."
          (vm-obj-or-nil? self-obj)
          (number? func-offset)
          (number? argc)]}
-  (do-vm
+  (mdo
    ;; invocation frame
-   [_ (stack-push target-pid) 
-    _ (stack-push target-obj) ; object whose method is called
-    _ (stack-push defining-obj) ; defining obj (may be superclass of target)
-    _ (stack-push self-obj) ; self (method may belong to delegate)
-    _ (stack-push (vm-nil)) ; TODO: "invokee"
-    ep (reg-get :ep)
-    p (pc)
-    fp (reg-get :fp)
-    ;; do_call
-    _ (stack-push (vm-nil)) ; TODO: "stack frame references"
-    ;; TODO seems that recursive call descriptor should go here too
-    _ (stack-push (vm-codeptr rc))
-    _ (stack-push (vm-codeofs (- p ep))) ; return offset
-    _ (stack-push (vm-codeofs ep)) ; current entry point should be codeptr
-    _ (stack-push (vm-int argc))
-    _ (stack-push (vm-stack fp))
-    sp (reg-get :sp)
-    _ (reg-set :fp sp)
-    _ (reg-set :ep func-offset)
-    mh (get-method-header func-offset)
-    ;;            _ (m-when (check-argc mh arg_count))
-    _ (m-seq (repeat (:local-variable-count mh) (stack-push (vm-nil))))
-    _ (set-pc (+ func-offset (:code-offset mh)))]
-   nil))
+   (stack-push target-pid) 
+   (stack-push target-obj) ; object whose method is called
+   (stack-push defining-obj) ; defining obj (may be superclass of target)
+   (stack-push self-obj) ; self (method may belong to delegate)
+   (stack-push (vm-nil)) ; TODO: "invokee"
+   ep <- (reg-get :ep)
+   p <- (pc)
+   fp <- (reg-get :fp)
+   ;; do_call
+   (stack-push (vm-nil)) ; TODO: "stack frame references"
+   ;; TODO seems that recursive call descriptor should go here too
+   (stack-push (vm-codeptr rc))
+   (stack-push (vm-codeofs (- p ep))) ; return offset
+   (stack-push (vm-codeofs ep)) ; current entry point should be codeptr
+   (stack-push (vm-int argc))
+   (stack-push (vm-stack fp))
+   sp <- (reg-get :sp)
+   (reg-set :fp sp)
+   (reg-set :ep func-offset)
+   mh <- (get-method-header func-offset)
+   (sequence-m (repeat (:local-variable-count mh) (stack-push (vm-nil))))
+   (set-pc (+ func-offset (:code-offset mh)))))
 
 (defn property-accessor
   "Construct monadic function using locate-property-fn to search properties and
@@ -703,25 +721,17 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   [locate-property-fn handle-property-fn]
 
   (fn [target-val pid argc]
-
-    {:pre [(number? pid)]}
-
+    {:pre [(vm-primitive? target-val) (integer? pid) (integer? argc)]}
     (trace "Accessing property" pid "of" target-val)
-    (cond
-     (vm-list? target-val) (do-vm
-                            [lst (as-list target-val)
-                             :let [tlst (t3chnique.metaclass.list/tads-list lst)]
-                             [defining-obj prop-val] (locate-property-fn tlst pid argc)
-                             r (handle-property-fn tlst defining-obj tlst pid prop-val argc)]
-                            r)
-     (vm-sstring? target-val) (abort "TODO Constant string property access")
-     (vm-obj? target-val) (do-vm
-                           [target (obj-retrieve (value target-val))
-                            [defining-obj prop-val] (locate-property-fn target pid argc)
-                            r (handle-property-fn target-val defining-obj target-val pid prop-val argc)]
-                           r)
-     (vm-nil?) (abort "VMERR_NIL_DEREF")
-     :else (abort "VMERR_OBJ_VAL_REQD"))))
+    (mdo
+     object <- (cond
+                (vm-list? target-val) (>>= (as-list target-val) #(return (t3chnique.metaclass.list/tads-list %)))
+                (vm-sstring? target-val) (throw (ex-info "TODO: Constant string property access"))
+                (vm-obj? target-val) (obj-retrieve (value target-val))
+                (vm-nil? target-val) (throw (ex-info "Nil dereference" {:code :VMERR_NIL_DEREF}))
+                :else (throw (ex-info "Object value required" {:code :VMERR_OBJ_VAL_REQD})))
+     [defining-obj prop-val] <- (locate-property-fn object pid argc)
+     (return (handle-property-fn target-val defining-obj target-val pid prop-val argc)))))
 
 (declare say-value)
 
@@ -730,30 +740,29 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 property value directly."
   [target defining self pid prop-val argc]
   (trace "vm/eval-prop" self pid prop-val argc)
-  (if prop-val ;; TODO vm-truthy
+  (if (vm-truthy? prop-val)
     (cond
-     (not (vm-auto-eval? prop-val)) (return prop-val)
-     (vm-dstring? prop-val) (m->>
-                             (stack-push prop-val)
-                             (say-value))
+     (not (vm-auto-eval? prop-val)) (vm-return prop-val)
+     (vm-dstring? prop-val) (>> (stack-push prop-val) (say-value))
      (vm-codeofs? prop-val) (prepare-frame (vm-prop pid)
                                            target
                                            defining
                                            self
                                            (value prop-val)
                                            argc
-                                           nil))
-    (abort "not implemented propNotDefined")))
+                                           nil)
+     :else (throw (ex-info "TODO: unexpected property value type")))
+    (throw (ex-info "TODO: implement propNotDefined"))))
 
 (defn data-only
   "Property handler which won't call methods but only returns data
 items if available."
   [target defining self pid prop-val argc]
   (trace "vm/data-only" self pid prop-val argc)
-  (if prop-val
+  (if (vm-truthy? prop-val)
     (cond
-     (not (vm-auto-eval? prop-val)) (return prop-val)
-     :else (abort "BAD_SPEC_EVAL"))))
+     (not (vm-auto-eval? prop-val)) (vm-return prop-val)
+     :else (throw (ex-info "BAD_SPEC_EVAL" {:code :BAD_SPEC_EVAL})))))
 
 (def generic-get-prop (property-accessor mc/get-property eval-prop))
 (def generic-inherit-prop (property-accessor mc/inherit-property eval-prop))
@@ -762,71 +771,54 @@ items if available."
 (defn- say-value
   "Take the value from top of stack and say it."
   []
-  (trace "say-value")
-  (do-vm
-   [self (get-stack-self)
-    sm (get-say-method)
-    sf (get-say-function)
-    :cond [(and (valid? self) (valid? sm))
-           [_ (generic-get-prop self sm 1)]
-           
-           (valid? sf)
-           [_ (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1 nil)]
-
-           :else
-           [_ (abort "VMERR_SAY_IS_NOT_DEFINED")]]]
-   nil))
+  (mdo
+   self <- (get-stack-self)
+   sm <- (get-say-method)
+   sf <- (get-say-function)
+   (cond
+    (and (valid? self) (valid? sm)) (generic-get-prop self sm 1)
+    (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1 nil)
+    :else (throw (ex-info "No say method or function defined" {:code :VMERR_SAY_IS_NOT_DEFINED})))))
 
 (defop call 0x58 [:ubyte arg_count :uint4 func_offset]
   (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) func_offset arg_count nil))
 
 (defop ptrcall 0x59 [:ubyte arg_count]
-  (do-vm
-   [val (stack-pop)
-    r (cond
-       (vm-funcptr? val) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value val) arg_count nil)
-       (vm-prop? val) (abort "todo as per ptrcallpropself")
-       (vm-obj? val) (abort "todo ObjectCallProp")
-       :else (abort "FUNCPTR_VAL_REQD"))]
-   r))
+  (mdo
+   val <- stack-pop
+   (cond
+    (vm-funcptr? val) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value val) arg_count nil)
+    (vm-prop? val) (throw (ex-info "TODO: implement as per ptrcallpropself"))
+    (vm-obj? val) (throw (ex-info "TODO: implement ObjectCallProp"))
+    :else (throw (ex-info "ptrcall requires function pointer value" {:code :FUNCPTR_VAL_REQD})))))
 
 (defop getprop 0x60 [:uint2 prop_id]
-  (do-vm
-    [obj (stack-pop)
-     r (generic-get-prop obj prop_id 0)]
-    r))
+  (>>= stack-pop #(generic-get-prop % prop_id 0)))
 
 (defop callprop 0x61 [:ubyte arg_count :uint2 prop_id]
-  (do-vm
-   [obj (stack-pop)
-    r (generic-get-prop obj prop_id arg_count)]
-   r))
+  (>>= stack-pop #(generic-get-prop % prop_id arg_count)))
 
 (defop ptrcallprop 0x62 [:ubyte arg_count]
-  (do-vm
-   [prop (stack-pop)
-    target-val (stack-pop)
-    r (generic-get-prop target-val (value prop) arg_count)]
-   r))
+  (mdo
+   prop <- stack-pop
+   target-val <- stack-pop
+   (generic-get-prop target-val (value prop) arg_count)))
 
 (defop getpropself 0x63 [:uint2 prop_id]
-  (do-vm
-   [self (get-stack-self)
-    r (generic-get-prop self prop_id 0)]
-   r))
+  (mdo
+   self <- (get-stack-self)
+   (generic-get-prop self prop_id 0)))
 
 (defop callpropself 0x64 [:ubyte arg_count :uint2 prop_id]
-  (do-vm
-   [self (get-stack-self)
-    r (generic-get-prop self prop_id arg_count)]
-   r))
+  (mdo
+   self <- (get-stack-self)
+   (generic-get-prop self prop_id arg_count)))
 
 (defop ptrcallpropself 0x65 [:ubyte arg_count]
-  (do-vm
-   [self (get-stack-self)
-    prop (stack-pop)
-    r (generic-get-prop self (value prop) arg_count)]
-   r))
+  (mdo
+   self <- (get-stack-self)
+   prop <- stack-pop
+   (generic-get-prop self (value prop) arg_count)))
 
 (defop objgetprop 0x66 [:uint4 obj_id :uint2 prop_id]
   (generic-get-prop (vm-obj obj_id) prop_id 0))
@@ -835,93 +827,63 @@ items if available."
   (generic-get-prop (vm-obj obj_id) prop_id arg_count))
 
 (defop getpropdata 0x68 [:uint2 prop_id]
-  (do-vm
-   [target-val (stack-pop)
-    r (generic-get-prop-data target-val prop_id)]
-   r))
+  (>>= stack-pop #(generic-get-prop-data % prop_id)))
 
 (defop ptrgetpropdata 0x69 []
-  (do-vm
-   [prop (stack-pop)
-    target-val (stack-pop)
-    r (generic-get-prop-data target-val (value prop))]
-   r))
+  (mdo
+   prop <- stack-pop
+   target-val <- stack-pop
+   (generic-get-prop-data target-val (value prop))))
 
 (defop getproplcl1 0x6A [:ubyte local_number :uint2 prop_id]
-  (do-vm
-   [target-val (get-stack-local local_number)
-    r (generic-get-prop target-val prop_id 0)]
-   r))
+  (>>= (get-stack-local local_number) #(generic-get-prop % prop_id 0)))
 
 (defop callproplcl1 0x6B [:ubyte arg_count :ubyte local_number :uint2 prop_id]
-  (do-vm
-   [target-val (get-stack-local local_number)
-    r (generic-get-prop target-val prop_id arg_count)]
-   r))
+  (>>= (get-stack-local local_number) #(generic-get-prop % prop_id arg_count)))
 
 (defop getpropr0 0x6C [:uint2 prop_id]
-  (do-vm
-   [target-val (reg-get :r0)
-    r (generic-get-prop target-val prop_id 0)]
-   r))
+  (>>= (reg-get :r0) #(generic-get-prop % prop_id 0)))
 
 (defop callpropr0 0x6D [:ubyte arg_count :uint2 prop_id]
-  (do-vm
-   [target-val (reg-get :r0)
-    r (generic-get-prop target-val prop_id arg_count)]
-   r))
+  (>>= (reg-get :r0) #(generic-get-prop % prop_id arg_count)))
 
 (defop inherit 0x72 [:ubyte arg_count :uint2 prop_id]
-  (do-vm
-   [target-val (stack-pop)
-    r (generic-inherit-prop target-val prop_id arg_count)]
-   r))
+  (>>= stack-pop #(generic-inherit-prop % prop_id arg_count)))
 
 (defop ptrinherit 0x73 [:ubyte arg_count]
-  (do-vm
-   [prop (stack-pop)
-    target-val (stack-pop)
-    r (generic-inherit-prop target-val (value prop) arg_count)]
-   r))
+  (mdo
+   prop <- stack-pop
+   target-val <- stack-pop
+   (generic-inherit-prop target-val (value prop) arg_count)))
 
 (defop expinherit 0x74 [:ubyte arg_count :uint2 prop_id :uint4 obj_id]
-  ; TODO expinherit
-  )
+  (throw (ex-info "TODO: expinherit")))
 
 (defop ptrexpinherit 0x75 [:ubyte arg_count :uint4 obj_id]
-  ; TODO ptrexpinherit
-  )
+  (throw (ex-info "TODO: ptrexpinherit")))
 
 (defop varargc 0x76 []
-  ; TODO varags
-  )
+  (throw (ex-info "TODO: varags")))
 
 (defop delegate 0x77 [:ubyte arg_count :uint2 prop_id]
-  ; TODO delegation
-  )
+  (throw (ex-info "TODO: delegation")))
 
 (defop ptrdelegate 0x78 [:ubyte arg_count]
-  ; TODO delegation
-  )
+  (throw (ex-info "TODO: delegation")))
 
 (defop swap2 0x7a []
   (with-stack [d c b a] [a b c d]))
 
 (defop swapn 0x7b [:ubyte idx1 :ubyte idx2]
-  (do-vm
-   [sp (reg-get :sp)
-    _ (stack-swap (- sp idx1) (- sp idx2))]
-   nil))
+  (>>= (reg-get :sp) #(stack-swap (- % idx1) (- % idx2))))
 
 ;; A set of operations which retrieve an item from lower down the
 ;; stack and push it onto the stack
 
 (defn- copy [reg offsetf]
-  (do-vm
-   [fp (reg-get reg)
-    rv (stack-get (offsetf fp))
-    _ (stack-push rv)]
-   nil))
+  (mdo
+   fp <- (reg-get reg)
+   (>>= (stack-get (offsetf fp)) stack-push)))
 
 (defop getlcl1 0x80 [:ubyte local_number]
   (copy :fp (partial + local_number)))
@@ -950,43 +912,35 @@ items if available."
 (defop pushself 0x84 []
   (copy :fp #(- % (- FRAME-SIZE 3))))
 
-; TODO debugger
 (defop getdblcl 0x85 [:uint2 local_number]
-  (abort "Not implemented"))
+  (throw (ex-info "TODO: implement getdblcl")))
 
-; TODO debugger
 (defop getdbarg 0x86 [:uint2 param_number]
-  (abort "Not implemented"))
+  (throw (ex-info "TODO: implement getdbarg")))
 
 (defop getargc 0x87 []
   (copy :fp #(- % 2)))
-
-
-;; Simple stack manipulations
 
 (defop dup 0x88 []
   (with-stack [x] [x x]))
 
 (defop disc 0x89 []
-  (with-stack [x] []))
+  stack-pop)
 
 (defop disc1 0x89 [:ubyte count]
-  (with-monad vm-m (m-seq (repeat count (stack-pop)))))
+  (sequence-m (repeat count stack-pop)))
 
 (defop getr0 0x8B []
-  (do-vm
-   [r0 (reg-get :r0)
-    _ (stack-push r0)]
-   nil))
+  (>>= (reg-get :r0) stack-push))
 
-; TODO debugger
-(defop getdbargc 0x8C [])
+(defop getdbargc 0x8C []
+  (throw (ex-info "TODO: implement getdbargc")))
 
 (defop swap 0x8D []
   (with-stack [x y] [y x]))
 
-; TODO context store / retrieve
-(defop pushctxele 0x8E [:ubyte element])
+(defop pushctxele 0x8E [:ubyte element]
+  (throw (ex-info "TODO:implement pushctxele")))
 
 (defop dup2 0x8F []
   (with-stack [a b] [a b a b]))
@@ -1033,11 +987,10 @@ them to account for the difference."
                                                 (fn [case] (vm-eq? val (:case-val case)))
                                                 (:cases inst))))
                           (:default inst)))]
-    (do-vm
-     [val (stack-pop)
-      pc (pc)
-      _ (jump-from-ip (find-offset val))]
-     (do pc nil))))
+    (mdo
+     val <- stack-pop
+     pc <- (pc)
+     (jump-from-ip (find-offset val)))))
 
 ;;;
 ;;; Various jump and branch operations
@@ -1047,18 +1000,20 @@ them to account for the difference."
 
 (defn- jump-cond1
   [jumpif? branch_offset]
-  (do-vm
-   [v (stack-pop)
-    _ (m-when (jumpif? v) (jump-from-ip (inc branch_offset)))]
-   nil))
+  (mdo
+   v <- stack-pop
+   (if (jumpif? v)
+     (jump-from-ip (inc branch_offset))
+     (return nil))))
 
 (defn- jump-cond2
   [jumpif? branch_offset]
-  (do-vm
-   [v2 (stack-pop)
-    v1 (stack-pop)
-    _ (m-when (jumpif? v1 v2) (jump-from-ip (inc branch_offset)))]
-   nil))
+  (mdo
+   v2 <- stack-pop
+   v1 <- stack-pop
+   (if (jumpif? v1 v2)
+     (jump-from-ip (inc branch_offset))
+     (return nil))))
 
 (defop jt 0x92 [:int2 branch_offset]
   (jump-cond1 (complement vm-falsey?) branch_offset))
@@ -1085,23 +1040,24 @@ them to account for the difference."
   (jump-cond2 vm-<=? branch_offset))
 
 (defop jst 0x9A [:int2 branch_offset]
-  (do-vm [v (stack-peek)
-                 _ (if (not (vm-falsey? v))
-                     (jump-from-ip (inc branch_offset))
-                     (stack-pop))]
-           nil))
+  (mdo
+   v <- stack-peek
+   (if (vm-truthy? v)
+       (jump-from-ip (inc branch_offset))
+       stack-pop)))
 
 (defop jsf 0x9B [:int2 branch_offset]
-  (do-vm [v (stack-peek)
-                 _ (if (vm-falsey? v)
-                     (jump-from-ip (inc branch_offset))
-                     (stack-pop))]
-           nil))
+  (mdo
+   v <- stack-peek
+   (if (vm-falsey? v)
+       (jump-from-ip (inc branch_offset))
+       stack-pop)))
 
-;; TODO Local jumps
+(defop ljsr 0x9C [:int2 branch_offset]
+  (throw (ex-info "TODO: implement ljsr")))
 
-(defop ljsr 0x9C [:int2 branch_offset])
-(defop lret 0x9D [:int2 local_variable_number])
+(defop lret 0x9D [:int2 local_variable_number]
+  (throw (ex-info "TODO: implement lret")))
 
 (defop jnil 0x9E [:int2 branch_offset]
   (jump-cond1 vm-nil? branch_offset))
@@ -1110,34 +1066,39 @@ them to account for the difference."
   (jump-cond1 (complement vm-nil?) branch_offset))
 
 (defop jr0t 0xA0 [:int2 branch_offset]
-  (do-vm [r0 (reg-get :r0)
-          _ (m-when (not (vm-falsey? r0)) (jump-from-ip (inc branch_offset)))]
-         nil))
+  (mdo
+   r0 <- (reg-get :r0)
+   (if (vm-truthy? r0)
+     (jump-from-ip (inc branch_offset))
+     (return nil))))
 
 (defop jr0f 0xA1 [:int2 branch_offset]
-  (do-vm [r0 (reg-get :r0)
-          _ (m-when (vm-falsey? r0) (jump-from-ip (inc branch_offset)))]
-         nil))
+  (mdo
+   r0 <- (reg-get :r0)
+   (if (vm-falsey? r0)
+     (jump-from-ip (inc branch_offset))
+     (return nil))))
 
 (defn run-intrinsic-method
   "Most intrinsic methods are obj -> [ret obj]. This wraps to update in place."
   [object method]
   {:pre [(vm-obj? object)]}
   (let [oid (value object)]
-    (do-vm [instance (obj-retrieve oid)
-            [ret new-instance] (method instance)
-            _ (obj-store oid new-instance)]
-           ret)))
+    (mdo
+     instance <- (obj-retrieve oid)
+     [ret new-instance] <- (method instance)
+     (obj-store oid new-instance)
+     (return ret))))
 
 (defn- getlcl [i]
   (copy :fp (partial + i)))
 
 (defop iternext 0xA2 [:uint2 local_number :int2 offset]
-  (do-vm [iterator (getlcl local_number)
-          _ (if (vm-obj? iterator)
-              (m-bind (run-intrinsic-method iterator mc/iter-next) stack-push)
-              (jump-from-ip (+ 5 offset)))]
-         nil))
+  (mdo
+   iterator <- (getlcl local_number)
+   (if (vm-obj? iterator)
+     (>>= (run-intrinsic-method iterator mc/iter-next) stack-push)
+     (jump-from-ip (+ 5 offset)))))
 
 ;; #define OPC_ITERNEXT     0xA2                              /* iterator next */
 ;; #define OPC_GETSETLCL1R0 0xA3 /* set local from R0 and leave value on stack */
@@ -1166,18 +1127,16 @@ them to account for the difference."
   (getlcl 5))
 
 (defop say 0xB0 [:uint4 offset]
-  (do-vm
-   [_ (stack-push (vm-sstring offset))
-    _ (say-value)]
-   nil))
+  (>>
+   (stack-push (vm-sstring offset))
+   (say-value)))
 
 (defn- bif
   "Call intrinsic function with index in set using argc arguments from stack. "
   [host set index argc]
-  (do-vm
-    [fnsd (fetch-val :fnsd)
-     _ (bif/invoke-by-index host (nth fnsd set) index argc)]
-    nil))
+  (>>=
+    (get-val :fnsd)
+    #(bif/invoke-by-index host (nth % set) index argc)))
 
 (defop builtin_a 0xB1 [:ubyte argc :ubyte func_index]
   (bif host 0 func_index argc))
@@ -1198,91 +1157,64 @@ them to account for the difference."
   (bif host set_index func_index argc))
 
 (defop callext 0xB7 []
-  (abort "callext not implemented"))
+  (throw (ex-info "callext not implemented")))
 
-;; TODO throw
 (defop throw 0xB8 []
-  (do-vm
-    [ep (reg-get :ep)
-     ip (reg-get :ip)
-     mh (get-method-header ep)
-     et (:etable-offset mh)
-     ex (get-exception-table et)
-                                        ;            _ (filter #(<= (:first-offset %) (dec ip) (:last-offset)) ex)
-     ]
-    nil))
+  (throw (ex-info "TODO: implement throw")))
 
 (defop sayval 0xB9 []
   (say-value))
 
 (defn- apply-index [obj idx]
   {:pre [(vm-primitive? obj) (number? idx)]}
-  (do-vm
-   [sq (as-list obj)
-    :if sq
-    :then [_ (stack-push (nth sq (dec idx)))]
-    :else [_ (abort "Op overload not implemented")]]
-   nil))
+  (mdo
+   sq <- (as-list obj)
+   (if sq
+     (stack-push (nth sq (dec idx)))
+     (throw (ex-info "TODO: Op overload not implemented")))))
 
 (defop index 0xBA []
-  (do-vm
-   [idx (stack-pop)
-    obj (stack-pop)
-    _ (apply-index obj (value idx))]
-   nil))
+  (mdo
+   idx <- stack-pop
+   obj <- stack-pop
+   (apply-index obj (value idx))))
 
 (defop idxlcl1int8 0xBB [:ubyte local_number :ubyte index_val]
-  (do-vm
-   [obj (getlcl local_number)
-    _ (apply-index obj index_val)]
-   nil))
+  (>>= (getlcl local_number) #(apply-index % index_val)))
 
 (defop idxint8 0xBC [:ubyte index_val]
-  (do-vm
-   [obj (stack-pop)
-    _ (apply-index obj index_val)]
-   nil))
+  (>>= stack-pop #(apply-index % index_val)))
 
-;; TODO byte code construction - new1
 (defop new1 0xC0 [:ubyte arg_count :ubyte metaclass_id]
-  (do-vm
-   [proto (m-apply #(mc/prototype % metaclass_id))
-    obj (mc/load-from-stack proto arg_count)
-    :let [obj (assoc obj :metaclass metaclass_id)]
-    id (new-obj-id)
-    _ (obj-store id obj)
-    _ (return (vm-obj id))]
-   nil))
+  (mdo
+   proto <- (get-val #(mc/prototype % metaclass_id))
+   obj <- (mc/load-from-stack proto arg_count)
+   (>>= (obj-intern (assoc obj :metaclass metaclass_id)) vm-return)))
 
-;; TODO byte code construction - new2
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id]
-  )
+  (throw (ex-info "TODO: implement new2")))
 
-;; TODO byte code construction - trnew1
-(defop trnew1 0xC2 [:ubyte arg_count :ubyte metaclass_id])
+(defop trnew1 0xC2 [:ubyte arg_count :ubyte metaclass_id]
+  (throw (ex-info "TODO: implement trnew1")))
 
-;; TODO byte code construction - trnew2
-(defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id])
+(defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id]
+  (throw (ex-info "TODO: implement trnew2")))
 
 (defn- setlcl [i v]
-  (trace "setlcl: " i v)
-  (do-vm [fp (reg-get :fp)
-          _ (stack-set (+ fp i) v)]
-         nil))
+  (>>= (reg-get :fp) #(stack-set (+ % i) v)))
 
 (defn- updlcl [i f]
-  (do-vm [fp (reg-get :fp)
-          v (stack-get (+ fp i))
-          _ (stack-set (+ fp i) (f v))]
-         nil))
+  (mdo
+   fp <- (reg-get :fp)
+   v <- (stack-get (+ fp i))
+   (stack-set (+ fp i) (f v))))
 
 (defn- updlcl-m [i mv]
-  (do-vm
-   [fp (reg-get :fp)
-    v (stack-get (+ fp i))
-    v+ (mv v)
-    _ (stack-set (+ fp i) v+)]
-   nil))
+  (mdo
+   fp <- (reg-get :fp)
+   v <- (stack-get (+ fp i))
+   v+ <- (mv v)
+   (stack-set (+ fp i) v+)))
 
 (defop inclcl 0xD0 [:uint2 local_number]
   (updlcl local_number vm-inc))
@@ -1297,14 +1229,14 @@ them to account for the difference."
   (updlcl-m local_number (partial compute-sum val)))
 
 (defop addtolcl 0xD4 [:uint2 local_number]
-  (do-vm [v (stack-pop)
-          _ (updlcl-m local_number #(compute-sum % v))]
-         nil))
+  (mdo
+   v <- stack-pop
+   (updlcl-m local_number #(compute-sum % v))))
 
 (defop subfromlcl 0xD5 [:uint2 local_number]
-  (do-vm [v (stack-pop)
-          _ (updlcl local_number #(vm-- % v))]
-         nil))
+  (mdo
+   v <- stack-pop
+   (updlcl local_number #(vm-- % v))))
 
 (defop zerolcl1 0xD6 [:ubyte local_number]
   (setlcl local_number (vm-int 0)))
@@ -1325,93 +1257,80 @@ them to account for the difference."
   (setlcl local_number (vm-int 1)))
 
 (defop setlcl1 0xE0 [:ubyte local_number]
-  (do-vm [v (stack-pop)
-          _ (setlcl local_number v)]
-         nil))
+  (>>= stack-pop #(setlcl local_number %)))
 
 (defop setlcl2 0xE1 [:uint2 local_number]
-  (do-vm [v (stack-pop)
-          _ (setlcl local_number v)]
-         nil))
+  (>>= stack-pop #(setlcl local_number %)))
 
 (defop setarg1 0xE2 [:ubyte arg_number]
-  (do-vm [fp (reg-get :fp)
-          v (stack-pop)
-          _ (stack-set (- fp (+ (dec FRAME-SIZE) arg_number)) v)]
-         nil))
+  (mdo
+   fp <- (reg-get :fp)
+   v <- stack-pop
+   (stack-set (- fp (+ (dec FRAME-SIZE) arg_number)) v)))
 
 (defop setarg2 0xE3 [:uint2 arg_number]
-  (do-vm [fp (reg-get :fp)
-          v (stack-pop)
-          _ (stack-set (- fp (+ (dec FRAME-SIZE) arg_number)) v)]
-         nil))
+  (mdo
+   fp <- (reg-get :fp)
+   v <- stack-pop
+   (stack-set (- fp (+ (dec FRAME-SIZE) arg_number)) v)))
 
-;TODO setind
-(defop setind 0xE4 [])
+(defop setind 0xE4 []
+  (throw (ex-info "TODO: implement setind")))
 
 (defn- set-property
   "Updates object store to contain modified version of object
 with property set as specified. oid, pid numbers. val primitive."
   [oid pid val]
-  (do-vm
-   [object (obj-retrieve oid)
-    new-object (mc/set-property object pid val)
-    _ (obj-store oid new-object)]
-   nil))
+  (mdo
+   object <- (obj-retrieve oid)
+   new-object <- (mc/set-property object pid val)
+   (obj-store oid new-object)))
 
 (defop setprop 0xE5 [:uint2 prop_id]
-  (do-vm
-   [obj-id (stack-pop)
-    new-val (stack-pop)
-    ret (set-property (value (vm-obj-check obj-id "OBJ_VAL_REQUIRED")) prop_id new-val)]
-   ret))
+  (mdo
+   obj-id <- stack-pop
+   new-val <- stack-pop
+   (set-property (value (vm-obj-check obj-id "OBJ_VAL_REQUIRED")) prop_id new-val)))
 
 (defop ptrsetprop 0xE6 []
-  (do-vm
-   [prop-id (stack-pop)
-    obj (stack-pop)
-    new-val (stack-pop)
-    ret (set-property (value obj) (value prop-id) new-val)]
-   ret))
+  (mdo
+   prop-id <- stack-pop
+   obj <- stack-pop
+   new-val <- stack-pop
+   (set-property (value obj) (value prop-id) new-val)))
 
 (defop setpropself 0xE7 [:uint2 prop_id]
-  (do-vm
-   [new-val (stack-pop)
-    self (get-stack-self)
-    ret (set-property (value self) prop_id new-val)]
-   ret))
+  (mdo
+   new-val <- stack-pop
+   self <- (get-stack-self)
+   (set-property (value self) prop_id new-val)))
 
 (defop objsetprop 0xE8 [:uint4 obj :uint2 prop_id]
-  (do-vm
-   [new-val (stack-pop)
-    ret (set-property obj prop_id new-val)]
-   ret))
+  (>>= stack-pop #(set-property obj prop_id %)))
 
-;TODO setdblcl
-(defop setdblcl 0xE9 [:uint2 local_number])
+(defop setdblcl 0xE9 [:uint2 local_number]
+  (throw (ex-info "TODO: implement setdblcl")))
 
-;TODO setdbarg
-(defop setdbarg 0xEA [:uint2 param_number])
+(defop setdbarg 0xEA [:uint2 param_number]
+  (throw (ex-info "TODO: implement setdbarg")))
 
-;TODO setself
-(defop setself 0xEB [])
+(defop setself 0xEB []
+  (throw (ex-info "TODO: implement setself")))
 
-;TODO loadctx
-(defop loadctx 0xEC [])
+(defop loadctx 0xEC []
+  (throw (ex-info "TODO: implement loadctx")))
 
-;TODO storectx
-(defop storectx 0xED [])
+(defop storectx 0xED []
+  (throw (ex-info "TODO: implement storectx")))
 
 (defop setlcl1r0 0xEE [:ubyte local_number]
-  (do-vm [v (reg-get :r0)
-          _ (setlcl local_number v)]
-         nil))
+  (>>= (reg-get :r0) (partial setlcl local_number)))
 
 (defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val]
-  )
+  (throw (ex-info "TODO: implement setindlcli8")))
 
-;; TODO debugger - bp
-(defop bp 0xF1 [])
+(defop bp 0xF1 []
+  (throw (ex-info "TODO: implement bp")))
 
 (defop nop 0xF2 [])
 
@@ -1421,40 +1340,39 @@ with property set as specified. oid, pid numbers. val primitive."
 (defn enter
   "Set up vm at initial entry point."
   [host]
-  (do-vm
-   [entp (fetch-val :entry-point-offset)
-    _ (op-pushlst host 0)
-    _ (op-call host 1 entp)
-    _ (commit-pc)]
-   nil))
+  (mdo
+   entp <- (get-val :entry-point-offset)
+   (op-pushlst host 0)
+   (op-call host 1 entp)
+   (commit-pc)))
 
 (defn step
   "Execute the op code referenced by the ip register.
    pre-action takes op args ip."
   [host pre-action]
-  (do-vm
-   [
-    ip (reg-get :ip)
-    ret (if (or (nil? ip) (zero? ip))
-          (reg-get :r0)
-          (do-vm [
-                  ;; parse op and set pc
-                  [op args len] (parse-op-at-ip)
-                  _ (set-pc (+ ip len))
+  (mdo
+   ip <- (reg-get :ip)
+   (if (or (nil? ip) (zero? ip))
+     (reg-get :r0)
+     (mdo
 
-                  ;; pre-action
-                  _ (pre-action op args ip)
-                  ret (apply (:run-fn op) (cons host (vals args)))
-                  _ (commit-pc)]
-                 ret))]
-   ret))
+      ;; parse op and set pc
+      [op args len] <- (parse-op-at-ip)
+      (set-pc (+ ip len))
+
+      ;; pre-action
+      (pre-action op args ip)
+
+      ;; call and complete
+      ret <- (apply (:run-fn op) (cons host (vals args)))
+      (commit-pc)))))
 
 (defn execute
   "Repeatedly execute a monadic step until it returns a value.
 error-fn takes state and exception."
   [stepper s error-fn]
   (loop [s s]
-    (let [[r s+] (try (run-vm stepper s) (catch Exception e (error-fn s e)))]
+    (let [[r s+] (try (run-state stepper s) (catch Exception e (error-fn s e)))]
       (if r
         [r s+]
         (recur s+)))))

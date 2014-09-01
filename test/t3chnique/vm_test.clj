@@ -1,20 +1,19 @@
 (ns t3chnique.vm-test
-  (:use [clojure.algo.monads]
-        [t3chnique.vm]
+  (:use [t3chnique.vm]
         [t3chnique.primitive]
         [t3chnique.util]
-        [t3chnique.metaclass :as mc]
         [midje.sweet])
   (:require [t3chnique.intrinsics :as bif]
-            [t3chnique.monad :as m]))
+            [t3chnique.metaclass :as mc]
+            [monads.core :as m]))
 
-(defmacro op
-  "Automatically supply nil host argument."
-  [operation & args]
-  (let [op-name (symbol (str "op-" operation))]
-    (list* op-name nil args)))
-
-;; helpers
+(facts "about truthiness"
+  (vm-truthy? (vm-nil)) => false
+  (vm-truthy? (vm-int 0)) => false
+  (vm-falsey? (vm-nil)) => true
+  (vm-falsey? (vm-int 0)) => true
+  (vm-truthy? (vm-int 1)) => true
+  (vm-falsey? (vm-int 1)) => false)
 
 (facts "Simple pushes"
   (tabular
@@ -28,6 +27,7 @@
    [(op pushlst 0xff)]          [(vm-list 0xff)]
    [(op pushnil) (op pushtrue)] (st nil true)
    [(op pushenum 9876)]         [(vm-enum 9876)]))
+
 
 (facts "Simple stack ops"
   (tabular
@@ -43,8 +43,8 @@
    (st 1 2)       [(op swap)]      (st 2 1)
    (st 1 2)       [(op dup2)]      (st 1 2 1 2)))
 
-(facts "Arithmetic"
-  
+
+(facts "about arithmetic op codes"
   (fact "Integer increment"
     (doseq [i (range 100)]
       (stack-after (op pushint i) (op inc)) => [(vm-int (inc i))]))
@@ -54,7 +54,7 @@
       (stack-after (op pushint i) (op dec)) => [(vm-int (dec i))]))
 
   (fact "Integer addition"
-    (doseq [i (range 10) j (range 10)]
+    (doseq [i [1 2] j [1 2]]
       (stack-after (op pushint8 i) (op pushint8 j) (op add)) => [(vm-int (+ i j))]))
 
   (fact "Integer equality"
@@ -106,7 +106,7 @@
   (stack-after (op pushint 0xffffffff) (op bnot)) => (st 0))
 
 (fact "Call stack construction"
-  (let [vm (vm-state-with :ep 0x10 :ip 0x30 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)])]
+  (let [vm (vm-state-with :ep 0x10 :ip 0x30 :pc 0x36 :fp 0 :sp 2 :stack [(vm-int 1) (vm-int 2)])]
     (apply-ops vm [(op call 2 0x1234)]) =>
     (assoc vm
       :ep 0x1234
@@ -117,14 +117,13 @@
       :sequence 1
       :stack (st 1 2 (vm-prop 0) nil nil nil nil nil
                  (vm-codeptr nil)
-                 (vm-codeofs 0x20)
+                 (vm-codeofs 0x26)
                  (vm-codeofs 0x10)
                  2 (vm-stack 0) nil nil nil nil))
     (provided
-      (get-method-header 0x1234) =>
-      (fn [s] [{:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10} s]))))
+      (get-method-header 0x1234) => (m/return {:param-count 2 :opt-param-count 0 :local-variable-count 4 :code-offset 10}))))
 
-(facts "Returns"
+(facts "about function return op codes"
 
   (let [vm (vm-state-with :ep 0x1234
                           :ip 0x123e
@@ -187,6 +186,7 @@
   (let [init 0x66
         offs 0x11
         dest (inc (+ init offs))]
+
     (tabular
      (fact (apply-ops (vm-state-with :ip init :stack ?stack) [?op]) => ?check)
      ?stack        ?op                ?check
@@ -201,6 +201,7 @@
      (st nil)      (op jnotnil offs)  #(not (contains? % #{:pc}))
      (st true)     (op jnotnil offs)  (contains {:pc dest})
      (st true)     (op jnil offs)     #(not (contains? % #{:pc})))
+
     (tabular
      (fact (apply-ops (vm-state-with :ip init :stack ?stack :r0 ?r0) [?op]) => ?check)
      ?stack     ?r0        ?op            ?check
@@ -269,13 +270,13 @@
 (let [vm (vm-state-with :stack (st 99 (vm-obj 1))
                         :objs {1 (reify
                                    mc/MetaClass
-                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+                                   (mc/set-property [self prop val] (m/return {prop val})))})]
   (fact (apply-ops vm [(op setprop 20)]) => (contains {:objs {1 {20 (vm-int 99)}}})))
 
 (let [vm (vm-state-with :stack (st 99 (vm-obj 1) (vm-prop 20))
                         :objs {1 (reify
                                    mc/MetaClass
-                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+                                   (mc/set-property [self prop val] (m/return {prop val})))})]
   (fact (apply-ops vm [(op ptrsetprop)]) => (contains {:objs {1 {20 (vm-int 99)}}})))
 
 (let [vm (vm-state-with :fp 9
@@ -285,18 +286,18 @@
                                    1 0 689)
                         :objs {1 (reify
                                    mc/MetaClass
-                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+                                   (mc/set-property [self prop val] (m/return {prop val})))})]
   (fact (apply-ops vm [(op setpropself 20)]) => (contains {:objs {1 {20 (vm-int 689)}}})))
 
 (let [vm (vm-state-with :stack (st 99)
                         :objs {1 (reify
                                    mc/MetaClass
-                                   (mc/set-property [self prop val] (fn [s] [{prop val} s])))})]
+                                   (mc/set-property [self prop val] (m/return {prop val})))})]
   (fact (apply-ops vm [(op objsetprop 1 20)]) => (contains {:objs {1 {20 (vm-int 99)}}})))
 
 (let [vm (vm-state-with :stack (st 99 (vm-codeofs 99))
                         :objs {1 (reify
                                    mc/MetaClass
-                                   (mc/set-property [self prop val] (fn [s] [nil s])))})]
+                                   (mc/set-property [self prop val] (m/return {prop val})))})]
   (fact (apply-ops vm [(op setprop 20)]) => (throws Exception #"OBJ_VAL_REQUIRED")))
 
