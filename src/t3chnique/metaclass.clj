@@ -2,11 +2,10 @@
   (:require [clojure.string :as string]
             [t3chnique.intrinsics :as bif]
             [t3chnique.primitive :as p]
-            [t3chnique.monad :as m]
             [t3chnique.common :refer [indexed positions]]
-            [clojure.tools.logging :refer [trace info spy]])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
-        [t3chnique.parse :only [uint2 uint4 data-holder times record prefixed-utf8]]))
+            [clojure.tools.logging :refer [trace info spy]]
+            [monads.core :refer [mdo return get-state]])
+  (:use [t3chnique.parse :only [uint2 uint4 data-holder times record prefixed-utf8]]))
 
 ;; Protocols for APIs which need to be exposed to the VM
 ;; implementation itself.
@@ -55,8 +54,7 @@ been invoked. propid passed as number.")
 and alternative strategies should be attempted (op overloading).")
 
   (set-property [self pid val]
-    "Monadic value to set property pid to value val. pid passed as number. Returns new obj.")
-  )
+    "Monadic value to set property pid to value val. pid passed as number. Returns new obj."))
 
 (defprotocol Iteration
 
@@ -157,7 +155,6 @@ metaclass and oid keys.
                                 (assoc :oid (:oid obj)))])
                   (:objects oblock)))))
 
-
 (defn process-intrinsic-class-objects
   "Process all the objects and link back any metaclasses to the 
 intrinsic class objects that represent them by storing oid in metaclass
@@ -179,14 +176,13 @@ under key :intrinsic-class-oid. Return enhanced mcld."
 
 (defn lookup-intrinsic
   "Lookup an intrinsic method by property id against a sequence of
-metaclass id / method table pairs. e.g. 
+   metaclass id / method table pairs. e.g.
 
-(lookup-intrinsic vm 23 :list list/property-table :collection coll/property-table ..)
+   (lookup-intrinsic vm 23 :list list/property-table :collection coll/property-table ..)
 
-Returns pair of the intrinsic class oid for the metaclass that defines
-the intrinsic and the intrinsic method itself, which when called delivers
-a monadic value.
-"
+   Returns pair of the intrinsic class oid for the metaclass that
+   defines the intrinsic and the intrinsic method itself as
+   vm-native-code, which when called delivers a monadic value."
   [state propid & mc-table-pairs]
   
   {:pre [(even? (count mc-table-pairs))
@@ -203,16 +199,12 @@ a monadic value.
               [(p/vm-obj intcls) (p/vm-native-code f)])
             (recur more)))))))
 
-(defn lookup-intrinsic-m
-  [propid & mc-table-pairs]
-  (m/m-apply #(apply lookup-intrinsic % propid mc-table-pairs)))
-
-(defn default-get-property [self propid argc & mc-table-pairs]
+(defn default-get-property
+  "Action to lookup intrinsic method and invoke it (returning [intcls action])."
+  [self propid argc & mc-table-pairs]
   {:pre [(number? propid)]}
   (trace "default-get-property" propid argc)
-  (m/do-vm
-   [[intcls method] (apply lookup-intrinsic-m
-                           propid
-                           mc-table-pairs)
-    r ((p/value method) self argc)]
-   [intcls r]))
+  (mdo
+   st <- get-state
+   (let [[intcls method] (apply lookup-intrinsic st propid mc-table-pairs)]
+     (return [intcls ((p/value method) self argc)]))))

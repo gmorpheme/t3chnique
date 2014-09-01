@@ -1,11 +1,10 @@
 (ns t3chnique.metaclass.string
   (:require [t3chnique.metaclass :as mc]
-            [t3chnique.monad :as m]
             [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]
-            [clojure.tools.logging :refer [trace]]
-            [clojure.algo.monads :refer [domonad with-monad m-seq fetch-val]]
-            [t3chnique.parse :refer [parse prefixed-utf8]]))
+            [clojure.tools.logging :refer [trace debug]]
+            [t3chnique.parse :refer [parse prefixed-utf8]]
+            [monads.core :refer [mdo return]]))
 
 (declare add-to-str)
 
@@ -48,9 +47,11 @@
   (load-from-image [self buf o]
     (TadsString. (parse prefixed-utf8 [buf o])))
 
-  (get-as-string [_] text)
+  (get-as-string [self]
+    (trace "get-as-string" self)
+    text)
 
-  (cast-to-string [_] (m/in-vm (m-result text)))
+  (cast-to-string [_] (return text))
 
   (add [self val]
     (add-to-str (p/vm-sstring self) val)))
@@ -67,12 +68,10 @@
 (mc/register-metaclass! "string/030008" tads-string)
 (mc/register-data-reader! 't3chnique.metaclass.string.TadsString map->TadsString)
 
-
-(defn create [text]
-  (m/do-vm
-   [oid (vm/new-obj-id)
-    _ (vm/obj-store oid (tads-string text))]
-   (p/vm-obj oid)))
+(defn create
+  "Action to create string "
+  [text]
+  (vm/obj-intern (tads-string text)))
 
 (defn- shortcut-add
   "Potentially we can shortcut a string addition if one is empty."
@@ -85,10 +84,10 @@
 (defn add-to-str
   "Concatenate left and right into a newly allocated string."
   [left right]
-  (m/do-vm
-   [left-text (vm/as-string left)
-    right-text (vm/convert-to-string right)
-    ret (if-let [val (shortcut-add left left-text right right-text)]
-          (m-result val)
-          (create (str left-text right-text)))]
-   ret))
+  (trace "add-to-str" left right)
+  (mdo
+   left-text <- (vm/as-string left)
+   right-text <- (vm/convert-to-string right)
+   (if-let [val (shortcut-add left left-text right right-text)]
+     (return val)
+     (create (str left-text right-text)))))

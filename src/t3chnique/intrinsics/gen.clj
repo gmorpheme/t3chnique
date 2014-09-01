@@ -4,17 +4,15 @@
             [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]
             [t3chnique.metaclass :as mc]
-            [t3chnique.monad :as m]
-            [clojure.tools.logging :refer [info trace debug]]
-            [clojure.algo.monads :refer [m-seq fetch-val fetch-state]]))
+            [monads.core :refer [mdo return >>= get-state]]
+            [monads.util :as u]
+            [monads.state :refer [eval-state]]
+            [clojure.tools.logging :refer [info trace debug]]))
 
 (defn dataType
   "Built-in. Return the data type of the item at the top of the stack"
   [_ argc]
-  (m/do-vm
-   [val (vm/stack-pop)
-    _ (vm/reg-set :r0 (p/vm-int (p/typeid val)))]
-   nil))
+  (>>= vm/stack-pop #(vm/reg-set :r0 (p/vm-int (p/typeid %)))))
 
 (defn- object-query-opts-from-args 
   "Interpret stack args as options for firstObj / nextObj query. In
@@ -22,14 +20,12 @@
   [argc]
   {:pre [(<= argc 2)]}
   
-  (m/do-vm
-   [args (m-seq (repeat argc (vm/stack-pop)))]
-
+  (mdo
+   args <- (u/sequence-m (repeat argc vm/stack-pop))
    (let [flags (or (first (filter p/vm-int? args)) 1)]
-
-     {:include-classes (bit-and flags 2)
-      :include-instances (bit-and flags 1)
-      :superclass (or (first (filter p/vm-obj? args)) (p/vm-nil))})))
+     (return {:include-classes (bit-and flags 2)
+              :include-instances (bit-and flags 1)
+              :superclass (or (first (filter p/vm-obj? args)) (p/vm-nil))}))))
 
 (defn- object-matcher
   "Sequentially tests objects in s for match against the query options
@@ -47,37 +43,31 @@ specified."
           (and (:is-class o) include-classes)
           (and (not (:is-class o)) include-instances))
          (or (not (p/valid? superclass))
-             (m/eval-vm (mc/is-instance? o superclass) s)))))
+             (eval-state (mc/is-instance? o superclass) s)))))
 
 (defn- next-object
   "Implements firstObj and nextObj."
   [argc start-id]
-  (m/do-vm
-   [query-opts (object-query-opts-from-args argc)
-    objs (fetch-val :objs)
-    s (fetch-state)]
-
-   (let [matches (filter (object-matcher s start-id query-opts) (vals objs))]
-     (if-let [next-obj (first matches)]
-       (p/vm-obj (:oid next-obj))
-       (p/vm-nil)))))
+  (mdo
+   query-opts <- (object-query-opts-from-args argc)
+   {objects :objs :as s}  <- get-state
+   (let [matches (filter (object-matcher s start-id query-opts) (vals objects))]
+     (return (if-let [next-obj (first matches)]
+               (p/vm-obj (:oid next-obj))
+               (p/vm-nil))))))
 
 (defn firstObj
   "Built-in. Return the first object matching the query specified by
   the pushed args (superclass and flags)."
   [_ argc]
-  (m/do-vm
-   [o (next-object argc 1)
-    _ (vm/reg-set :r0 o)]
-   nil))
+  (>>= (next-object argc 1) vm/vm-return))
 
 (defn nextObj
   "Built-in. Return the next object matching the query specified by the pushed args.
 First argument is object id to start from. Remainder are query
   opts (superclass and flags)."
   [_ argc]
-  (m/do-vm
-   [last-obj (vm/stack-pop)
-    o (next-object (dec argc) (inc (p/value last-obj)))
-    _ (vm/reg-set :r0 o)]
-   nil))
+  (mdo
+   v <- vm/stack-pop
+   o <- (next-object (dec argc) (inc (p/value v)))
+   (vm/vm-return o)))

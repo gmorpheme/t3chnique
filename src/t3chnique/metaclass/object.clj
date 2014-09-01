@@ -1,7 +1,6 @@
 (ns t3chnique.metaclass.object
   (:require [t3chnique.metaclass :as mc]
-            [clojure.tools.logging :refer [trace]])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]))
+            [clojure.tools.logging :refer [trace]]))
 
 
 (def property-table

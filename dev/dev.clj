@@ -3,7 +3,6 @@
             [t3chnique.vm :as vm]
             [t3chnique.parse :as parse]
             [t3chnique.primitive :as p]
-            [t3chnique.monad :as m]
             [t3chnique.metaclass :as mc]
             [t3chnique.dump :refer [dump-state load-state]]
             [t3chnique.all]

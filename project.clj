@@ -20,7 +20,7 @@
                  ;; for logback and groovy configuration
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [org.codehaus.groovy/groovy "2.3.2"]]
-  :jvm-opts ["-Xms48m" "-Xmx1g" "-XX:MaxPermSize=512M" "-server"]
+  :jvm-opts ["-Xms48m" "-Xmx1g" "-server"]
 
   :repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot"
                                          :username :env/ARTIFACTORY_USERNAME

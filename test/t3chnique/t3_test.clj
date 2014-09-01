@@ -1,7 +1,6 @@
 (ns ^{:doc "Run compiled t3 test cases from TADS3 source"}
   t3chnique.t3-test
-  (:require [t3chnique.monad :as m]
-            [t3chnique.metaclass :as mc]
+  (:require [t3chnique.metaclass :as mc]
             [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]
             [t3chnique.parse :as parse]
@@ -10,27 +9,39 @@
             [t3chnique.intrinsics.gen :as gen]
             [t3chnique.dump :refer [dump-state]]
             t3chnique.all
-            [clojure.algo.monads :refer (update-val fetch-val m-seq m-chain)]
             [clojure.pprint :refer (pprint)]
             [clojure.string :as string]
             [clojure.java.io :as io]
-            [clojure.tools.logging :refer [trace debug info]])
+            [monads.core :refer [mdo >>= return]]
+            [monads.util :as u]
+            [monads.state :refer [exec-state]]
+            [clojure.tools.logging :refer [trace tracef debug info error]])
   (:use [midje.sweet]))
 
-(defrecord TraceHost [])
-
-(defn to-string
-  "A special to-string for say"
+(defn convert-to-string-for-say
+  "Return internal string representation (not vm-sstring)."
   [v]
+  {:pre [(p/vm-primitive? v)]}
+  (trace "convert-to-string" v)
   (cond
-   (p/vm-string? v) (fn [s] [(vm/load-string-constant s (p/value v)) s])
-   (p/vm-obj? v) (m/do-vm [obj (vm/obj-retrieve (p/value v))
-                            text (mc/cast-to-string obj)]
-                           text)
-   (p/vm-int? v) (m/in-vm (m-result (str (p/value v))))
-   (p/vm-list? v) (m/abort "TODO say to-string for lists")
-   (p/vm-nil? v) (m/in-vm (m-result ""))
-   :else (m/abort "VMERR_BAD_TYPE_BIF")))
+
+   (or (p/vm-sstring? v)
+       (p/vm-dstring? v)) (vm/get-val #(vm/load-string-constant % (p/value v)))
+   
+   (p/vm-obj? v) (mdo
+                  obj <- (vm/obj-retrieve (p/value v))
+                  (return (mc/get-as-string obj))) ;TODO metaclass cast_to_string
+
+   (p/vm-int? v) (return (str (p/value v)))
+
+   (p/vm-nil? v) (return "")
+   
+   (p/vm-true? v) (return "true")
+   
+   :else (throw (ex-info "TODO other string conversions" {:value (p/mnemonise v)}))))
+
+
+(defrecord TraceHost [])
 
 (defmacro traced [f]
   `(fn [self# argc#]
@@ -56,13 +67,12 @@
   bif/tads-io
   {:tadsSay (fn [_ argc]
               (trace "tads-io/tadsSay")
-              (m/do-vm
-               [args (m-seq (repeat argc (m-bind
-                                          (vm/stack-pop)
-                                          to-string)))
-                _ (update-val :_output #(concat % args))
-                _ (vm/reg-set :r0 (p/vm-nil))]
-               nil))}
+              (mdo
+               args <- (u/sequence-m (repeat argc (>>=
+                                                   vm/stack-pop
+                                                   convert-to-string-for-say)))
+               (vm/update-val :_output #(concat % args))
+               (vm/vm-return (p/vm-nil))))}
 
   bif/tads-net)
 
@@ -73,12 +83,11 @@
   [host]
   (vm/step
    host
-   (fn [op args ip]
-     (trace "@" ip ":" (:mnemonic op))
-     (m/do-vm
-      [stack (fetch-val :stack)
-       _ (update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))]
-      nil))))
+   (fn [op args ip pc]
+     (tracef "@%d..%d: %s" ip pc (:mnemonic op))
+     (mdo
+      stack <- (vm/get-val :stack)
+      (vm/update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))))))
 
 (defn format-stack
   ([stack]
@@ -88,6 +97,7 @@
        (apply str (interpose " " (map p/mnemonise stack-vals))))))
 
 (defn format-trace [{trc :_trace :as s}]
+  (debug trc)
   (let [instructions (->> trc
                           (map (fn [{:keys [op args pre ip]}]
                                  (str "[..."
@@ -105,13 +115,15 @@
 
 (defn trace-execution [name]
   (let [m0 (vm/vm-from-image (parse/parse-resource name))]
-    (trace "===> Executing " name)
+    (info "===> Executing " name)
     (let [host (trace-host)
-          m1 (m/exec-vm (vm/enter host) m0)
+          m1 (exec-state (vm/enter host) m0)
           m2 (assoc m1 :_trace [])
           stepper (trace-step host)]
+      (info "Executing now")
       (vm/execute stepper m2
                   (fn error-handler [s e]
+                    (error e)
                     (spit (str "test/t3chnique/out/" name ".err")
                           (str (format-trace s) "\nexception: " e))
                     (dump-state s)
@@ -138,6 +150,9 @@
   (let [s (run "basic")]
     (compare-trace "basic") => true))
 
+     ;.;. Actual: false
+   ;.;. Expected: true
+;.;. FAIL "object" at (form-init2319925236458664615.clj:4)
 (fact "object"
   (let [s (run "object")]
     (compare-trace "object") => true))

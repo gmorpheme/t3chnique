@@ -1,8 +1,6 @@
 (ns t3chnique.intrinsics.t3vm-test
   (:require [t3chnique.vm :as vm]
-            [t3chnique.monad :as m]
-            [t3chnique.primitive :as p]
-            [clojure.algo.monads :refer [m-seq]])
+            [t3chnique.primitive :as p])
   (:use midje.sweet
         t3chnique.util
         t3chnique.intrinsics.t3vm))

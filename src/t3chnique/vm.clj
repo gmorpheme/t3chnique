@@ -180,6 +180,7 @@ the VM execution."
   ([{:keys [ip] :as vm}]
      (offset vm ip))
   ([{:keys [code-page-size code-pages]} p]
+     (trace "Computing offset for " p)
      [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
 
 (defn const-offset
@@ -199,12 +200,11 @@ the VM execution."
   "Read the operation in the supplied buffer position.
 Return opcode map, args map and byte length of compete instruction."
   [[b i]]
+  (trace "read-op:" b i)
   (let [[[op args] [b' i']] (parse/run-parse parse-op [b i])]
     [op args (- i' i)]))
 
-(def parse-op-at-ip
-  "Action to parse operation at current instruction pointer."
-  #(return (read-op (offset %))))
+
 
 ;; We leave :ip pointing at the current instruction during processing.
 ;; Should opcodes need to jump, they set :pc instead and this will be
@@ -227,15 +227,25 @@ Return opcode map, args map and byte length of compete instruction."
 (defn set-pc [val]
   (modify #(assoc % :pc val)))
 
-(defn pc [] (get-val :pc))
+(defn pc []
+  (mdo
+   pc <- (get-val :pc)
+   (if pc
+     (return pc)
+     (throw (ex-info "No program counter - op incorrectly started" {})))))
 
 (defn commit-pc
   "Commit the in-progress program counter back to ip."
   []
   (mdo
-   pc (pc)
+   pc <- (pc)
    (set-val :ip pc)
    (rm-val :pc)))
+
+(def parse-op-at-ip
+  "Action to parse operation at current instruction pointer."
+  (>>= get-state
+       #(return (read-op (offset %)))))
 
 (def get-say-method (get-val :say-method))
 (def set-say-method (partial set-val :say-method))
@@ -247,6 +257,7 @@ Return opcode map, args map and byte length of compete instruction."
 (defn stack-push
   "Action to push value onto the VM stack."
   [val]
+  {:pre [(vm-primitive? val)]}
   (>> (update-val :stack #(conj % val))
       (update-val :sp inc)))
 
@@ -262,15 +273,19 @@ Return opcode map, args map and byte length of compete instruction."
    (return top)))
 
 (defn stack-set [idx val]
+  {:pre [(integer? idx) (vm-primitive? val)]}
   (update-val :stack #(assoc % idx val)))
 
 (defn stack-get [idx]
+  {:pre [(integer? idx)]}
   (>>= (get-val :stack) #(return (nth % idx))))
 
 (defn stack-update [idx f]
+  {:pre [(integer? idx) (fn? f)]}
   (update-val :stack #(update-in % [idx] f)))
 
 (defn stack-swap [i j]
+  {:pre [(integer? i) (integer? j)]}
   (update-val :stack (fn [stack] (-> stack
                                     (assoc i (stack j))
                                     (assoc j (stack i))))))
@@ -280,11 +295,14 @@ Return opcode map, args map and byte length of compete instruction."
 setting the program counter (pc) - this will be committed to ip once the
 instruction is complete."
   [offset-from-ip]
+  {:pre [(integer? offset-from-ip)]}
   (>>= (get-val :ip) #(set-pc (+ % offset-from-ip))))
 
 (def reg-get get-val)
 
-(defn reg-set [reg val] (set-val reg val))
+(defn reg-set [reg val]
+  {:pre [(keyword? reg)]}
+  (set-val reg val))
 
 (def vm-return (partial reg-set :r0))
 
@@ -324,9 +342,10 @@ instruction is complete."
   "Read method header at specified offset."
   [ptr]
   {:pre [(integer? ptr)]}
+  (trace "get-method-header" ptr)
   (>>=
    get-state
-   #(parse/parse-at (parse/method-header (:method-header-size %)) (offset % ptr))))
+   #(return (parse/parse-at (parse/method-header (:method-header-size %)) (offset % ptr)))))
 
 (defn get-exception-table
   "Read exception table at specified offset."
@@ -334,8 +353,7 @@ instruction is complete."
   {:pre [(integer? ptr)]}
   (>>=
    get-state
-   #((first ((parse/exception-table)
-             (offset % ptr))))))
+   #(return (parse/parse-at (parse/exception-table) (offset % ptr)))))
 
 (def tick
   "Action to update sequence number in state."
@@ -362,8 +380,8 @@ instruction is complete."
   [v]
   {:pre [(vm-primitive? v)]}
   (cond
-   (vm-sstring? v) (fn [s] [(load-string-constant s (value v)) s])
-   (vm-obj? v) (>>= (obj-retrieve (value v)) mc/get-as-string)))
+   (vm-sstring? v) (get-val #(load-string-constant % (value v)))
+   (vm-obj? v) (>>= (obj-retrieve (value v)) #(return (mc/get-as-string %)))))
 
 (defn load-list-constant
   "Read a list (prefixed) from the constant pool."
@@ -378,8 +396,8 @@ instruction is complete."
   {:pre [(vm-primitive? v)]
    :post [#(or (record? %) (nil? %))]}
   (cond
-   (vm-list? v) (fn [s] [(load-list-constant s (value v)) s])
-   (vm-obj? v) (>>= (obj-retrieve (value v)) mc/get-as-seq)
+   (vm-list? v) (get-val #(load-list-constant % (value v)))
+   (vm-obj? v) (>>= (obj-retrieve (value v)) #(return (mc/get-as-seq %)))
    :else nil))
 
 ;; TODO should this be in string metaclass?
@@ -387,8 +405,11 @@ instruction is complete."
   "Return internal string representation (not vm-sstring)."
   [v]
   {:pre [(vm-primitive? v)]}
+  (trace "convert-to-string" v)
   (cond
-   (vm-sstring? v) (get-val #(load-string-constant % (value v)))
+
+   (or (vm-sstring? v)
+       (vm-dstring? v)) (get-val #(load-string-constant % (value v)))
    
    (vm-obj? v) (mdo
                 obj <- (obj-retrieve (value v))
@@ -400,7 +421,7 @@ instruction is complete."
    
    (vm-true? v) (return "true")
    
-   :else (throw (ex-info ("TODO other string conversions" {:value (mnemonise v)})))))
+   :else (throw (ex-info "TODO other string conversions" {:value (mnemonise v)}))))
 
 ;; TODO non-numerics
 (defn- vm-lift2
@@ -546,7 +567,7 @@ instruction is complete."
    :post [vm-primitive?]}
   (trace "Compute sum " a b)
   (cond
-   (vm-int? a) (vm-+ a b)
+   (vm-int? a) (return (vm-+ a b))
    (vm-sstring? a) (t3chnique.metaclass.string/add-to-str a b)
    (vm-obj? a) (t3chnique.metaclass.string/add-to-str a b)
    :else (throw (ex-info "BAD_TYPE_ADD" {:code :BAD_TYPE_ADD :left a :right b}))))
@@ -554,7 +575,8 @@ instruction is complete."
 (defop add 0x22 []
   (mdo
    [r l] <- (sequence-m (repeat 2 stack-pop))
-   (stack-push (compute-sum l r))))
+   result <- (compute-sum l r)
+   (stack-push result)))
 
 (defop sub 0x23 []
   (stack-op2 vm--))
@@ -731,7 +753,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
                 (vm-nil? target-val) (throw (ex-info "Nil dereference" {:code :VMERR_NIL_DEREF}))
                 :else (throw (ex-info "Object value required" {:code :VMERR_OBJ_VAL_REQD})))
      [defining-obj prop-val] <- (locate-property-fn object pid argc)
-     (return (handle-property-fn target-val defining-obj target-val pid prop-val argc)))))
+     (handle-property-fn target-val defining-obj target-val pid prop-val argc))))
 
 (declare say-value)
 
@@ -773,8 +795,8 @@ items if available."
   []
   (mdo
    self <- (get-stack-self)
-   sm <- (get-say-method)
-   sf <- (get-say-function)
+   sm <- get-say-method
+   sf <- get-say-function
    (cond
     (and (valid? self) (valid? sm)) (generic-get-prop self sm 1)
     (valid? sf) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value sf) 1 nil)
@@ -1340,9 +1362,12 @@ with property set as specified. oid, pid numbers. val primitive."
 (defn enter
   "Set up vm at initial entry point."
   [host]
+  (info "Entering VM")
   (mdo
    entp <- (get-val :entry-point-offset)
    (op-pushlst host 0)
+   ip <- (get-val :ip)
+   (set-pc ip)
    (op-call host 1 entp)
    (commit-pc)))
 
@@ -1352,20 +1377,27 @@ with property set as specified. oid, pid numbers. val primitive."
   [host pre-action]
   (mdo
    ip <- (reg-get :ip)
+   let _ = (trace "Stepping from ip=" ip)
    (if (or (nil? ip) (zero? ip))
      (reg-get :r0)
      (mdo
-
       ;; parse op and set pc
-      [op args len] <- (parse-op-at-ip)
-      (set-pc (+ ip len))
+      [op args len] <- parse-op-at-ip
+      let _ = (debug "parsed" op args len)
+
+      let p = (+ ip len)
+      (set-pc p)
+      let _ = (debug "set pc" p)
 
       ;; pre-action
-      (pre-action op args ip)
+      (pre-action op args ip p)
 
+      let _ = (debug "running op")
       ;; call and complete
       ret <- (apply (:run-fn op) (cons host (vals args)))
-      (commit-pc)))))
+      (commit-pc)
+      
+      (return nil)))))
 
 (defn execute
   "Repeatedly execute a monadic step until it returns a value.
@@ -1373,7 +1405,7 @@ error-fn takes state and exception."
   [stepper s error-fn]
   (loop [s s]
     (let [[r s+] (try (run-state stepper s) (catch Exception e (error-fn s e)))]
-      (if r
+      (if (spy r)
         [r s+]
         (recur s+)))))
 

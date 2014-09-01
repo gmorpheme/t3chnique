@@ -1,7 +1,7 @@
 (ns ^{:doc "Tooling support. Functionality for rendering internal VM
 structures for human inspection"}
   t3chnique.inspect
-  (:require [t3chnique.monad :as m]
+  (:require [monads.state :refer [eval-state]]
             [t3chnique.vm :as vm]
             [t3chnique.primitive :as p]))
 
@@ -41,7 +41,7 @@ information about its value or referent."
 
 (defmethod inspect-shallow p/vm-obj-id [vm val]
   (let [oid (p/value val)
-        {:keys [metaclass] :as  obj} (m/eval-vm (vm/obj-retrieve oid) vm)
+        {:keys [metaclass] :as  obj} (eval-state (vm/obj-retrieve oid) vm)
         metaclass-name (:name (nth (:mcld vm) metaclass))]
     [metaclass-name]))
 

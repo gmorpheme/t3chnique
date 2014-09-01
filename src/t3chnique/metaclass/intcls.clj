@@ -1,7 +1,6 @@
 (ns t3chnique.metaclass.intcls
   (:require [t3chnique.metaclass :as mc]
             [t3chnique.vm :as vm]
-            [t3chnique.monad :as m]
             [t3chnique.primitive :as p]
             [monads.core :refer [mdo return]]
             [clojure.tools.logging :refer [trace]])
@@ -20,7 +19,7 @@
      buf o))
 
   (mc/is-instance? [self val]
-    (m/in-vm (m-result false))) ; TODO metaclass subclassing?
+    (return (p/vm-nil)))                  ; TODO metaclass subclassing?
   
   )
 

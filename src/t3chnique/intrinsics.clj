@@ -1,7 +1,8 @@
-(ns t3chnique.intrinsics
+(ns ^{:doc "Intrinsic function protocols required by the VM together with the 
+            requisite machinery for locating and invoking methods."}
+  t3chnique.intrinsics
   (:refer-clojure :exclude [min max rand concat])
-  (:require [clojure.string :as string]
-            [t3chnique.monad :as m]))
+  (:require [clojure.string :as string]))
 
 (defmacro def-function-set
   "Generate a protocol definition for a function set but also add
@@ -141,6 +142,6 @@ method in the function set identified by fsid at index n, passing
 specified args."
   [host fsid n & args]
   {:pre [(number? n)]}
-  (let [prot (or (find-protocol fsid) (m/abort (str "Missing function set " fsid)))
+  (let [prot (or (find-protocol fsid) (throw (ex-info "Missing function set" {:set fsid})))
         f (get (:fns (meta prot)) n)]
     (apply f host args)))

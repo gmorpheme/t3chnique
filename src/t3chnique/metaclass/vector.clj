@@ -3,12 +3,13 @@
             [t3chnique.primitive :as p]
             [t3chnique.metaclass.object :as obj]
             [t3chnique.vm :as vm]
-            [t3chnique.monad :as m]
             [t3chnique.metaclass.collection :as coll]
             [t3chnique.metaclass.object :as obj]
-            [clojure.tools.logging :refer [trace]])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq fetch-val]]
-        [t3chnique.monad :only [vm-m do-vm m-apply]]))
+            [clojure.tools.logging :refer [trace]]
+            [monads.core :refer [mdo return >>=]]))
+
+(defmacro abort [& args]
+  `(throw (ex-info ~@args)))
 
 (def vec-table
   [
@@ -54,38 +55,32 @@
 
   mc/MetaClass
 
-  (load-from-image [self buf o]
-                                        ; TODO vector load-from-image
-    )
-
-                                        ; [] [capacity] [src] [capacity src] [src copy-count]
+  ;; action: first arg is capacity (ignored), then source object or initial count
   (load-from-stack [_ argc]
-
     (case argc
-      0 (do-vm [] (Vector. []))
-      1 (do-vm
-         [arg (vm/stack-pop)]
-         (if (p/vm-int? arg)
-           (Vector. [])
-           (m/abort "todo vector copy")))
-      2 (do-vm
-         [arg1 (vm/stack-pop)
-          arg2 (vm/stack-pop)]
+      0 (return (Vector. []))
+      1 (>>= vm/stack-pop #(if (p/vm-int? %) (return (Vector. [])) (abort "TODO: vector copy")))
+      2 (mdo
+         arg1 <- vm/stack-pop
+         arg2 <- vm/stack-pop
          (if (every? p/vm-int? [arg1 arg2])
-           (Vector. (repeat (p/value arg2) (p/vm-nil)))
-           (m/abort "todo vector copy")))
-      :else (m/abort "VMERR_WRONG_NUM_OF_ARGS")))
+           (return (Vector. (repeat (p/value arg2) (p/vm-nil))))
+           (abort "TODO: vector copy")))
+      :else (abort "VMERR_WRONG_NUM_OF_ARGS")))
 
-  (get-property [self propid argc]
-    (let [mcidx (:metaclass self)]
-      (do-vm
-       [f (mc/lookup-intrinsic-m propid
-                                 :vector vec-table
-                                 :collection coll/property-table
-                                 :object obj/property-table)
-        r (f argc)]
-       r)))
+  (load-from-image [self buf o]
+    )                                   ; TODO: load vector from image
   
+  ;; action: lookup and invoke intrinsic (returning [intcls action]) 
+  (get-property [self propid argc]
+    (mc/default-get-property
+      self
+      propid
+      argc
+      :vector vec-table
+      :collection coll/property-table
+      :object obj/property-table))
+
   (list-like? [_ _] true)
 
   (get-as-string [_] nil))

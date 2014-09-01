@@ -1,7 +1,6 @@
 (ns t3chnique.metaclass.grammar
   (:require [t3chnique.metaclass :as mc]
-            [clojure.tools.logging :refer [trace]])
-  (:use [clojure.algo.monads :only [domonad with-monad m-seq]]))
+            [clojure.tools.logging :refer [trace]]))
 
 (defrecord GrammarProduction []
   mc/MetaClass

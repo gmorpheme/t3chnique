@@ -3,17 +3,19 @@
             [t3chnique.primitive :as p]
             [t3chnique.metaclass :as mc]
             [t3chnique.metaclass.object :as obj]
-            [t3chnique.monad :as m]
             [clojure.tools.logging :refer [trace]]))
+
+(defmacro abort [& args]
+  `(throw (ex-info ~@args)))
 
 (def property-table
   [nil
 
    (fn getp-get-next [self argc])
    (fn getp-get-is-next-avail [self argc])
-   (fn getp-get-reset-iter [self argc] (m/abort "TODO getp-get-reset-iter"))
-   (fn getp-get-cur-key [self argc] (m/abort "TODO getp-get-cur-key"))
-   (fn getp-get-cur-val [self argc] (m/abort "TODO getp-get-cur-val"))])
+   (fn getp-get-reset-iter [self argc] (abort "TODO getp-get-reset-iter"))
+   (fn getp-get-cur-key [self argc] (abort "TODO getp-get-cur-key"))
+   (fn getp-get-cur-val [self argc] (abort "TODO getp-get-cur-val"))])
 
 (defrecord Iterator []
   mc/MetaClass

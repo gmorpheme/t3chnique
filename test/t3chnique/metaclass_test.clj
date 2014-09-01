@@ -1,8 +1,7 @@
 (ns t3chnique.metaclass-test
   (:use [midje.sweet]
         [t3chnique.metaclass]
-        [t3chnique.primitive :as p]
-        [t3chnique.monad :as m])
+        [t3chnique.primitive :as p])
   (:require [t3chnique.vm :as vm]))
 
 
@@ -35,10 +34,7 @@
     (lookup-intrinsic {:mcld mcld} 4 :foo foo-table :bar bar-table) => [(p/vm-obj 10) (p/vm-native-code 'b)]
     (lookup-intrinsic {:mcld mcld} 5 :foo foo-table :bar bar-table) => [(p/vm-obj 20) (p/vm-native-code 'B)]
     (lookup-intrinsic {:mcld mcld} 6 :foo foo-table :bar bar-table) => [(p/vm-obj 10) (p/vm-native-code 'c)]
-    (lookup-intrinsic {:mcld mcld} 7 :foo foo-table :bar bar-table) => [(p/vm-obj 20) (p/vm-native-code 'C)]
-
-    (m/eval-vm (lookup-intrinsic-m 8 :foo foo-table) {:mcld mcld}) => [(p/vm-obj 10) (p/vm-native-code 'd)]
-    (m/eval-vm (lookup-intrinsic-m 9 :bar bar-table) {:mcld mcld}) => [(p/vm-obj 20) (p/vm-native-code 'D)]))
+    (lookup-intrinsic {:mcld mcld} 7 :foo foo-table :bar bar-table) => [(p/vm-obj 20) (p/vm-native-code 'C)]))
 
 (facts "Wiring up intrinsic classes"
   (let [mcld [{:metaclass-id :a}

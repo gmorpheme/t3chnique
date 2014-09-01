@@ -1,18 +1,16 @@
 (ns t3chnique.main
   (:gen-class)
-  (:use [clojure.tools.cli :only [cli]]
-        [monads.core :refer [mdo return]]
-        [clojure.algo.monads :only [domonad fetch-state]]
-        [clojure.main :only [repl]])
+  (:use [clojure.tools.cli :only [cli]])
   (:require [t3chnique.all]
             [t3chnique.server :as sv]
             [t3chnique.vm :as vm]
             [t3chnique.parse :as parse]
             [clojure.java.io :as io]
-            [clojure.pprint :as pp])
+            [clojure.pprint :as pp]
+            [monads.core :refer [mdo return]])
   (:import [java.nio Buffer]))
 
-(declare entp dis object constant-string constant-list output vm-repl run-rest-server)
+(declare entp dis object constant-string constant-list output run-rest-server)
 
 (defn -main [& args]
   (time
@@ -111,16 +109,3 @@
                                                            (sv/stop system))))
       (sv/start system))))
 
-(defn vm-repl 
-  "Run a REPL which applies the read fn to the state s."
-  [s]
-  (let [state (atom s)]
-    (repl
-     :init (fn []
-             (use 't3chnique.vm)
-             (use 'clojure.algo.monads))
-     :eval (fn [form]
-             (let [f (eval form)
-                   [r s] (f @state)]
-               (reset! state s)
-               r)))))

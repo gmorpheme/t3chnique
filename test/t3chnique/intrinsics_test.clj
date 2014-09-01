@@ -1,6 +1,5 @@
 (ns t3chnique.intrinsics-test
-  (:use [clojure.algo.monads]
-        [midje.sweet])
+  (:use [midje.sweet])
   (:require [t3chnique.intrinsics :as bif]))
 
 (defrecord TestHost []
