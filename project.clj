@@ -22,14 +22,12 @@
                  [org.codehaus.groovy/groovy "2.3.2"]]
   :jvm-opts ["-Xms48m" "-Xmx1g" "-server"]
 
-  :repositories [["gmorpheme-snapshots" {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot"
-                                         :username :env/ARTIFACTORY_USERNAME
-                                         :password :env/ARTIFACTORY_PASSWORD}]]
-
-  :deploy-repositories [["gmorpheme-snapshots"
-                         {:url "http://dev.gmorpheme.net/artifactory/libs-snapshot-local"
-                          :username :env/ARTIFACTORY_USERNAME
-                          :password :env/ARTIFACTORY_PASSWORD}]]
+  :repositories [["curvelogic-snapshots" {:url "http://dev.curvelogic.co.uk/nexus/content/repositories/snapshots"
+                                          :username :env/NEXUS_USERNAME
+                                          :password :env/NEXUS_PASSWORD}]
+                 ["curvelogic-releases" {:url "http://dev.curvelogic.co.uk/nexus/content/repositories/releases"
+                                         :username :env/NEXUS_USERNAME
+                                         :password :env/NEXUS_PASSWORD}]]
 
   ;; add t3 tests to resources for
   :profiles {:dev {:repl-options {:init-ns user}
