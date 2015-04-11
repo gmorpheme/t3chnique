@@ -357,7 +357,7 @@
                     :handler-offset uint2))))
 
 (defn load-image-file [f]
-  (let [buf (nio/mmap f)
+  (let [buf (nio/mmap (nio/readable-channel f) nil nil :mode :read-only)
         _ (.order buf ByteOrder/LITTLE_ENDIAN)]
     buf))
 

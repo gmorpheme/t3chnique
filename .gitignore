@@ -25,3 +25,5 @@ pom.xml
 *.log
 *.edn
 *.log#
+/.lein-env
+/.nrepl-history
