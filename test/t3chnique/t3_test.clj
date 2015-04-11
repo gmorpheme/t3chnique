@@ -97,7 +97,6 @@
        (apply str (interpose " " (map p/mnemonise stack-vals))))))
 
 (defn format-trace [{trc :_trace :as s}]
-  (debug trc)
   (let [instructions (->> trc
                           (map (fn [{:keys [op args pre ip]}]
                                  (str "[..."

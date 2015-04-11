@@ -1,6 +1,6 @@
 machine:
   pre:
-    - curl "https://github.com/boot-clj/boot/releases/download/2.0.0-rc13/boot.sh"
+    - curl -L "https://github.com/boot-clj/boot/releases/download/2.0.0-rc13/boot.sh"
     - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin 
 
 test:
