@@ -21,10 +21,12 @@
             [t3chnique.inspect :as i]
             [clojure.stacktrace :as st]
             [clojure.tools.logging :refer (info debug debugf trace error spy)]
-            [t3chnique.all :refer [default-host]]))
+            [t3chnique.all :refer [default-host]]
+            [monads.state :refer [run-state]]
+            [monads.core :as m]))
 
-(defn pre-trace-step [op args ip]
-  (trace "@" ip ":" (:mnemonic op)))
+(defn pre-trace-step [op args ip p]
+  (m/return (trace "@" ip ":" (:mnemonic op) "(" p ")")))
 
 (defn vm-actions
   "Return the actions available for the vm at its current state"
@@ -389,7 +391,7 @@ useful information for tooling UIs."
   [system id]
   (info "Entering VM: " id)
   (let [host (vm-host system id)
-        [r s] ((t3vm/enter host) (vm-get system id))]
+        [r s] (run-state (t3vm/enter host) (vm-get system id))]
     (debugf "Updating store with %s/%d" id (:sequence s))
     (swap! (:vm-histories system) update-in [id] conj s)
     (vm-get system id)))
@@ -401,7 +403,7 @@ useful information for tooling UIs."
         host (vm-host system id)]
     (debug "Stepping VM: " id " from sequence " (:sequence initial-state))
     (try
-      (let [[e s] ((t3vm/step host pre-trace-step) initial-state)]
+      (let [[e s] (run-state (t3vm/step host pre-trace-step) initial-state)]
         (debugf "Updating store with %s/%d" id (:sequence s))
         (swap! (:vm-histories system) update-in [id] conj (assoc s :exc nil)))
       (catch Throwable t
@@ -558,6 +560,11 @@ useful information for tooling UIs."
      
      (route/not-found "No such resource"))))
 
+(defn wrap-logging [app]
+  (fn [req]
+    (info "Request:" req)
+    (app req)))
+
 (defn make-app
   "Make a Ring app for serving the REST tools API. Context root must be
 supplied for URL formation."
@@ -565,7 +572,8 @@ supplied for URL formation."
   (-> (handler/api (make-routes context system))
       (wrap-restful-params)
       (wrap-response)
-      (wrap-stacktrace-web)))
+      (wrap-stacktrace-web)
+      (wrap-logging)))
 
 (defn start-server
   "Start server with REST API at root context."

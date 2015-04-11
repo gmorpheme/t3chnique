@@ -532,16 +532,16 @@ instruction is complete."
   (obj-intern (t3chnique.metaclass.string/create string_bytes)))
 
 (defop pushparlst 0x0D [:ubyte fixed_arg_count]
-  (throw (ex-info "TODO: implement pushparlst")))
+  (throw (ex-info "TODO: implement pushparlst" {})))
 
 (defop makelstpar 0x0E []
-  (throw (ex-info "TODO: implement makelstpar")))
+  (throw (ex-info "TODO: implement makelstpar" {})))
 
 (defop pushenum 0x0F [:int4 val]
   (stack-push (vm-enum val)))
 
 (defop pushbifptr 0x10 [:uint2 function_index :uint2 set_index]
-  (throw (ex-info "TODO: implement pushbifptr")))
+  (throw (ex-info "TODO: implement pushbifptr" {})))
 
 (defop neg 0x20 []
   (with-stack [val]
@@ -663,10 +663,10 @@ instruction is complete."
   unwind)
 
 (defop namedargptr 0x56 [:ubyte named_arg_count :uint2 table_offset]
-  (throw (ex-info "TODO: implement namedargptr")))
+  (throw (ex-info "TODO: implement namedargptr" {})))
 
 (defop namedargtab 0x57 [:named-arg-args args]
-  (throw (ex-info "TODO: implement namedargtab")))
+  (throw (ex-info "TODO: implement namedargtab" {})))
 
 (def FRAME-SIZE 11)
 
@@ -748,7 +748,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
     (mdo
      object <- (cond
                 (vm-list? target-val) (>>= (as-list target-val) #(return (t3chnique.metaclass.list/tads-list %)))
-                (vm-sstring? target-val) (throw (ex-info "TODO: Constant string property access"))
+                (vm-sstring? target-val) (throw (ex-info "TODO: Constant string property access" {}))
                 (vm-obj? target-val) (obj-retrieve (value target-val))
                 (vm-nil? target-val) (throw (ex-info "Nil dereference" {:code :VMERR_NIL_DEREF}))
                 :else (throw (ex-info "Object value required" {:code :VMERR_OBJ_VAL_REQD})))
@@ -773,8 +773,8 @@ property value directly."
                                            (value prop-val)
                                            argc
                                            nil)
-     :else (throw (ex-info "TODO: unexpected property value type")))
-    (throw (ex-info "TODO: implement propNotDefined"))))
+     :else (throw (ex-info "TODO: unexpected property value type" {:property prop-val})))
+    (throw (ex-info "TODO: implement propNotDefined" {:property prop-val}))))
 
 (defn data-only
   "Property handler which won't call methods but only returns data
@@ -810,8 +810,8 @@ items if available."
    val <- stack-pop
    (cond
     (vm-funcptr? val) (prepare-frame (vm-prop 0) (vm-nil) (vm-nil) (vm-nil) (value val) arg_count nil)
-    (vm-prop? val) (throw (ex-info "TODO: implement as per ptrcallpropself"))
-    (vm-obj? val) (throw (ex-info "TODO: implement ObjectCallProp"))
+    (vm-prop? val) (throw (ex-info "TODO: implement as per ptrcallpropself" {}))
+    (vm-obj? val) (throw (ex-info "TODO: implement ObjectCallProp" {}))
     :else (throw (ex-info "ptrcall requires function pointer value" {:code :FUNCPTR_VAL_REQD})))))
 
 (defop getprop 0x60 [:uint2 prop_id]
@@ -879,19 +879,19 @@ items if available."
    (generic-inherit-prop target-val (value prop) arg_count)))
 
 (defop expinherit 0x74 [:ubyte arg_count :uint2 prop_id :uint4 obj_id]
-  (throw (ex-info "TODO: expinherit")))
+  (throw (ex-info "TODO: expinherit" {})))
 
 (defop ptrexpinherit 0x75 [:ubyte arg_count :uint4 obj_id]
-  (throw (ex-info "TODO: ptrexpinherit")))
+  (throw (ex-info "TODO: ptrexpinherit" {})))
 
 (defop varargc 0x76 []
-  (throw (ex-info "TODO: varags")))
+  (throw (ex-info "TODO: varags" {})))
 
 (defop delegate 0x77 [:ubyte arg_count :uint2 prop_id]
-  (throw (ex-info "TODO: delegation")))
+  (throw (ex-info "TODO: delegation" {})))
 
 (defop ptrdelegate 0x78 [:ubyte arg_count]
-  (throw (ex-info "TODO: delegation")))
+  (throw (ex-info "TODO: delegation" {})))
 
 (defop swap2 0x7a []
   (with-stack [d c b a] [a b c d]))
@@ -935,10 +935,10 @@ items if available."
   (copy :fp #(- % (- FRAME-SIZE 3))))
 
 (defop getdblcl 0x85 [:uint2 local_number]
-  (throw (ex-info "TODO: implement getdblcl")))
+  (throw (ex-info "TODO: implement getdblcl" {})))
 
 (defop getdbarg 0x86 [:uint2 param_number]
-  (throw (ex-info "TODO: implement getdbarg")))
+  (throw (ex-info "TODO: implement getdbarg" {})))
 
 (defop getargc 0x87 []
   (copy :fp #(- % 2)))
@@ -956,13 +956,13 @@ items if available."
   (>>= (reg-get :r0) stack-push))
 
 (defop getdbargc 0x8C []
-  (throw (ex-info "TODO: implement getdbargc")))
+  (throw (ex-info "TODO: implement getdbargc" {})))
 
 (defop swap 0x8D []
   (with-stack [x y] [y x]))
 
 (defop pushctxele 0x8E [:ubyte element]
-  (throw (ex-info "TODO:implement pushctxele")))
+  (throw (ex-info "TODO:implement pushctxele" {})))
 
 (defop dup2 0x8F []
   (with-stack [a b] [a b a b]))
@@ -1076,10 +1076,10 @@ them to account for the difference."
        stack-pop)))
 
 (defop ljsr 0x9C [:int2 branch_offset]
-  (throw (ex-info "TODO: implement ljsr")))
+  (throw (ex-info "TODO: implement ljsr" {})))
 
 (defop lret 0x9D [:int2 local_variable_number]
-  (throw (ex-info "TODO: implement lret")))
+  (throw (ex-info "TODO: implement lret" {})))
 
 (defop jnil 0x9E [:int2 branch_offset]
   (jump-cond1 vm-nil? branch_offset))
@@ -1179,10 +1179,10 @@ them to account for the difference."
   (bif host set_index func_index argc))
 
 (defop callext 0xB7 []
-  (throw (ex-info "callext not implemented")))
+  (throw (ex-info "callext not implemented" {})))
 
 (defop throw 0xB8 []
-  (throw (ex-info "TODO: implement throw")))
+  (throw (ex-info "TODO: implement throw" {})))
 
 (defop sayval 0xB9 []
   (say-value))
@@ -1193,7 +1193,7 @@ them to account for the difference."
    sq <- (as-list obj)
    (if sq
      (stack-push (nth sq (dec idx)))
-     (throw (ex-info "TODO: Op overload not implemented")))))
+     (throw (ex-info "TODO: Op overload not implemented" {})))))
 
 (defop index 0xBA []
   (mdo
@@ -1214,13 +1214,13 @@ them to account for the difference."
    (>>= (obj-intern (assoc obj :metaclass metaclass_id)) vm-return)))
 
 (defop new2 0xC1 [:uint2 arg_count :uint2 metaclass_id]
-  (throw (ex-info "TODO: implement new2")))
+  (throw (ex-info "TODO: implement new2" {})))
 
 (defop trnew1 0xC2 [:ubyte arg_count :ubyte metaclass_id]
-  (throw (ex-info "TODO: implement trnew1")))
+  (throw (ex-info "TODO: implement trnew1" {})))
 
 (defop trnew2 0xC3 [:uint2 arg_count :uint2 metaclass_id]
-  (throw (ex-info "TODO: implement trnew2")))
+  (throw (ex-info "TODO: implement trnew2" {})))
 
 (defn- setlcl [i v]
   (>>= (reg-get :fp) #(stack-set (+ % i) v)))
@@ -1297,7 +1297,7 @@ them to account for the difference."
    (stack-set (- fp (+ (dec FRAME-SIZE) arg_number)) v)))
 
 (defop setind 0xE4 []
-  (throw (ex-info "TODO: implement setind")))
+  (throw (ex-info "TODO: implement setind" {})))
 
 (defn- set-property
   "Updates object store to contain modified version of object
@@ -1331,28 +1331,28 @@ with property set as specified. oid, pid numbers. val primitive."
   (>>= stack-pop #(set-property obj prop_id %)))
 
 (defop setdblcl 0xE9 [:uint2 local_number]
-  (throw (ex-info "TODO: implement setdblcl")))
+  (throw (ex-info "TODO: implement setdblcl" {})))
 
 (defop setdbarg 0xEA [:uint2 param_number]
-  (throw (ex-info "TODO: implement setdbarg")))
+  (throw (ex-info "TODO: implement setdbarg" {})))
 
 (defop setself 0xEB []
-  (throw (ex-info "TODO: implement setself")))
+  (throw (ex-info "TODO: implement setself" {})))
 
 (defop loadctx 0xEC []
-  (throw (ex-info "TODO: implement loadctx")))
+  (throw (ex-info "TODO: implement loadctx" {})))
 
 (defop storectx 0xED []
-  (throw (ex-info "TODO: implement storectx")))
+  (throw (ex-info "TODO: implement storectx" {})))
 
 (defop setlcl1r0 0xEE [:ubyte local_number]
   (>>= (reg-get :r0) (partial setlcl local_number)))
 
 (defop setindlcl1i8 0xEF [:ubyte local_number :ubyte index_val]
-  (throw (ex-info "TODO: implement setindlcli8")))
+  (throw (ex-info "TODO: implement setindlcli8" {})))
 
 (defop bp 0xF1 []
-  (throw (ex-info "TODO: implement bp")))
+  (throw (ex-info "TODO: implement bp" {})))
 
 (defop nop 0xF2 [])
 

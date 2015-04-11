@@ -46,4 +46,4 @@
 
 (defn reset []
   (stop)
-  (refresh :after 'user/go))
+  (refresh :after 'dev/go))

@@ -11,8 +11,7 @@ structures for human inspection"}
   "Disassemble instruction at addr and return {:op {...} :args {...}}"
   [vm addr]
   (-> (vm/offset vm addr)
-      ((vm/parse-op))
-      (first)
+      (vm/read-op)
       ((fn [[op args]] {:op (dissoc op :run-fn) :args args}))))
 
 (defn annotate-primitive
