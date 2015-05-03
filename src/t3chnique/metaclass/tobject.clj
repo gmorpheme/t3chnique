@@ -52,12 +52,11 @@ final instance remains in the sequence."
 (defn prop-chain
   "Return seq of [defining val] based on inheritance hierarchy."
   [state {:keys [bases properties] :as self} pid]
-  (trace "prop-chain" pid)
   (let [inherited (->> bases
                        (map #(get (:objs state) %))
                        (mapcat #(prop-chain state % pid))
                        (dedupe-chain-backwards (comp :oid first)))]
-    (trace "inherited:" inherited)
+    (trace "chain of defining obj / val:" inherited)
     (if (contains? properties pid)
       (cons [self (get properties pid)] inherited)
       inherited)))
@@ -66,7 +65,6 @@ final instance remains in the sequence."
   "Get a property using the inheritance hierarchy."
   {:post [#(p/vm-primitive? (second %))]}
   [state self pid]
-  (trace "get-prop-from-chain")
   (first (prop-chain state self pid)))
 
 (defn inh-prop-from-chain
@@ -77,12 +75,12 @@ final instance remains in the sequence."
       (first pchain))))
 
 (defn get-prop
-  "Get property"
+  "Get property pid of TadsObject self in state."
   [state self pid]
   (or (get-prop-from-chain state self pid)
       (mc/lookup-intrinsic state pid
-                       :tads-object tobj-table
-                       :root-object obj/property-table)))
+                           :tads-object tobj-table
+                           :root-object obj/property-table)))
 
 (defrecord TadsObject [is-class bases properties]
 
@@ -109,11 +107,11 @@ final instance remains in the sequence."
     (let [metaclass-index (:metaclass self)]
       (mdo
        st <- get-state
-       (let [[obj val] (spy (get-prop st self propid))]
+       (let [[defining-obj val] (get-prop st self propid)]
          ;; if it's an intrinsic and argc allows call, evaluate it
          (return (if (and (p/vm-native-code? val) (not (nil? argc)))
                    ((p/value val) argc)
-                   [(p/vm-obj (:oid obj)) val])))))) ; TODO: could this be another type?
+                   [(p/vm-obj (:oid defining-obj)) val])))))) ; TODO: could this be another type?
 
   ;; action to set property
   (mc/set-property [self propid val]

@@ -48,6 +48,7 @@
     (trace ~(str f))
     (~f self# argc#)))
 
+;; A host implementation that wraps intrinsics with extra logging for debugging.
 (extend TraceHost
     
   bif/t3vm
@@ -65,18 +66,26 @@
    :nextObj (traced gen/nextObj)}
 
   bif/tads-io
+  
+  ;; tracing say that just adds args to _output in state
   {:tadsSay (fn [_ argc]
               (trace "tads-io/tadsSay")
               (mdo
+               ;; pop the args to say
                args <- (u/sequence-m (repeat argc (>>=
                                                    vm/stack-pop
                                                    convert-to-string-for-say)))
+               ;; concat to _output in state
                (vm/update-val :_output #(concat % args))
+
+               ;; return say
                (vm/vm-return (p/vm-nil))))}
 
   bif/tads-net)
 
-(defn trace-host []
+(defn trace-host
+  "Create tracing host"
+  []
   (TraceHost.))
 
 (defn trace-step
@@ -84,7 +93,6 @@
   (vm/step
    host
    (fn [op args ip pc]
-     (tracef "@%d..%d: %s" ip pc (:mnemonic op))
      (mdo
       stack <- (vm/get-val :stack)
       (vm/update-val :_trace #(concat % [{:op op :args args :pre stack :ip ip}]))))))
@@ -111,31 +119,52 @@
                        ["\n\nstack: " (format-stack (:stack s))
                         "\n\noutput: " (apply str (:_output s))]))))
 
+(def error-state (atom nil))
 
-(defn trace-execution [name]
+(defn tracing-execute
+  "Execute the VM image using tracing host and stepper"
+  [name]
   (let [m0 (vm/vm-from-image (parse/parse-resource name))]
-    (info "===> Executing " name)
-    (let [host (trace-host)
+    (info "============================ " name " ============================")
+    (let [;; create a tracing host
+          host (trace-host)
+          ;; and tracing stepper
+          stepper (trace-step host)
+          ;; enter the VM
           m1 (exec-state (vm/enter host) m0)
-          m2 (assoc m1 :_trace [])
-          stepper (trace-step host)]
-      (info "Executing now")
-      (vm/execute stepper m2
+          ;; add a _trace key for storing trace in the state
+          m2 (assoc m1 :_trace [])]
+      (vm/execute stepper
+                  m2
                   (fn error-handler [s e]
+                    ;; log the error
                     (error e)
+
+                    ;; save off the formatted output 
                     (spit (str "test/t3chnique/out/" name ".err")
                           (str (format-trace s) "\nexception: " e))
+
+                    ;; store off the erroring state for repl use
+                    ;; during debugging
+                    (reset! error-state s)
+
+                    ;; ... and dump it as edn
                     (dump-state s)
                     (throw e))))))
 
-(defn run [name]
+(defn run
+  "Load and run the specified t3 image, saving trace information for
+  comparison."
+  [name]
   (let [resource-name (str name ".t3")
-        [r s] (trace-execution resource-name)
+        [r s] (tracing-execute resource-name)
         trc (str (format-trace s)
                  (when r (str "\nreturn " (p/mnemonise r))))]
     (spit (str "test/t3chnique/out/" resource-name ".trc") trc)))
 
-(defn compare-trace [name]
+(defn compare-trace
+  "Compare expected and actual trace for the named t3 image."
+  [name]
   (let [new (str "test/t3chnique/out/" name ".t3.trc")
         old (str "test/t3chnique/out/" name ".t3.good")]
     (and (.exists (io/file new))
@@ -149,9 +178,6 @@
   (let [s (run "basic")]
     (compare-trace "basic") => true))
 
-     ;.;. Actual: false
-   ;.;. Expected: true
-;.;. FAIL "object" at (form-init2319925236458664615.clj:4)
 (fact "object"
   (let [s (run "object")]
     (compare-trace "object") => true))

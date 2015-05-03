@@ -40,7 +40,7 @@
 
 (def vm-obj-or-nil? (some-fn vm-obj? vm-nil?))
 (def vm-string? (some-fn vm-sstring? vm-dstring?))
-(def vm-auto-eval? (some-fn vm-codeofs? vm-dstring?))
+(def vm-auto-eval? (some-fn vm-codeofs? vm-dstring? vm-objx?))
 
 (defn vm-bool [v] (if v (vm-true) (vm-nil)))
 (defn typeid [entry] (:type entry))
@@ -68,8 +68,8 @@
     vm-true-id "t"
     vm-stack-id (str "st" (value val))
     vm-codeptr-id (str "#" (value val))
-    vm-obj-id (str "o" (or (value val) "-"))
-    vm-prop-id (str "p" (or (value val) "-"))
+    vm-obj-id (str "o:" (or (value val) "-"))
+    vm-prop-id (str "p:" (or (value val) "-"))
     vm-int-id (str (value val))
     vm-sstring-id (str "'" (value val))
     vm-dstring-id (str \" (value val))

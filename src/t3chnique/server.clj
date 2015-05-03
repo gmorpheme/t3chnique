@@ -337,6 +337,11 @@ useful information for tooling UIs."
                                     (map (partial + 97))
                                     (map char)))))
 
+(defn new-unique-id
+  "Create a new id that is not already a key in histories"
+  [prefix histories]
+  (first (remove (partial contains? histories) (repeatedly #(new-id prefix)))))
+
 (defn game-list
   "List available games."
   [system] (:game-catalogue system))
@@ -378,6 +383,16 @@ useful information for tooling UIs."
     (swap! histories assoc id [vm])
     (swap! hosts assoc id host)
     vm))
+
+(defn vm-adopt!
+  "Adopt a state from elsewhere (load or repl) so it can be inspected
+  via the REST api."
+  [system state]
+  (trace "vm-adopt!")
+  (let [histories (:vm-histories system)
+        id (new-unique-id "import" @histories)]
+    (swap! histories assoc id [state])
+    state))
 
 (defn vm-destroy!
   "Delete a VM by id"

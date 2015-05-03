@@ -8,7 +8,7 @@ and function set protocols."}
             [t3chnique.parse :as parse]
             [t3chnique.intrinsics :as bif]
             [t3chnique.metaclass :as mc]
-            [clojure.tools.logging :refer [spy debug info trace error]])
+            [clojure.tools.logging :refer [spy debug info trace tracef error]])
   (:import [java.nio ByteBuffer]))
 
 (set! *warn-on-reflection* true)
@@ -160,7 +160,7 @@ the VM execution."
         op-fn-name (symbol (str "op-" op))]
     `(do
        (defn ^{:opcode ~cd} ~op-fn-name ~param-syms
-         (trace '~op ~(vec (rest param-syms)))
+         (debug '~op ~(vec (rest param-syms)))
          (runop (fn [] ~@exprs)))
 
        (swap! table assoc ~cd (OpCode. ~cd '~op ~spec ~(symbol (str "op-" op)))))))
@@ -180,7 +180,6 @@ the VM execution."
   ([{:keys [ip] :as vm}]
      (offset vm ip))
   ([{:keys [code-page-size code-pages]} p]
-     (trace "Computing offset for " p)
      [(:bytes (nth code-pages (/ p code-page-size))) (mod p code-page-size)]))
 
 (defn const-offset
@@ -200,11 +199,8 @@ the VM execution."
   "Read the operation in the supplied buffer position.
 Return opcode map, args map and byte length of compete instruction."
   [[b i]]
-  (trace "read-op:" b i)
   (let [[[op args] [b' i']] (parse/run-parse parse-op [b i])]
     [op args (- i' i)]))
-
-
 
 ;; We leave :ip pointing at the current instruction during processing.
 ;; Should opcodes need to jump, they set :pc instead and this will be
@@ -744,7 +740,7 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
 
   (fn [target-val pid argc]
     {:pre [(vm-primitive? target-val) (integer? pid) (integer? argc)]}
-    (trace "Accessing property" pid "of" target-val)
+    (trace "Access property" pid "of" (mnemonise target-val))
     (mdo
      object <- (cond
                 (vm-list? target-val) (>>= (as-list target-val) #(return (t3chnique.metaclass.list/tads-list %)))
@@ -761,8 +757,10 @@ as (vm-obj), defining-obj as (vm-obj) ^int pid ^int prop-val ^int argc"
   "Property handler which calls a method if appropriate or returns
 property value directly."
   [target defining self pid prop-val argc]
-  (trace "vm/eval-prop" self pid prop-val argc)
-  (if (vm-truthy? prop-val)
+  (trace "eval-prop" "self: " (mnemonise self) " property: " pid " prop-val: " (mnemonise prop-val) " argc: " argc)
+
+  (if prop-val                          ; locator fns return nil if
+                                        ; not found
     (cond
      (not (vm-auto-eval? prop-val)) (vm-return prop-val)
      (vm-dstring? prop-val) (>> (stack-push prop-val) (say-value))
@@ -1377,24 +1375,22 @@ with property set as specified. oid, pid numbers. val primitive."
   [host pre-action]
   (mdo
    ip <- (reg-get :ip)
-   let _ = (trace "Stepping from ip=" ip)
+   let _ = (tracef "IP: 0x%08x" ip)
    (if (or (nil? ip) (zero? ip))
      (reg-get :r0)
      (mdo
       ;; parse op and set pc
       [op args len] <- parse-op-at-ip
-      let _ = (debug "parsed" op args len)
 
       let p = (+ ip len)
       (set-pc p)
-      let _ = (debug "set pc" p)
 
       ;; pre-action
       (pre-action op args ip p)
 
-      let _ = (debug "running op")
       ;; call and complete
       ret <- (apply (:run-fn op) (cons host (vals args)))
+
       (commit-pc)
       
       (return nil)))))
@@ -1405,7 +1401,6 @@ error-fn takes state and exception."
   [stepper s error-fn]
   (loop [s s]
     (let [[r s+] (try (run-state stepper s) (catch Exception e (error-fn s e)))]
-      (if (spy r)
+      (if r
         [r s+]
         (recur s+)))))
-

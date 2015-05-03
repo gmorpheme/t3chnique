@@ -203,8 +203,9 @@ under key :intrinsic-class-oid. Return enhanced mcld."
   "Action to lookup intrinsic method and invoke it (returning [intcls action])."
   [self propid argc & mc-table-pairs]
   {:pre [(number? propid)]}
-  (trace "default-get-property" propid argc)
+  (trace "default-get-property" propid " argc: " argc mc-table-pairs)
   (mdo
    st <- get-state
-   (let [[intcls method] (apply lookup-intrinsic st propid mc-table-pairs)]
-     (return [intcls ((p/value method) self argc)]))))
+   (if-let [[intcls method] (apply lookup-intrinsic st propid mc-table-pairs)]
+     (return [intcls ((p/value method) self argc)])
+     (return nil))))
