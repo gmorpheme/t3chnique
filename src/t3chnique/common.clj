@@ -6,7 +6,7 @@
 
   (indexed '(a b c d))  =>  ([0 a] [1 b] [2 c] [3 d])"
   [s]
-  (map vector (iterate inc 0) s))
+  (map vector (range) s))
 
 (defn positions
   "Returns a lazy sequence containing the positions at which pred
