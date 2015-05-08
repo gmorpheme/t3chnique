@@ -1,11 +1,12 @@
-(ns ^{:doc "Server for maintaining managing running VMs."}
+(ns ^{:doc "Server for maintaining managing running VMs."
+      :deprecated true}
     t3chnique.server
   (:use [ring.middleware.format-params :only [wrap-restful-params]]
         [ring.middleware.format-response :only [wrap-format-response serializable? make-encoder]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
         [compojure.core :only [routes GET POST DELETE]]
         clojure.java.io)
-  (:require [ring.adapter.jetty :as j]
+  (:require [org.httpkit.server :as http]
             [ring.util.response :as response]
             [compojure.handler :as handler]
             [cheshire.custom :as json]
@@ -593,11 +594,12 @@ supplied for URL formation."
 (defn start-server
   "Start server with REST API at root context."
   [system]
-  (j/run-jetty (make-app "/" system) {:port 8080 :join? false}))
+  (http/run-server (make-app "/" system) {:port 8080 :join? false}))
 
 (defn stop-server [system]
   (when-let [server @(:server system)]
-    (.stop server)))
+    (server :timeout 100)
+    (reset! server nil)))
 
 (defn system 
   "Initialise a new instance of the whole application."
