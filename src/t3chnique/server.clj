@@ -599,7 +599,7 @@ supplied for URL formation."
 (defn stop-server [system]
   (when-let [server @(:server system)]
     (server :timeout 100)
-    (reset! server nil)))
+    (reset! (:server system) nil)))
 
 (defn system 
   "Initialise a new instance of the whole application."
