@@ -1,0 +1,20 @@
+## -*- mode: restclient -*-
+
+GET http://localhost:8090/games/
+Accept: application/json
+
+##
+
+GET http://localhost:8090/games/12
+Accept: application/edn
+
+##
+
+GET http://localhost:8090/vms
+Accept: application/json
+
+##
+
+GET http://localhost:8090/vms/basic-xjucnd/dis1/0
+Accept: application/json
+

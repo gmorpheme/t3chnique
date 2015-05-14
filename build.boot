@@ -7,6 +7,8 @@
                   [org.clojure/tools.logging "0.3.1"]
                   [com.stuartsierra/component "0.2.3"]
                   [http-kit "2.1.16"]
+                  [bidi "1.18.11"]
+                  [liberator "0.12.2"]
                   [compojure "1.3.3"]
                   [ring-cors "0.1.0"]
                   [ring-middleware-format "0.5.0"]
@@ -23,7 +25,8 @@
 (def build-resources #{"src" "resources"})
 
 (def test-deps (vec (concat build-deps '[[org.clojure/tools.trace "0.7.8"]
-                                         [org.clojure/tools.namespace "0.2.10"]])))
+                                         [org.clojure/tools.namespace "0.2.10"]
+                                         [ring/ring-mock "0.2.0"]])))
 
 (def test-resources #{"src" "resources" "t3" "dev" "test"})
 
