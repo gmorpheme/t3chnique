@@ -47,5 +47,5 @@
   "Build t3chnique engine and REST server."
   []
   (set-env! :dependencies build-deps)
-  (set-env! :resources build-resources)
+  (set-env! :resource-paths build-resources)
   (comp (pom) (jar)))
