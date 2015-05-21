@@ -89,6 +89,4 @@
   {:pre [(vm-bifptr? p)]}
   [(bit-and 0xffff0000 v) (bit-and 0xffff v)])
 
-(set! *data-readers* (assoc *data-readers*
-                       't3chnique.primitive.TypedValue
-                       map->TypedValue))
+(alter-var-root #'*data-readers* assoc 't3chnique.primitive.TypedValue map->TypedValue)

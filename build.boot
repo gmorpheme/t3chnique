@@ -40,6 +40,7 @@
 (task-options!
  pom {:project 't3chnique
       :version "0.0.1-SNAPSHOT"}
+ aot {:namespace #{'t3chnique.main}}
  jar {:main 't3chnique.main}
  repl {:init-ns 'dev})
 
@@ -48,4 +49,4 @@
   []
   (set-env! :dependencies build-deps)
   (set-env! :resource-paths build-resources)
-  (comp (pom) (jar)))
+  (comp (pom) (aot) (uber) (jar)))
