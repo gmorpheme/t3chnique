@@ -7,7 +7,8 @@
             [clojure.tools.logging :refer [trace]])
   (:require [t3chnique.primitive :as prim])
   (:import [java.nio.charset Charset]
-           [java.nio ByteOrder MappedByteBuffer ByteBuffer]))
+           [java.nio ByteOrder MappedByteBuffer ByteBuffer]
+           [com.google.common.io ByteStreams]))
 
 (set! *warn-on-reflection* true)
 
@@ -356,7 +357,9 @@
                     :oid uint4
                     :handler-offset uint2))))
 
-(defn load-image-file [f]
+(defn load-image-file
+  "Load image from file or input stream"
+  [f]
   (let [buf (nio/mmap (nio/readable-channel f) nil nil :mode :read-only)
         _ (.order buf ByteOrder/LITTLE_ENDIAN)]
     buf))
@@ -371,5 +374,7 @@
 (defn parse-resource
   "Load and parse image file resource."
   [name]
-  (when-let [f (io/file (io/resource name))]
-    (parse image (load-image-file f))))
+  (when-let [url (io/resource name)]
+    (case (.getProtocol url)
+      "file" (parse image (load-image-file (io/file url)))
+      "jar" (parse image (ByteStreams/toByteArray (io/input-stream url))))))

@@ -14,10 +14,13 @@
   "Scan the classpath for .t3 files to produce the game catalogue."
   []
   (info "Scanning for t3 resources.")
-  (->> (cp/classpath-directories)
-       (mapcat file-seq)
-       (map #(.getName %))
-       (filter #(.endsWith % ".t3"))))
+  (let [jart3s (->> (cp/classpath-jarfiles)
+                    (mapcat #(iterator-seq (.entries %))))
+        dirt3s (->> (cp/classpath-directories)
+                    (mapcat file-seq))]
+    (spy :info (->> (concat jart3s dirt3s)
+                    (map #(.getName %))
+                    (filter #(.endsWith % ".t3"))))))
 
 (defn list-games
   "List all the available games."
