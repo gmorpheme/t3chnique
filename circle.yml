@@ -1,4 +1,6 @@
 machine:
+  services:
+    - docker
   java:
     version: oraclejdk8
   pre:
@@ -9,3 +11,12 @@ test:
   override:
     - boot midje
 
+
+deployment:
+  prod:
+    branch: master
+    commands:
+      - boot build
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker build -t gmorpheme/t3chnique .
+      - docker push gmorpheme/t3chnique:latest
